@@ -9,6 +9,8 @@ import {
 } from 'react-router-dom';
 
 import HomePage from './pages/HomePage';
+import LoginPage from './pages/auth/LoginPage';
+
 
 export default function App() {
   return (
@@ -17,6 +19,7 @@ export default function App() {
 
         {/* HOME */}
         <Route path="/" element={<HomePage />} />
+        <Route path="/login" element={<LoginPage />} />
 
         
 
