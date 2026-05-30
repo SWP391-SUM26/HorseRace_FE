@@ -1,0 +1,413 @@
+.loginPage {
+  height: 100dvh;
+  display: grid;
+  grid-template-columns: minmax(360px, 1fr) minmax(360px, 1fr);
+  background: #ffffff;
+  color: #15352f;
+  font-family: Montserrat, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  overflow: hidden;
+}
+
+.loginPanel {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 0;
+  padding: clamp(20px, 3vh, 36px) 32px;
+  overflow: hidden;
+}
+
+.formWrap {
+  width: min(100%, 620px);
+  max-height: 100%;
+}
+
+.brandButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  background: transparent;
+  border: 0;
+  color: #064536;
+  padding: 0;
+  margin-bottom: clamp(14px, 2vh, 22px);
+  font-size: clamp(1.38rem, 2.2vh, 1.6rem);
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.brandMark {
+  width: 11px;
+  height: 11px;
+  border-radius: 999px;
+  background: #0f6b52;
+  box-shadow: 0 0 0 5px rgba(15, 107, 82, 0.1);
+}
+
+.headingBlock {
+  margin-bottom: clamp(16px, 2.4vh, 24px);
+}
+
+.headingBlock h1 {
+  margin: 0 0 6px;
+  color: #074635;
+  font-size: clamp(2.7rem, 5.2vh, 3.7rem);
+  font-weight: 850;
+  letter-spacing: 0;
+}
+
+.headingBlock p {
+  margin: 0;
+  color: #6b7773;
+  font-size: clamp(1.08rem, 1.8vh, 1.24rem);
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+}
+
+.fieldLabel {
+  color: #334640;
+  font-size: clamp(0.96rem, 1.45vh, 1.05rem);
+  font-weight: 800;
+  margin-bottom: 8px;
+}
+
+.inputShell {
+  height: clamp(54px, 6.6vh, 60px);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border: 1px solid #d8dedb;
+  background: #ffffff;
+  padding: 0 20px;
+  margin-bottom: clamp(14px, 2.3vh, 20px);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.inputShell:focus-within {
+  border-color: #0f6b52;
+  box-shadow: 0 0 0 3px rgba(15, 107, 82, 0.1);
+}
+
+.inputShell svg,
+.loginButton svg,
+.googleButton svg,
+.roleButton svg,
+.performanceIcon svg {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 auto;
+}
+
+.inputShell svg,
+.loginButton svg,
+.roleButton svg,
+.performanceIcon svg {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.googleButton svg {
+  fill: currentColor;
+}
+
+.inputShell {
+  color: #5d6a65;
+}
+
+.inputShell input {
+  width: 100%;
+  border: 0;
+  outline: 0;
+  color: #1d2c28;
+  font-size: 1.08rem;
+  background: transparent;
+}
+
+.inputShell input::placeholder {
+  color: #9aa5a1;
+}
+
+.formMeta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: clamp(16px, 2.4vh, 22px);
+}
+
+.rememberControl {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: #70807a;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.rememberControl input {
+  width: 14px;
+  height: 14px;
+  accent-color: #075c47;
+}
+
+.textButton {
+  border: 0;
+  background: transparent;
+  color: #075c47;
+  font-size: 0.9rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.loginButton,
+.googleButton {
+  min-height: clamp(56px, 6.8vh, 64px);
+  border: 0;
+  cursor: pointer;
+  font-size: 1.08rem;
+  font-weight: 800;
+  transition: transform 0.2s ease, background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.loginButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: linear-gradient(180deg, #087057 0%, #014934 100%);
+  color: #ffffff;
+  box-shadow: 0 9px 18px rgba(1, 73, 52, 0.16);
+}
+
+.loginButton:hover,
+.googleButton:hover,
+.roleButton:hover {
+  transform: translateY(-1px);
+}
+
+.divider {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 18px;
+  margin: clamp(20px, 3vh, 28px) 0 clamp(14px, 2vh, 18px);
+}
+
+.divider span {
+  height: 1px;
+  background: #dfe5e2;
+}
+
+.divider p {
+  margin: 0;
+  color: #77847f;
+  font-size: 0.9rem;
+}
+
+.googleButton {
+  width: 100%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 20px;
+  background: linear-gradient(180deg, #087057 0%, #014934 100%);
+  color: #ffffff;
+  box-shadow: 0 9px 18px rgba(1, 73, 52, 0.16);
+}
+
+.googleButton:hover {
+  background: linear-gradient(180deg, #0a7f62 0%, #07543f 100%);
+}
+
+.roleDivider {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 18px;
+  margin: clamp(16px, 2.4vh, 22px) 0 clamp(12px, 1.7vh, 16px);
+}
+
+.roleDivider span {
+  height: 1px;
+  background: #dfe5e2;
+}
+
+.roleDivider p {
+  margin: 0;
+  color: #77847f;
+  font-size: 0.9rem;
+}
+
+.roleGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.roleButton {
+  min-height: clamp(46px, 5.4vh, 54px);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  background: #ffffff;
+  border: 1px solid #d9dfdc;
+  color: #253a34;
+  cursor: pointer;
+  font-size: 1.04rem;
+  font-weight: 800;
+  transition: transform 0.2s ease, border-color 0.2s ease, background-color 0.2s ease;
+}
+
+.roleButton:hover {
+  border-color: #075c47;
+  background: #f7fbfa;
+  color: #075c47;
+}
+
+.roleButton:nth-child(3) {
+  grid-column: 1 / -1;
+  justify-self: center;
+  width: 58%;
+}
+
+.errorMessage {
+  margin: -8px 0 16px;
+  padding: 10px 12px;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.errorMessage {
+  background: #fef2f2;
+  color: #b91c1c;
+  border: 1px solid #fecaca;
+}
+
+.visualPanel {
+  position: relative;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+  background: #10211d;
+}
+
+.horseImage {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  display: block;
+  filter: saturate(0.95) contrast(1.03);
+}
+
+.visualShade {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(90deg, rgba(5, 25, 20, 0.1) 0%, rgba(5, 25, 20, 0.08) 45%, rgba(5, 25, 20, 0.34) 100%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0) 42%, rgba(255, 255, 255, 0.75) 100%);
+}
+
+.performanceCard {
+  position: absolute;
+  left: 48px;
+  right: 48px;
+  bottom: 54px;
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+  max-width: 450px;
+  padding: clamp(16px, 2.4vh, 22px) 24px;
+  background: rgba(255, 255, 255, 0.22);
+  border: 1px solid rgba(255, 255, 255, 0.26);
+  color: #ffffff;
+  backdrop-filter: blur(18px);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.12);
+}
+
+.performanceIcon {
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.24);
+  color: #ffffff;
+}
+
+.performanceCard span {
+  display: block;
+  font-size: 0.82rem;
+  font-weight: 800;
+  margin-bottom: 8px;
+}
+
+.performanceCard h2 {
+  margin: 0 0 8px;
+  font-size: 1.3rem;
+  line-height: 1.2;
+  font-weight: 850;
+}
+
+.performanceCard p {
+  margin: 0;
+  max-width: 320px;
+  color: rgba(255, 255, 255, 0.78);
+  font-size: 0.82rem;
+  line-height: 1.5;
+}
+
+@media (max-width: 900px) {
+  .loginPage {
+    grid-template-columns: 1fr;
+    height: auto;
+    min-height: 100dvh;
+    overflow: auto;
+  }
+
+  .visualPanel {
+    min-height: 360px;
+  }
+
+  .horseImage {
+    min-height: 360px;
+  }
+}
+
+@media (max-width: 560px) {
+  .loginPanel {
+    padding: 36px 20px;
+  }
+
+  .headingBlock h1 {
+    font-size: 1.7rem;
+  }
+
+  .formMeta {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .roleGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .roleButton:nth-child(3) {
+    width: 100%;
+  }
+
+  .performanceCard {
+    left: 20px;
+    right: 20px;
+    bottom: 24px;
+  }
+}
