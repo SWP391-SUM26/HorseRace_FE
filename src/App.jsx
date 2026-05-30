@@ -1,9 +1,26 @@
-function App() {
+import React from 'react';
+import './index.css';
+
+import {
+  BrowserRouter,
+  Routes,
+  Route,
+  Navigate,
+} from 'react-router-dom';
+
+import HomePage from './pages/HomePage';
+
+export default function App() {
   return (
-    <div className="text-4xl font-bold text-blue-500">
-      Horse Racing Tournament System
-    </div>
+    <BrowserRouter>
+      <Routes>
+
+        {/* HOME */}
+        <Route path="/" element={<HomePage />} />
+
+        
+
+      </Routes>
+    </BrowserRouter>
   );
 }
-
-export default App;
