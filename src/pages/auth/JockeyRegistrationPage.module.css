@@ -1,0 +1,358 @@
+/* JockeyRegistrationPage.module.css */
+
+.registrationPage {
+    display: flex;
+    min-height: 100vh;
+    background-color: #f8fafc;
+}
+
+/* CỘT TRÁI - ẢNH NỀN VISUAL PANEL */
+.visualPanel {
+    flex: 1;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    padding: 60px 48px;
+    background-color: #032c23;
+    color: #ffffff;
+    overflow: hidden;
+}
+
+@media (max-width: 1024px) {
+    .visualPanel {
+        display: none;
+        /* Ẩn cột ảnh trên các màn hình máy tính bảng và di động */
+    }
+}
+
+.jockeyImage {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    opacity: 0.9;
+    z-index: 0;
+}
+
+.visualShade {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(180deg, rgba(3, 44, 35, 0.25) 0%, rgba(3, 44, 35, 0.85) 100%);
+    z-index: 1;
+}
+
+.brandCard {
+    position: relative;
+    z-index: 2;
+    max-width: 480px;
+}
+
+.brandName {
+    display: flex;
+    align-items: center;
+    font-size: 1.5rem;
+    font-weight: 800;
+    margin-bottom: 16px;
+    color: #ffffff;
+    letter-spacing: -0.01em;
+}
+
+.brandDesc {
+    font-size: 0.95rem;
+    line-height: 1.6;
+    color: rgba(255, 255, 255, 0.85);
+    margin: 0;
+}
+
+/* CỘT PHẢI - FORM PANEL */
+.formPanel {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    padding: 60px 48px;
+    overflow-y: auto;
+    background-color: #f8fafc;
+}
+
+@media (max-width: 640px) {
+    .formPanel {
+        padding: 40px 24px;
+    }
+}
+
+.formWrap {
+    max-width: 600px;
+    width: 100%;
+}
+
+.title {
+    font-size: 2rem;
+    font-weight: 800;
+    color: #0f172a;
+    margin: 0 0 8px 0;
+    letter-spacing: -0.02em;
+}
+
+.subtitle {
+    font-size: 0.95rem;
+    color: #64748b;
+    margin: 0 0 36px 0;
+    line-height: 1.5;
+}
+
+/* KHỐI THẺ ĐĂNG KÝ (CARDS) */
+.card {
+    background-color: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 28px 24px;
+    margin-bottom: 24px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.01);
+}
+
+.cardHeader {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    border-bottom: 1px solid #f1f5f9;
+    padding-bottom: 16px;
+    margin-bottom: 24px;
+}
+
+.headerIconWrapper {
+    width: 32px;
+    height: 32px;
+    background-color: #e6f4ea;
+    color: #047857;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.cardTitle {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #0f172a;
+    margin: 0;
+}
+
+.cardBody {
+    display: flex;
+    flex-direction: column;
+}
+
+.grid2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+
+@media (max-width: 480px) {
+    .grid2 {
+        grid-template-columns: 1fr;
+        gap: 16px;
+    }
+}
+
+/* ĐỊNH DẠNG KHUNG NHẬP LIỆU (ĐỒNG BỘ LOGIN) */
+.inputField {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.fieldLabel {
+    font-size: 0.72rem;
+    font-weight: 800;
+    color: #64748b;
+    letter-spacing: 0.06em;
+}
+
+.inputShell {
+    display: flex;
+    align-items: center;
+    background: #ffffff;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    padding: 0 16px;
+    transition: all 0.2s ease;
+}
+
+.inputShell input {
+    width: 100%;
+    border: none;
+    outline: none;
+    padding: 12px 0;
+    font-size: 0.95rem;
+    color: #0f172a;
+    background: transparent;
+}
+
+.inputShell:focus-within {
+    border-color: #059669;
+    box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.08);
+}
+
+/* HỘP LỰA CHỌN DROPDOWN */
+.selectWrap {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 20px;
+}
+
+.selectContainer {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.select {
+    width: 100%;
+    padding: 12px 16px;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    appearance: none;
+    background: #ffffff;
+    color: #0f172a;
+    font-size: 0.95rem;
+    cursor: pointer;
+    outline: none;
+    transition: all 0.2s ease;
+}
+
+.select:focus {
+    border-color: #059669;
+    box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.08);
+}
+
+.selectArrow {
+    position: absolute;
+    right: 16px;
+    pointer-events: none;
+    color: #64748b;
+    display: flex;
+    align-items: center;
+}
+
+/* PHẦN KÉO THẢ TỆP TIN CREDENTIALS */
+.uploadContainer {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 20px;
+}
+
+.uploadArea {
+    border: 1.5px dashed #cbd5e1;
+    background-color: #f8fafc;
+    border-radius: 10px;
+    padding: 24px 16px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.uploadArea:hover {
+    border-color: #059669;
+    background-color: #f0fdf4;
+}
+
+.uploadIcon {
+    color: #64748b;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.uploadArea:hover .uploadIcon {
+    color: #059669;
+}
+
+.uploadText {
+    font-size: 0.88rem;
+    color: #334155;
+    margin-bottom: 4px;
+}
+
+.highlightText {
+    color: #059669;
+    font-weight: 700;
+}
+
+.uploadArea:hover .highlightText {
+    text-decoration: underline;
+}
+
+.uploadHint {
+    font-size: 0.78rem;
+    color: #94a3b8;
+}
+
+/* THANH CHÂN TRANG (ACTION FOOTER) */
+.actionFooter {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 40px;
+    padding-top: 24px;
+    border-top: 1px solid #e2e8f0;
+}
+
+.backBtn {
+    background: none;
+    border: none;
+    color: #475569;
+    font-size: 0.95rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: color 0.2s ease;
+}
+
+.backBtn:hover {
+    color: #0f172a;
+}
+
+.submitBtn {
+    background-color: #022c22;
+    color: #ffffff;
+    border: none;
+    border-radius: 8px;
+    padding: 14px 28px;
+    font-size: 0.95rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.submitBtn:hover {
+    background-color: #064e3b;
+    box-shadow: 0 4px 12px rgba(2, 44, 34, 0.15);
+    transform: translateY(-1px);
+}
+
+.submitBtn:active {
+    transform: translateY(0);
+}
+
+.submitBtn:disabled {
+    background-color: #94a3b8;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}

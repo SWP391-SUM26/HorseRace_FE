@@ -29,9 +29,6 @@ export default function HomePage() {
           <button className={styles.loginBtn} onClick={() => navigate('/login')}>
             Login
           </button>
-          <button className={styles.ctaBtn} onClick={() => navigate('/register')}>
-            Register
-          </button>
         </div>
       </header>
 
