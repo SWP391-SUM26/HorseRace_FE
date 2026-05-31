@@ -45,6 +45,9 @@
         display: flex;
         align-items: center;
         gap: 24px;
+        position: absolute;
+        left: 50%;
+        transform: translateX(-50%);
     }
 
     .topbarNavBtn {
@@ -75,23 +78,8 @@
     }
 
     .loginBtn {
-        background: none;
-        border: none;
-        color: #ffffff;
-        font-size: 0.95rem;
-        font-weight: 600;
-        cursor: pointer;
-        padding: 10px 20px;
-        transition: opacity 0.2s ease;
-    }
-
-    .loginBtn:hover {
-        opacity: 0.8;
-    }
-
-    .ctaBtn {
         background-color: #ffffff;
-        color: #032c23;
+         color: #032c23;
         border: none;
         border-radius: 8px;
         padding: 10px 20px;
@@ -101,11 +89,12 @@
         transition: all 0.2s ease;
     }
 
-    .ctaBtn:hover {
+    .loginBtn:hover {
         background-color: #f1f5f9;
-        transform: translateY(-1px);
+            transform: translateY(-1px);
     }
 
+   
     /* HERO SECTION */
     .hero {
         position: relative;

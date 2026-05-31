@@ -129,13 +129,25 @@ export default function LoginPage() {
             <span></span>
           </div>
 
+          
           <div className={styles.roleGrid}>
             {roleOptions.map((role) => (
               <button
                 className={styles.roleButton}
                 key={role}
                 type="button"
-                onClick={() => handleRoleLogin(role)}
+                onClick={() => {
+                  // Chuyển sang trang đăng ký theo từng vai trò cụ thể
+                  if (role === "Owner") {
+                    navigate("/owner-register");
+
+                  } else if (role === "Jockey") {
+                    navigate("/jockey-register");
+
+                  } else if (role === "Spectator") {
+                    navigate("/spectator-register");
+                  }
+                }}
               >
                 <RoleIcon role={role} />
                 {role}
