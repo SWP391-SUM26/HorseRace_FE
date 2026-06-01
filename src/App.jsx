@@ -13,6 +13,8 @@ import LoginPage from './pages/auth/LoginPage';
 import JockeyRegistrationPage from './pages/auth/JockeyRegistrationPage';
 import OwnerRegistrationPage from './pages/auth/OwnerRegistrationPage';
 import SpectatorRegistrationPage from './pages/auth/SpectatorRegistrationPage';
+import ForgotPasswordPage from './pages/auth/ForgotPasswordPage';
+import ResetPasswordPage from './pages/auth/ResetPasswordPage';
 
 export default function App() {
   return (
@@ -25,6 +27,8 @@ export default function App() {
         <Route path="/jockey-register" element={<JockeyRegistrationPage />} />
         <Route path="/owner-register" element={<OwnerRegistrationPage />} />
         <Route path="/spectator-register" element={<SpectatorRegistrationPage />} />
+        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+        <Route path="/reset-password" element={<ResetPasswordPage />} />
       </Routes>
     </BrowserRouter>
   );
