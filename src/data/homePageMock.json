@@ -1,0 +1,111 @@
+{
+  "homeMarketLeaders": {
+    "tournament": {
+      "name": "Royal Ascot 2025",
+      "location": "Ascot, UK",
+      "status": "IN_PROGRESS"
+    },
+    "race": {
+      "name": "Race 5 (Gold Cup)",
+      "race_code": "RC-ASC-R5",
+      "track_condition": "Good to Firm (2.4)",
+      "scheduled_start_at": "2025-06-19T15:45:00Z",
+      "status": "UPCOMING"
+    },
+    "countdown": "04:12:35",    
+    "runners": [
+      {
+        "entry_no": 1,
+        "horse_name": "Midnight Banner",
+        "jockey_name": "R. Moore",
+        "trainer_name": "A. O'Brien",
+        "odds": "2/1"
+      },
+      {
+        "entry_no": 4,
+        "horse_name": "Desert Storm",
+        "jockey_name": "W. Buick",
+        "trainer_name": "C. Appleby",
+        "odds": "4/1"
+      },
+      {
+        "entry_no": 7,
+        "horse_name": "Ocean Pearl",
+        "jockey_name": "J. McDonald",
+        "trainer_name": "C. Waller",
+        "odds": "11/2"
+      }
+    ],
+    "aiInsights": {
+      "summary": "Track conditions favor low-draw sprinters today. Midnight Runner has a 68% win probability based on morning works and pedigree analysis.",
+      "confidence_score": 68,
+      "confidence_label": "HIGH"
+    }
+  },
+  "homeLeaderboard": [
+    {
+      "rank": 1,
+      "name": "Flightline",
+      "stat_label": "Rating",
+      "stat_value": 140,
+      "badge": "Horse"
+    },
+    {
+      "rank": 2,
+      "name": "Baaeed",
+      "stat_label": "Rating",
+      "stat_value": 135,
+      "badge": "Horse"
+    },
+    {
+      "rank": 3,
+      "name": "James McDonald",
+      "stat_label": "Wins",
+      "stat_value": 142,
+      "badge": "Jockey"
+    }
+  ],
+  "homeEcosystemWidgets": {
+    "owner": {
+      "portfolioROI": "+14.2%",
+      "roiProgress": 70,
+      "features": [
+        "Horse Registration",
+        "Financial Ledgering",
+        "Health Reports"
+      ]
+    },
+    "jockey": {
+      "nextBooking": {
+        "race_name": "Race 7 @ Flemington",
+        "post_time": "15:45 (Local)",
+        "status": "Confirmed"
+      },
+      "features": [
+        "Ride Schedule Management",
+        "Agent Communication",
+        "Weight Analytics"
+      ]
+    },
+    "spectator": {
+      "liveStreamActive": true,
+      "features": [
+        "Real-time Results Feed",
+        "Community Predictions",
+        "Digital Collectibles"
+      ]
+    }
+  },
+  "homeVirtualPaddock": {
+    "horse_name": "SILVER STREAK",
+    "badge": "HORSE OF THE DAY",
+    "age": 4,
+    "wins": 12,
+    "win_rate": "88%",
+    "metrics": {
+      "stamina": 92,
+      "speed": 88,
+      "temperament": 95
+    }
+  }
+}

@@ -100,7 +100,11 @@ export default function LoginPage() {
                 />
                 <span>Remember Me</span>
               </label>
-              <button className={styles.textButton} type="button">
+              <button 
+                className={styles.textButton} 
+                type="button"
+                onClick={() => navigate("/forgot-password")}
+              >
                 Forgot Password?
               </button>
             </div>
