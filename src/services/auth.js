@@ -2,6 +2,27 @@ import authMock from "../data/authMock.json";
 
 const SESSION_KEY = "equine_elite_session";
 
+export const ROLE_PERMISSIONS = {
+  Owner: [
+    "dashboard:view",
+    "horses:manage",
+    "finance:view",
+    "reports:view",
+  ],
+  Jockey: [
+    "dashboard:view",
+    "rides:view",
+    "schedule:manage",
+    "performance:view",
+  ],
+  Spectator: [
+    "dashboard:view",
+    "races:view",
+    "predictions:view",
+    "streams:view",
+  ],
+};
+ 
 function createAccessToken(prefix, userId, expiresInSeconds) {
   const expiresAt = Date.now() + expiresInSeconds * 1000;
   const randomPart = Math.random().toString(36).slice(2);
@@ -54,6 +75,60 @@ export function getStoredSession() {
   }
 }
 
+export function getUserPermissions(userOrRole) {
+  const role = typeof userOrRole === "string" ? userOrRole : userOrRole?.role;
+
+  return ROLE_PERMISSIONS[role] || [];
+}
+
+export function getCurrentUserPermissions() {
+  const session = getStoredSession();
+
+  if (!session?.user) {
+    return [];
+  }
+
+  return getUserPermissions(session.user);
+}
+
+export function hasPermission(permission) {
+  return getCurrentUserPermissions().includes(permission);
+}
+
+export function validateSession(requiredRoles = []) {
+  let session = getStoredSession();
+
+  if (!session?.user || !session.refreshTokenExpiresAt || session.refreshTokenExpiresAt <= Date.now()) {
+    return {
+      isAuthenticated: false,
+      isAuthorized: false,
+      session: null,
+      reason: "SESSION_EXPIRED",
+    };
+  }
+
+  if (session.accessTokenExpiresAt <= Date.now()) {
+    try {
+      session = refreshAccessToken();
+    } catch {
+      return {
+        isAuthenticated: false,
+        isAuthorized: false,
+        session: null,
+        reason: "TOKEN_REFRESH_FAILED",
+      };
+    }
+  }
+const allowedRoles = Array.isArray(requiredRoles) ? requiredRoles : [requiredRoles];
+  const isAuthorized = allowedRoles.length === 0 || allowedRoles.includes(session.user.role);
+
+  return {
+    isAuthenticated: true,
+    isAuthorized,
+    session,
+    reason: isAuthorized ? "OK" : "ROLE_NOT_ALLOWED",
+  };
+}
 export function loginWithCredentials(identifier, password, rememberMe = false) {
   const normalizedIdentifier = identifier.trim().toLowerCase();
   const user = authMock.users.find(
@@ -97,7 +172,6 @@ export function refreshAccessToken() {
   if (!account) {
     throw new Error("User session is invalid.");
   }
-
   const accessToken = createAccessToken(
     account.tokens.accessToken,
     session.user.id,
