@@ -1,0 +1,80 @@
+{
+  "users": [
+    {
+      "id": "usr_owner_001",
+      "name": "Alistair Sterling",
+      "email": "a.sterling@elite-stables.com",
+      "username": "owner",
+      "password": "Owner@123",
+      "role": "Owner",
+      "avatar": "AS",
+      "stable": "Hartwell Racing Syndicate",
+      "provider": "credentials"
+    },
+    {
+      "id": "usr_jockey_001",
+      "name": "Marcus Reyes",
+      "email": "mreyes.jock@gmail.com",
+      "username": "jockey",
+      "password": "Jockey@123",
+      "role": "Jockey",
+      "avatar": "MR",
+      "stable": "Flemington Pro Circuit",
+      "provider": "credentials"
+    },
+    {
+      "id": "usr_spectator_001",
+      "name": "Elena Hayes",
+      "email": "ehayes@global-racing.org",
+      "username": "spectator",
+      "password": "Spectator@123",
+      "role": "Referee",
+      "avatar": "EH",
+      "stable": "Elite Fan Zone",
+      "provider": "credentials"
+    },
+    {
+      "id": "usr_owner_002",
+      "name": "Amelia Dupont",
+      "email": "a.dupont@royal-turf.fr",
+      "username": "ameliad",
+      "password": "Amelia@123",
+      "role": "Owner",
+      "avatar": "AD",
+      "stable": "Chantilly Thoroughbreds",
+      "provider": "credentials"
+    },
+    {
+      "id": "usr_jockey_002",
+      "name": "Yuki Tanaka",
+      "email": "y.tanaka@jra-circuit.jp",
+      "username": "yukit",
+      "password": "Yuki@123",
+      "role": "Jockey",
+      "avatar": "YT",
+      "stable": "Tokyo Racing Club",
+      "provider": "credentials"
+    },
+    {
+      "id": "usr_referee_002",
+      "name": "Oliver Vance",
+      "email": "o.vance@equine-association.org",
+      "username": "oliverv",
+      "password": "Oliver@123",
+      "role": "Referee",
+      "avatar": "OV",
+      "stable": "Meydan Racecourse",
+      "provider": "credentials"
+    }
+  ],
+  "googleAccount": {
+    "id": "usr_google_001",
+    "name": "Thomas Chen",
+    "email": "t.chen@investments-co.com",
+    "username": "google.user",
+    "role": "Spectator (VIP)",
+    "avatar": "TC",
+    "stable": "Google Connected Stable",
+    "provider": "google"
+  }
+}

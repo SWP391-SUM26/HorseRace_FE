@@ -18,8 +18,17 @@ export default function LoginPage() {
     setError("");
 
     try {
-      loginWithCredentials(identifier, password, rememberMe);
-      navigate("/");
+      const session = loginWithCredentials(
+        identifier,
+        password,
+        rememberMe
+      );
+
+      if (session.user.role === "Admin") {
+        navigate("/admin/users");
+      } else {
+        navigate("/");
+      }
     } catch (loginError) {
       setError(loginError.message);
     }
