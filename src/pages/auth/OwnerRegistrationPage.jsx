@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { loginWithRole } from '../../services/auth';
 import styles from './OwnerRegistrationPage.module.css';
 
 export default function OwnerRegistrationPage() {
@@ -32,6 +33,7 @@ export default function OwnerRegistrationPage() {
     setTimeout(() => {
       setLoading(false);
       console.log('Owner Registration:', form, avatarFile);
+      loginWithRole('Owner');
       navigate('/owner-dashboard');
     }, 900);
   };

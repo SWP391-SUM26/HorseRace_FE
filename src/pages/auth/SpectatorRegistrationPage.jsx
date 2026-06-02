@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { loginWithRole } from '../../services/auth';
 import styles from './SpectatorRegistrationPage.module.css';
 
 export default function SpectatorRegistrationPage() {
@@ -24,6 +25,7 @@ export default function SpectatorRegistrationPage() {
     setTimeout(() => {
       setLoading(false);
       console.log('Spectator Registration:', form);
+      loginWithRole('Spectator');
       navigate('/spectator-dashboard');
     }, 900);
   };
