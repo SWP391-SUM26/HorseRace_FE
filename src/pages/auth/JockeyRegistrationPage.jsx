@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import jockeyImage from '../../assets/Jockey preparing for race.png';
+import { loginWithRole } from '../../services/auth';
 import styles from './JockeyRegistrationPage.module.css';
 
 export default function JockeyRegistrationPage() {
@@ -31,6 +32,7 @@ export default function JockeyRegistrationPage() {
     setTimeout(() => {
       setLoading(false);
       console.log(form);
+      loginWithRole('Jockey');
       navigate('/jockey-dashboard');
     }, 900);
   };

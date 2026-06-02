@@ -6,6 +6,12 @@ import styles from "./LoginPage.module.css";
 
 const roleOptions = ["Owner", "Jockey", "Spectator"];
 
+const dashboardByRole = {
+  Owner: "/owner-dashboard",
+  Jockey: "/jockey-dashboard",
+  Spectator: "/spectator-dashboard",
+};
+
 export default function LoginPage() {
   const navigate = useNavigate();
   const [identifier, setIdentifier] = useState("");
@@ -18,8 +24,8 @@ export default function LoginPage() {
     setError("");
 
     try {
-      loginWithCredentials(identifier, password, rememberMe);
-      navigate("/");
+      const session = loginWithCredentials(identifier, password, rememberMe);
+      navigate(dashboardByRole[session.user.role] || "/");
     } catch (loginError) {
       setError(loginError.message);
     }
@@ -29,8 +35,8 @@ export default function LoginPage() {
     setError("");
 
     try {
-      loginWithGoogle();
-      navigate("/");
+      const session = loginWithGoogle();
+      navigate(dashboardByRole[session.user.role] || "/");
     } catch (loginError) {
       setError(loginError.message);
     }
@@ -40,8 +46,8 @@ export default function LoginPage() {
     setError("");
 
     try {
-      loginWithRole(role);
-      navigate("/");
+      const session = loginWithRole(role);
+      navigate(dashboardByRole[session.user.role] || "/");
     } catch (loginError) {
       setError(loginError.message);
     }
@@ -143,13 +149,13 @@ export default function LoginPage() {
                 onClick={() => {
                   // Chuyển sang trang đăng ký theo từng vai trò cụ thể
                   if (role === "Owner") {
-                    navigate("/owner-register");
+                    handleRoleLogin("Owner");
 
                   } else if (role === "Jockey") {
-                    navigate("/jockey-register");
+                    handleRoleLogin("Jockey");
 
                   } else if (role === "Spectator") {
-                    navigate("/spectator-register");
+                    handleRoleLogin("Spectator");
                   }
                 }}
               >

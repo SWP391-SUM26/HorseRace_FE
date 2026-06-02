@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import styles from "./HomePage.module.css";
 import silverStreakImg from "../assets/silver_streak.png";
@@ -39,7 +39,7 @@ export default function HomePage() {
       return `${h}:${m}:${s}`;
     };
 
-    let currentSeconds = timeToSeconds(countdown);
+    let currentSeconds = timeToSeconds(homeMarketLeaders.countdown);
 
     // 3. Thiết lập Interval chạy chu kỳ 1000ms (1 giây)
     const interval = setInterval(() => {
@@ -54,7 +54,7 @@ export default function HomePage() {
 
     // Hủy bỏ interval khi component bị unmount để tránh rò rỉ bộ nhớ (memory leak)
     return () => clearInterval(interval);
-  }, []);
+  }, [homeMarketLeaders.countdown]);
 
   return (
     <div className={styles.appContainer}>
