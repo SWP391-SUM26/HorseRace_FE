@@ -164,7 +164,7 @@ export default function LoginPage() {
                 onChange={(event) => setIdentifier(event.target.value)}
                 placeholder="owner@horserace.local"
                 autoComplete="username"
-                type="email"
+                type="text"
               />
             </div>
 

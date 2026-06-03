@@ -295,6 +295,20 @@ export function validateSession(requiredRoles = []) {
 export async function loginWithCredentials(identifier, password, rememberMe = false) {
   const normalizedIdentifier = identifier.trim().toLowerCase();
 
+  // LUÔN kiểm tra mock users trước - đây là tài khoản "cứng" không phụ thuộc backend
+  // Mock users sẽ hoạt động ngay cả khi backend DB bị reset
+  const mockUser = authMock.users.find(
+    (candidate) =>
+      candidate.email.toLowerCase() === normalizedIdentifier ||
+      candidate.username.toLowerCase() === normalizedIdentifier,
+  );
+
+  if (mockUser && mockUser.password === password) {
+    console.log("[auth] Mock user matched, logging in offline:", mockUser.email);
+    return persistSession(createSession(mockUser), rememberMe);
+  }
+
+  // Nếu không phải mock user, thử API backend
   try {
     const response = await api.post("/v1/auth/login", {
       email: normalizedIdentifier,
@@ -308,26 +322,16 @@ export async function loginWithCredentials(identifier, password, rememberMe = fa
       return persistSession(session, rememberMe);
     }
   } catch (apiError) {
-    // If it's a real API authentication error (e.g. 400, 401, 403), throw it directly
+    // Nếu là lỗi xác thực thật (401/403) và không phải mock user → thông báo lỗi
     if (apiError.response && (apiError.response.status === 400 || apiError.response.status === 401 || apiError.response.status === 403)) {
       throw new Error(apiError.response.data?.message || "Email, username or password is incorrect.");
     }
-    console.warn("API login failed due to network/server error, falling back to mock credentials check:", apiError.message);
-  }
-
-  // Fallback to local authMock users for development and mock login support
-  const user = authMock.users.find(
-    (candidate) =>
-      candidate.email.toLowerCase() === normalizedIdentifier ||
-      candidate.username.toLowerCase() === normalizedIdentifier,
-  );
-
-  if (user && user.password === password) {
-    return persistSession(createSession(user), rememberMe);
+    console.warn("API login failed due to network/server error:", apiError.message);
   }
 
   throw new Error("Email, username or password is incorrect.");
 }
+
 
 export async function loginWithGoogle(idToken) {
   if (!idToken) {
