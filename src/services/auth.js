@@ -3,6 +3,75 @@ import api from "./api";
 
 const SESSION_KEY = "equine_elite_session";
 const REFRESH_TOKEN_TTL_SECONDS = 7 * 24 * 60 * 60;
+const MOCK_USERS_KEY = "equine_elite_mock_users";
+
+// Initialize mock users in localStorage if not exists
+if (!localStorage.getItem(MOCK_USERS_KEY)) {
+  localStorage.setItem(MOCK_USERS_KEY, JSON.stringify(authMock.users));
+}
+
+export function getLocalMockUsers() {
+  const raw = localStorage.getItem(MOCK_USERS_KEY);
+  return raw ? JSON.parse(raw) : authMock.users;
+}
+
+export function saveLocalMockUsers(users) {
+  localStorage.setItem(MOCK_USERS_KEY, JSON.stringify(users));
+}
+
+export function registerOfflineUser(userData) {
+  const users = getLocalMockUsers();
+  
+  // check if user already exists
+  const existing = users.find(u => u.email.toLowerCase() === userData.email.trim().toLowerCase());
+  if (existing) {
+    const updatedUsers = users.map(u => {
+      if (u.email.toLowerCase() === userData.email.trim().toLowerCase()) {
+        return {
+          ...u,
+          password: userData.password || u.password,
+          name: userData.fullName || userData.name || u.name,
+          phone: userData.phone || userData.contactNumber || u.phone || "",
+          stable: userData.stableName || userData.stable || u.stable || "",
+        };
+      }
+      return u;
+    });
+    saveLocalMockUsers(updatedUsers);
+    return updatedUsers.find(u => u.email.toLowerCase() === userData.email.trim().toLowerCase());
+  }
+
+  const userId = `usr_local_${Date.now()}`;
+  const initials = (userData.fullName || userData.name || userData.email)
+    ?.split(" ")
+    .map((part) => part[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase() || "US";
+
+  const newUser = {
+    id: userId,
+    userId: userId,
+    name: userData.fullName || userData.name || userData.email.split('@')[0],
+    email: userData.email.trim().toLowerCase(),
+    username: userData.username || userData.email.trim().toLowerCase(),
+    password: userData.password,
+    role: userData.role || "Spectator",
+    avatar: initials,
+    stable: userData.stableName || userData.stable || (userData.role === "Owner" ? "Hartwell Racing Syndicate" : "Flemington Pro Circuit"),
+    provider: "credentials",
+    tokens: {
+      accessToken: `mock_access_${userId}`,
+      refreshToken: `mock_refresh_${userId}`,
+      accessTokenExpiresInSeconds: 900000,
+      refreshTokenExpiresInSeconds: 7 * 24 * 60 * 60
+    }
+  };
+
+  users.push(newUser);
+  saveLocalMockUsers(users);
+  return newUser;
+}
 
 const API_ROLE_TO_APP_ROLE = {
   ADMIN: "Admin",
@@ -297,7 +366,8 @@ export async function loginWithCredentials(identifier, password, rememberMe = fa
 
   // LUÔN kiểm tra mock users trước - đây là tài khoản "cứng" không phụ thuộc backend
   // Mock users sẽ hoạt động ngay cả khi backend DB bị reset
-  const mockUser = authMock.users.find(
+  const localMockUsers = getLocalMockUsers();
+  const mockUser = localMockUsers.find(
     (candidate) =>
       candidate.email.toLowerCase() === normalizedIdentifier ||
       candidate.username.toLowerCase() === normalizedIdentifier,
@@ -358,7 +428,8 @@ export async function loginWithGoogle(idToken) {
 }
 
 export function loginWithRole(role) {
-  const user = authMock.users.find((candidate) => candidate.role === role);
+  const localMockUsers = getLocalMockUsers();
+  const user = localMockUsers.find((candidate) => candidate.role === role);
 
   if (!user) {
     throw new Error("Selected role account is not available.");
@@ -374,8 +445,9 @@ export function refreshAccessToken() {
     throw new Error("Refresh token is missing or expired.");
   }
 
+  const localMockUsers = getLocalMockUsers();
   const account =
-    authMock.users.find((user) => user.id === session.user.id) ||
+    localMockUsers.find((user) => user.id === session.user.id) ||
     (authMock.googleAccount.id === session.user.id ? authMock.googleAccount : null);
 
   if (!account) {

@@ -1,13 +1,15 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import jockeyImage from '../../assets/Jockey preparing for race.png';
-import { loginWithRole } from '../../services/auth';
+import { loginWithRole, registerOfflineUser, loginWithCredentials } from '../../services/auth';
 import styles from './JockeyRegistrationPage.module.css';
 
 export default function JockeyRegistrationPage() {
   const navigate = useNavigate();
 
   const [form, setForm] = useState({
+    email: '',
+    password: '',
     firstName: '',
     lastName: '',
     age: '',
@@ -27,13 +29,36 @@ export default function JockeyRegistrationPage() {
 
   const handleRegister = (event) => {
     event.preventDefault();
+    if (!form.email || !form.password) {
+      alert("Please fill in email and password");
+      return;
+    }
     setLoading(true);
 
     setTimeout(() => {
       setLoading(false);
       console.log(form);
-      loginWithRole('Jockey');
-      navigate('/jockey-dashboard');
+      
+      // Register offline to localStorage
+      registerOfflineUser({
+        email: form.email,
+        password: form.password,
+        fullName: `${form.firstName} ${form.lastName}`.trim(),
+        role: 'Jockey',
+        stable: 'Flemington Pro Circuit'
+      });
+
+      // Auto login with the registered credentials
+      loginWithCredentials(form.email, form.password)
+        .then(() => {
+          navigate('/jockey-dashboard');
+        })
+        .catch(err => {
+          console.error(err);
+          // fallback
+          loginWithRole('Jockey');
+          navigate('/jockey-dashboard');
+        });
     }, 900);
   };
 
@@ -63,6 +88,48 @@ export default function JockeyRegistrationPage() {
           </p>
 
           <form onSubmit={handleRegister}>
+            {/* 0. ACCOUNT CREDENTIALS */}
+            <div className={styles.card}>
+              <div className={styles.cardHeader}>
+                <div className={styles.headerIconWrapper}>
+                  <ShieldCheckIcon />
+                </div>
+                <h3 className={styles.cardTitle}>0. Account Credentials</h3>
+              </div>
+
+              <div className={styles.cardBody}>
+                <div className={styles.grid2}>
+                  <div className={styles.inputField}>
+                    <label className={styles.fieldLabel} htmlFor="email">EMAIL ADDRESS</label>
+                    <div className={styles.inputShell}>
+                      <input
+                        id="email"
+                        type="email"
+                        value={form.email}
+                        onChange={(e) => set('email', e.target.value)}
+                        placeholder="jockey@horserace.local"
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <div className={styles.inputField}>
+                    <label className={styles.fieldLabel} htmlFor="password">PASSWORD</label>
+                    <div className={styles.inputShell}>
+                      <input
+                        id="password"
+                        type="password"
+                        value={form.password}
+                        onChange={(e) => set('password', e.target.value)}
+                        placeholder="••••••••"
+                        required
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
             {/* 1. PERSONAL IDENTITY CARD */}
             <div className={styles.card}>
               <div className={styles.cardHeader}>

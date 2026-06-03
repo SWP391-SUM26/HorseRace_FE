@@ -60,10 +60,8 @@ function normalizeUser(user) {
 
 // Loads local Mock fallback data
 function getMockUsers() {
-  const list = [
-    ...(DATA_FROM_JSON.users || []),
-    DATA_FROM_JSON.googleAccount
-  ].filter(Boolean);
+  const raw = localStorage.getItem("equine_elite_mock_users");
+  const list = raw ? JSON.parse(raw) : (DATA_FROM_JSON.users || []);
   return list.map(u => normalizeUser(u));
 }
 
