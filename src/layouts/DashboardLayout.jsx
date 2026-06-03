@@ -5,8 +5,10 @@ import styles from "./DashboardLayout.module.css";
 const roleNavItems = {
   Owner: [
     { label: "Overview", to: "/owner-dashboard" },
-    { label: "Stable", to: "/owner-dashboard", permission: "horses:manage" },
-    { label: "Finance", to: "/owner-dashboard", permission: "finance:view" },
+    { label: "Stable Management", to: "/owner-dashboard/stable", permission: "horses:manage" },
+    { label: "Jockey Market", to: "/owner-dashboard/jockeys" },
+    { label: "Race Calendar", to: "/owner-dashboard/calendar" },
+    { label: "Financials", to: "/owner-dashboard/financials", permission: "finance:view" },
   ],
   Jockey: [
     { label: "Overview", to: "/jockey-dashboard" },

@@ -1,8 +1,9 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Routes, Route, Link, useLocation, useNavigate, Navigate } from 'react-router-dom';
 import styles from './UserManagement.module.css';
 import DATA_FROM_JSON from '../../data/UserMock.json';
 import { getStoredSession, logout } from '../../services/auth';
+import { getAllUsers, getUserById, updateMyProfile, updateUserProfile } from '../../services/user';
 
 // ==========================================
 // CÁC COMPONENT GIAO DIỆN NỘI BỘ (INTERNAL COMPONENTS)
@@ -154,10 +155,41 @@ const INITIAL_USERS = [
 // ==========================================
 
 const UserManagementView = () => {
-  const [users, setUsers] = useState(INITIAL_USERS);
+  const [users, setUsers] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [selectedUser, setSelectedUser] = useState(null);
   const [editForm, setEditForm] = useState({ name: '', email: '', username: '', stable: '' });
+
+  // Fetch list of users from the server on mount
+  useEffect(() => {
+    async function loadData() {
+      setLoading(true);
+      const data = await getAllUsers();
+      const processed = data.map(u => ({
+        ...u,
+        roleIcon:
+          u.role === 'Owner'
+            ? '🏪'
+            : u.role === 'Jockey'
+              ? '🏁'
+              : u.role === 'Referee'
+                ? '⚖️'
+                : '👁️',
+        lastAuth:
+          u.role === 'Owner'
+            ? 'Today, 08:42 AM'
+            : u.role === 'Jockey'
+              ? 'Oct 24, 14:30 PM'
+              : u.role === 'Referee'
+                ? 'Sep 12, 09:15 AM'
+                : 'Oct 25, 18:05 PM'
+      }));
+      setUsers(processed);
+      setLoading(false);
+    }
+    loadData();
+  }, []);
 
   const filteredUsers = useMemo(() => {
     return users.filter(u =>
@@ -187,32 +219,81 @@ const UserManagementView = () => {
     }));
   }, [users]);
 
-  const handleSelectUser = (user) => {
-    setSelectedUser(user);
+  const handleSelectUser = async (user) => {
+    // Load fresh details from API
+    const freshUser = await getUserById(user.id);
+    if (!freshUser) return;
+
+    const processed = {
+      ...freshUser,
+      roleIcon:
+        freshUser.role === 'Owner'
+          ? '🏪'
+          : freshUser.role === 'Jockey'
+            ? '🏁'
+            : freshUser.role === 'Referee'
+              ? '⚖️'
+              : '👁️',
+      lastAuth: user.lastAuth
+    };
+    
+    setSelectedUser(processed);
     setEditForm({
-      name: user.name,
-      email: user.email,
-      username: user.username,
-      stable: user.stable
+      name: processed.name,
+      email: processed.email,
+      username: processed.username || processed.name.toLowerCase().replace(' ', '.'),
+      stable: processed.stable || ''
     });
   };
 
-  const handleUpdateProfile = (e) => {
+  const handleUpdateProfile = async (e) => {
     e.preventDefault();
     if (!selectedUser) return;
 
     const nameParts = editForm.name.trim().split(' ');
     const newAvatar = ((nameParts[0]?.[0] || '') + (nameParts[nameParts.length - 1]?.[0] || '')).toUpperCase();
 
-    const updatedUsers = users.map(u => {
-      if (u.id === selectedUser.id) {
-        return { ...u, name: editForm.name, email: editForm.email, username: editForm.username, stable: editForm.stable, avatar: newAvatar };
+    const currentSession = getStoredSession();
+    if (currentSession?.user && currentSession.user.id === selectedUser.id) {
+      try {
+        const updatedSelf = await updateMyProfile({
+          fullName: editForm.name,
+          phone: selectedUser.phone,
+          avatarUrl: selectedUser.avatarUrl
+        });
+
+        // Update in list
+        const processedSelf = {
+          ...updatedSelf,
+          roleIcon: selectedUser.roleIcon,
+          lastAuth: selectedUser.lastAuth
+        };
+        
+        setUsers(users.map(u => u.id === selectedUser.id ? processedSelf : u));
+        setSelectedUser(processedSelf);
+        alert('Hồ sơ cá nhân của bạn đã được cập nhật thành công trên server!');
+        return;
+      } catch (err) {
+        alert('Lỗi cập nhật hồ sơ: ' + err.message);
+        return;
       }
-      return u;
+    }
+
+    // Call the updateUserProfile API (falls back to mock update internally)
+    const updatedData = await updateUserProfile(selectedUser.id, {
+      name: editForm.name,
+      email: editForm.email,
+      stable: editForm.stable
     });
 
-    setUsers(updatedUsers);
-    setSelectedUser(prev => ({ ...prev, name: editForm.name, email: editForm.email, username: editForm.username, stable: editForm.stable, avatar: newAvatar }));
+    const processedUpdated = {
+      ...selectedUser,
+      ...updatedData,
+      avatar: newAvatar
+    };
+
+    setUsers(users.map(u => u.id === selectedUser.id ? processedUpdated : u));
+    setSelectedUser(processedUpdated);
     alert('Hồ sơ thành viên đã được cập nhật thành công!');
   };
 
@@ -311,7 +392,13 @@ const UserManagementView = () => {
             <tr>{['USER DETAILS', 'SYSTEM ROLE', 'CLEARANCE STATUS', 'LAST AUTHENTICATION'].map(h => <th key={h} className={styles.th}>{h}</th>)}</tr>
           </thead>
           <tbody>
-            {filteredUsers.map((u) => (
+            {loading ? (
+              <tr>
+                <td colSpan="4" style={{ padding: '24px', textAlign: 'center', color: '#64748b', fontSize: '14px' }}>
+                  Loading users registry...
+                </td>
+              </tr>
+            ) : filteredUsers.map((u) => (
               <tr key={u.id} onClick={() => handleSelectUser(u)} className={`${styles.tableRow} ${selectedUser?.id === u.id ? styles.tableRowSelected : ''}`}>
                 <td className={styles.td}>
                   <div className={styles.userCell}>

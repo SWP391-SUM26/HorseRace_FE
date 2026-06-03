@@ -84,6 +84,17 @@ function getApiErrorMessage(error) {
   );
 }
 
+// Decode JWT payload to extract any role claims
+function decodeJwtPayload(token) {
+  try {
+    const payload = token.split('.')[1];
+    const decoded = JSON.parse(atob(payload.replace(/-/g, '+').replace(/_/g, '/')));
+    return decoded;
+  } catch {
+    return null;
+  }
+}
+
 async function fetchUserProfile(userId, accessToken) {
   if (!userId) {
     return null;
@@ -102,11 +113,92 @@ async function fetchUserProfile(userId, accessToken) {
   }
 }
 
+// Thử lấy thông tin user từ /api/v1/users/me khi profile thông thường trả về roleCode = null
+async function fetchMyProfile(accessToken) {
+  try {
+    const response = await api.get('/api/v1/users/me', {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    });
+    return response.data?.data || null;
+  } catch {
+    return null;
+  }
+}
+
 async function buildSessionFromAuthData(authData) {
   const profile = await fetchUserProfile(authData.userId, authData.accessToken);
-  const apiRole = profile?.roleCode || authData.role;
+
+  // Backend có thể trả về role theo cấu trúc phẳng (roleCode) hoặc object lồng nhau (role.roleCode)
+  // Thử tất cả các dạng có thể có:
+  let apiRole =
+    profile?.roleCode ||           // Dạng phẳng: { roleCode: "ADMIN" }
+    profile?.role?.roleCode ||     // Dạng lồng (JPA): { role: { roleCode: "ADMIN" } }
+    profile?.role?.code ||         // Dạng alternative: { role: { code: "ADMIN" } }
+    authData.roleCode ||           // Từ login response trực tiếp
+    authData.role;                 // Cuối cùng
+
+  // Nếu vẫn null, thử giải mã JWT token để lấy role claims
+  if (!apiRole) {
+    const jwtClaims = decodeJwtPayload(authData.accessToken);
+    apiRole = jwtClaims?.role || jwtClaims?.roleCode || jwtClaims?.authorities?.[0];
+  }
+
+  // Cuối cùng: thử gọi /api/v1/users/me (một số backend có endpoint này trả về role đầy đủ hơn)
+  if (!apiRole) {
+    const meProfile = await fetchMyProfile(authData.accessToken);
+    apiRole =
+      meProfile?.roleCode ||
+      meProfile?.role?.roleCode ||
+      meProfile?.roleName;
+  }
+
+  // Last resort: thử probe admin-only endpoint để tự động detect role
+  // Nếu user có thể gọi /api/v1/admin/users thành công → chắc chắn là ADMIN
+  if (!apiRole) {
+    try {
+      const adminProbe = await api.get('/api/v1/admin/users', {
+        headers: { Authorization: `Bearer ${authData.accessToken}` },
+        params: { page: 0, size: 1 },
+      });
+      if (adminProbe.status === 200) {
+        apiRole = 'ADMIN';
+        console.log('[auth] Admin role auto-detected via admin endpoint probe.');
+      }
+    } catch (probeErr) {
+      // 403 = not admin, ignore silently
+      if (probeErr?.response?.status !== 403 && probeErr?.response?.status !== 401) {
+        // Thử endpoint thay thế
+        try {
+          const usersProbe = await api.get('/api/v1/users', {
+            headers: { Authorization: `Bearer ${authData.accessToken}` },
+            params: { page: 0, size: 1 },
+          });
+          // Nếu response có data và user có VERIFIED KYC + ACTIVE status, kiểm tra thêm
+          if (usersProbe.status === 200 && profile?.kycStatus === 'VERIFIED') {
+            // Thử xác định qua email pattern (chỉ dùng nếu email có dạng admin.*)
+            const emailLocal = authData.email?.split('@')[0]?.toLowerCase();
+            if (emailLocal?.startsWith('admin')) {
+              apiRole = 'ADMIN';
+              console.log('[auth] Admin role detected via email pattern fallback.');
+            }
+          }
+        } catch {
+          // ignore
+        }
+      }
+    }
+  }
+
+
   const appRole = normalizeApiRole(apiRole);
-  const initials = profile?.fullName
+
+  // Debug: log để kiểm tra cấu trúc backend trả về
+  console.log("[auth] Profile from API:", profile);
+  console.log("[auth] apiRole resolved:", apiRole, "→ appRole:", appRole);
+
+  const initials = (profile?.fullName || authData.email)
     ?.split(" ")
     .map((part) => part[0])
     .join("")
@@ -121,7 +213,7 @@ async function buildSessionFromAuthData(authData) {
       email: authData.email,
       role: appRole,
       apiRole,
-      roleName: profile?.roleName,
+      roleName: profile?.roleName || profile?.role?.roleName,
       avatar: initials,
     },
     accessToken: authData.accessToken,
@@ -216,7 +308,11 @@ export async function loginWithCredentials(identifier, password, rememberMe = fa
       return persistSession(session, rememberMe);
     }
   } catch (apiError) {
-    console.warn("API login failed, falling back to mock credentials check:", apiError.message);
+    // If it's a real API authentication error (e.g. 400, 401, 403), throw it directly
+    if (apiError.response && (apiError.response.status === 400 || apiError.response.status === 401 || apiError.response.status === 403)) {
+      throw new Error(apiError.response.data?.message || "Email, username or password is incorrect.");
+    }
+    console.warn("API login failed due to network/server error, falling back to mock credentials check:", apiError.message);
   }
 
   // Fallback to local authMock users for development and mock login support
