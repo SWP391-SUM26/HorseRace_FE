@@ -1,6 +1,23 @@
 {
   "users": [
     {
+      "id": "usr_admin_001",
+      "name": "Sơn Hải (System Admin)",
+      "email": "admin@equineelite.com",
+      "username": "admin",
+      "password": "admin123",
+      "role": "Admin",
+      "avatar": "SH",
+      "stable": "HQ Operations Command",
+      "provider": "credentials",
+      "tokens": {
+        "accessToken": "mock_access_admin_001",
+        "refreshToken": "mock_refresh_admin_001",
+        "accessTokenExpiresInSeconds": 900,
+        "refreshTokenExpiresInSeconds": 604800
+      }
+    },
+    {
       "id": "usr_owner_001",
       "name": "Amelia Hart",
       "email": "owner@equineelite.com",
