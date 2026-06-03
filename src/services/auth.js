@@ -1,6 +1,17 @@
 import authMock from "../data/authMock.json";
+import api from "./api";
 
 const SESSION_KEY = "equine_elite_session";
+const REFRESH_TOKEN_TTL_SECONDS = 7 * 24 * 60 * 60;
+
+const API_ROLE_TO_APP_ROLE = {
+  ADMIN: "Admin",
+  HORSE_OWNER: "Owner",
+  OWNER: "Owner",
+  JOCKEY: "Jockey",
+  RACE_REFEREE: "Referee",
+  SPECTATOR: "Spectator",
+};
 
 export const ROLE_PERMISSIONS = {
   Owner: [
@@ -61,6 +72,66 @@ function persistSession(session, rememberMe = false) {
   return sessionToStore;
 }
 
+function normalizeApiRole(roleCode) {
+  return API_ROLE_TO_APP_ROLE[roleCode] || roleCode || "Spectator";
+}
+
+function getApiErrorMessage(error) {
+  return (
+    error?.response?.data?.message ||
+    error?.message ||
+    "Unable to connect to the authentication server."
+  );
+}
+
+async function fetchUserProfile(userId, accessToken) {
+  if (!userId) {
+    return null;
+  }
+
+  try {
+    const response = await api.get(`/v1/users/${userId}`, {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    });
+
+    return response.data?.data || null;
+  } catch {
+    return null;
+  }
+}
+
+async function buildSessionFromAuthData(authData) {
+  const profile = await fetchUserProfile(authData.userId, authData.accessToken);
+  const apiRole = profile?.roleCode || authData.role;
+  const appRole = normalizeApiRole(apiRole);
+  const initials = profile?.fullName
+    ?.split(" ")
+    .map((part) => part[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
+
+  return {
+    user: {
+      id: authData.userId,
+      userId: authData.userId,
+      name: profile?.fullName || authData.email,
+      email: authData.email,
+      role: appRole,
+      apiRole,
+      roleName: profile?.roleName,
+      avatar: initials,
+    },
+    accessToken: authData.accessToken,
+    refreshToken: authData.refreshToken,
+    tokenType: authData.tokenType || "Bearer",
+    accessTokenExpiresAt: Date.now() + authData.expiresInSeconds * 1000,
+    refreshTokenExpiresAt: Date.now() + REFRESH_TOKEN_TTL_SECONDS * 1000,
+  };
+}
+
 export function getStoredSession() {
   const rawSession = localStorage.getItem(SESSION_KEY);
 
@@ -119,7 +190,7 @@ export function validateSession(requiredRoles = []) {
       };
     }
   }
-const allowedRoles = Array.isArray(requiredRoles) ? requiredRoles : [requiredRoles];
+  const allowedRoles = Array.isArray(requiredRoles) ? requiredRoles : [requiredRoles];
   const isAuthorized = allowedRoles.length === 0 || allowedRoles.includes(session.user.role);
 
   return {
@@ -129,23 +200,51 @@ const allowedRoles = Array.isArray(requiredRoles) ? requiredRoles : [requiredRol
     reason: isAuthorized ? "OK" : "ROLE_NOT_ALLOWED",
   };
 }
-export function loginWithCredentials(identifier, password, rememberMe = false) {
-  const normalizedIdentifier = identifier.trim().toLowerCase();
-  const user = authMock.users.find(
-    (candidate) =>
-      candidate.email.toLowerCase() === normalizedIdentifier ||
-      candidate.username.toLowerCase() === normalizedIdentifier,
-  );
+export async function loginWithCredentials(identifier, password, rememberMe = false) {
+  const email = identifier.trim().toLowerCase();
 
-  if (!user || user.password !== password) {
-    throw new Error("Email, username or password is incorrect.");
+  try {
+    const response = await api.post("/v1/auth/login", {
+      email,
+      password,
+    });
+
+    const authData = response.data?.data;
+
+    if (!response.data?.success || !authData?.accessToken) {
+      throw new Error(response.data?.message || "Login failed.");
+    }
+
+    const session = await buildSessionFromAuthData(authData);
+
+    return persistSession(session, rememberMe);
+  } catch (error) {
+    throw new Error(getApiErrorMessage(error), { cause: error });
   }
-
-  return persistSession(createSession(user), rememberMe);
 }
 
-export function loginWithGoogle() {
-  return persistSession(createSession(authMock.googleAccount), true);
+export async function loginWithGoogle(idToken) {
+  if (!idToken) {
+    throw new Error("Google ID token is missing.");
+  }
+
+  try {
+    const response = await api.post("/v1/auth/google", {
+      idToken,
+    });
+
+    const authData = response.data?.data;
+
+    if (!response.data?.success || !authData?.accessToken) {
+      throw new Error(response.data?.message || "Google login failed.");
+    }
+
+    const session = await buildSessionFromAuthData(authData);
+
+    return persistSession(session, true);
+  } catch (error) {
+    throw new Error(getApiErrorMessage(error), { cause: error });
+  }
 }
 
 export function loginWithRole(role) {

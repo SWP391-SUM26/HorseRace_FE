@@ -223,6 +223,33 @@
   box-shadow: 0 9px 18px rgba(1, 73, 52, 0.16);
 }
 
+.googleButton:disabled {
+  cursor: not-allowed;
+  opacity: 0.72;
+  transform: none;
+}
+
+.googleButtonHost {
+  width: 100%;
+  min-height: clamp(56px, 6.8vh, 64px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 20px;
+}
+
+.googleButtonHost > div {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+.googleLoadingText {
+  color: #075c47;
+  font-size: 0.9rem;
+  font-weight: 800;
+}
+
 .googleButton:hover {
   background: linear-gradient(180deg, #0a7f62 0%, #07543f 100%);
 }
