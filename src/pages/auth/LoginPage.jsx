@@ -7,7 +7,7 @@ import styles from "./LoginPage.module.css";
 const roleOptions = ["Owner", "Jockey", "Spectator"];
 
 const dashboardByRole = {
-  Admin: "/",
+  Admin: "/admin/users",
   Owner: "/owner-dashboard",
   Jockey: "/jockey-dashboard",
   Spectator: "/spectator-dashboard",

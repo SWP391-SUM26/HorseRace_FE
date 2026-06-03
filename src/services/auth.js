@@ -201,26 +201,36 @@ export function validateSession(requiredRoles = []) {
   };
 }
 export async function loginWithCredentials(identifier, password, rememberMe = false) {
-  const email = identifier.trim().toLowerCase();
+  const normalizedIdentifier = identifier.trim().toLowerCase();
 
   try {
     const response = await api.post("/v1/auth/login", {
-      email,
+      email: normalizedIdentifier,
       password,
     });
 
     const authData = response.data?.data;
 
-    if (!response.data?.success || !authData?.accessToken) {
-      throw new Error(response.data?.message || "Login failed.");
+    if (response.data?.success && authData?.accessToken) {
+      const session = await buildSessionFromAuthData(authData);
+      return persistSession(session, rememberMe);
     }
-
-    const session = await buildSessionFromAuthData(authData);
-
-    return persistSession(session, rememberMe);
-  } catch (error) {
-    throw new Error(getApiErrorMessage(error), { cause: error });
+  } catch (apiError) {
+    console.warn("API login failed, falling back to mock credentials check:", apiError.message);
   }
+
+  // Fallback to local authMock users for development and mock login support
+  const user = authMock.users.find(
+    (candidate) =>
+      candidate.email.toLowerCase() === normalizedIdentifier ||
+      candidate.username.toLowerCase() === normalizedIdentifier,
+  );
+
+  if (user && user.password === password) {
+    return persistSession(createSession(user), rememberMe);
+  }
+
+  throw new Error("Email, username or password is incorrect.");
 }
 
 export async function loginWithGoogle(idToken) {

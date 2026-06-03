@@ -16,6 +16,7 @@ import ResetPasswordPage from './pages/auth/ResetPasswordPage';
 import ProtectedRoute from './components/ProtectedRoute';
 import DashboardLayout from './layouts/DashboardLayout';
 import DashboardHome from './pages/dashboard/DashboardHome';
+import AdminDashboard from './pages/Admin/UserManagement';
 
 export default function App() {
   return (
@@ -49,6 +50,9 @@ export default function App() {
             <Route path="/spectator-dashboard" element={<DashboardHome />} />
           </Route>
         </Route>
+
+        {/* ADMIN */}
+        <Route path="/admin/*" element={<AdminDashboard />} />
       </Routes>
     </BrowserRouter>
   );
