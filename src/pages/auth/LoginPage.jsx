@@ -1,55 +1,140 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import horseImage from "../../assets/login.jpg";
-import { loginWithCredentials, loginWithGoogle, loginWithRole } from "../../services/auth";
+import { loginWithCredentials, loginWithGoogle } from "../../services/auth";
 import styles from "./LoginPage.module.css";
 
 const roleOptions = ["Owner", "Jockey", "Spectator"];
 
 const dashboardByRole = {
+  Admin: "/",
   Owner: "/owner-dashboard",
   Jockey: "/jockey-dashboard",
   Spectator: "/spectator-dashboard",
 };
 
+const registrationRouteByRole = {
+  Owner: "/owner-register",
+  Jockey: "/jockey-register",
+  Spectator: "/spectator-register",
+};
+
+const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+const isGoogleConfigured =
+  Boolean(googleClientId) && !googleClientId.startsWith("your-google-web-client-id");
+
+function loadGoogleIdentityScript() {
+  const existingScript = document.querySelector('script[src="https://accounts.google.com/gsi/client"]');
+
+  if (existingScript) {
+    return new Promise((resolve, reject) => {
+      if (window.google?.accounts?.id) {
+        resolve();
+        return;
+      }
+
+      existingScript.addEventListener("load", resolve, { once: true });
+      existingScript.addEventListener("error", reject, { once: true });
+    });
+  }
+
+  return new Promise((resolve, reject) => {
+    const script = document.createElement("script");
+    script.src = "https://accounts.google.com/gsi/client";
+    script.async = true;
+    script.defer = true;
+    script.onload = resolve;
+    script.onerror = reject;
+    document.head.appendChild(script);
+  });
+}
+
 export default function LoginPage() {
   const navigate = useNavigate();
+  const googleButtonRef = useRef(null);
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
 
-  function handleSubmit(event) {
+  useEffect(() => {
+    let mounted = true;
+
+    async function initializeGoogleSignIn() {
+      if (!isGoogleConfigured || !googleButtonRef.current) {
+        return;
+      }
+
+      try {
+        await loadGoogleIdentityScript();
+
+        if (!mounted || !googleButtonRef.current) {
+          return;
+        }
+
+        window.google.accounts.id.initialize({
+          client_id: googleClientId,
+          callback: async (response) => {
+            setError("");
+            setGoogleLoading(true);
+
+            try {
+              const session = await loginWithGoogle(response.credential);
+              navigate(dashboardByRole[session.user.role] || "/");
+            } catch (loginError) {
+              setError(loginError.message);
+            } finally {
+              setGoogleLoading(false);
+            }
+          },
+        });
+        window.google.accounts.id.renderButton(googleButtonRef.current, {
+          theme: "outline",
+          size: "large",
+          shape: "rectangular",
+          text: "continue_with",
+          width: googleButtonRef.current.offsetWidth || 360,
+        });
+      } catch {
+        if (mounted) {
+          setError("Could not load Google Sign-In.");
+        }
+      }
+    }
+
+    initializeGoogleSignIn();
+
+    return () => {
+      mounted = false;
+    };
+  }, [navigate]);
+
+  async function handleSubmit(event) {
     event.preventDefault();
     setError("");
+    setLoading(true);
 
     try {
-      const session = loginWithCredentials(identifier, password, rememberMe);
+      const session = await loginWithCredentials(identifier, password, rememberMe);
       navigate(dashboardByRole[session.user.role] || "/");
     } catch (loginError) {
       setError(loginError.message);
+    } finally {
+      setLoading(false);
     }
   }
 
-  function handleGoogleLogin() {
-    setError("");
-
-    try {
-      const session = loginWithGoogle();
-      navigate(dashboardByRole[session.user.role] || "/");
-    } catch (loginError) {
-      setError(loginError.message);
-    }
+  function handleMissingGoogleConfig() {
+    setError("Google Client ID is missing. Please update VITE_GOOGLE_CLIENT_ID in .env and restart the frontend.");
   }
 
-  function handleRoleLogin(role) {
-    setError("");
+  function registrationByRole(role) {
+    const registrationRoute = registrationRouteByRole[role];
 
-    try {
-      const session = loginWithRole(role);
-      navigate(dashboardByRole[session.user.role] || "/");
-    } catch (loginError) {
-      setError(loginError.message);
+    if (registrationRoute) {
+      navigate(registrationRoute);
     }
   }
 
@@ -69,7 +154,7 @@ export default function LoginPage() {
 
           <form className={styles.form} onSubmit={handleSubmit}>
             <label className={styles.fieldLabel} htmlFor="identifier">
-              Email Address / Username
+              Email Address
             </label>
             <div className={styles.inputShell}>
               <MailIcon />
@@ -77,8 +162,9 @@ export default function LoginPage() {
                 id="identifier"
                 value={identifier}
                 onChange={(event) => setIdentifier(event.target.value)}
-                placeholder="Enter your email or username"
+                placeholder="owner@horserace.local"
                 autoComplete="username"
+                type="email"
               />
             </div>
 
@@ -116,9 +202,9 @@ export default function LoginPage() {
             </div>
 
             {error && <div className={styles.errorMessage}>{error}</div>}
-            <button className={styles.loginButton} type="submit">
-              Login
-              <ArrowRightIcon />
+            <button className={styles.loginButton} type="submit" disabled={loading}>
+              {loading ? "Logging in..." : "Login"}
+              {!loading && <ArrowRightIcon />}
             </button>
           </form>
 
@@ -128,14 +214,20 @@ export default function LoginPage() {
             <span></span>
           </div>
 
-          <button className={styles.googleButton} type="button" onClick={handleGoogleLogin}>
-            <GoogleIcon />
-            Continue with Google
-          </button>
+          {isGoogleConfigured ? (
+            <div className={styles.googleButtonHost} ref={googleButtonRef}>
+              {googleLoading && <span className={styles.googleLoadingText}>Signing in with Google...</span>}
+            </div>
+          ) : (
+            <button className={styles.googleButton} type="button" onClick={handleMissingGoogleConfig}>
+              <GoogleIcon />
+              Sign in with Google
+            </button>
+          )}
 
           <div className={styles.roleDivider}>
             <span></span>
-            <p>Or sign in as</p>
+            <p>Or sign up as</p>
             <span></span>
           </div>
 
@@ -146,18 +238,7 @@ export default function LoginPage() {
                 className={styles.roleButton}
                 key={role}
                 type="button"
-                onClick={() => {
-                  // Chuyển sang trang đăng ký theo từng vai trò cụ thể
-                  if (role === "Owner") {
-                    handleRoleLogin("Owner");
-
-                  } else if (role === "Jockey") {
-                    handleRoleLogin("Jockey");
-
-                  } else if (role === "Spectator") {
-                    handleRoleLogin("Spectator");
-                  }
-                }}
+                onClick={() => registrationByRole(role)}
               >
                 <RoleIcon role={role} />
                 {role}
