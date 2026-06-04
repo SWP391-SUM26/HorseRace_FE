@@ -18,6 +18,40 @@
       }
     },
     {
+      "id": "usr_admin_local_001",
+      "name": "System Admin",
+      "email": "admin@horserace.local",
+      "username": "admin.local",
+      "password": "Admin@123",
+      "role": "Admin",
+      "avatar": "SA",
+      "stable": "HQ Admin Panel",
+      "provider": "credentials",
+      "tokens": {
+        "accessToken": "mock_access_admin_local_001",
+        "refreshToken": "mock_refresh_admin_local_001",
+        "accessTokenExpiresInSeconds": 900,
+        "refreshTokenExpiresInSeconds": 604800
+      }
+    },
+    {
+      "id": "usr_admin_local_002",
+      "name": "Super Admin",
+      "email": "superadmin@horserace.local",
+      "username": "superadmin",
+      "password": "Admin@123",
+      "role": "Admin",
+      "avatar": "SA",
+      "stable": "HQ Admin Panel",
+      "provider": "credentials",
+      "tokens": {
+        "accessToken": "mock_access_superadmin_001",
+        "refreshToken": "mock_refresh_superadmin_001",
+        "accessTokenExpiresInSeconds": 900,
+        "refreshTokenExpiresInSeconds": 604800
+      }
+    },
+    {
       "id": "usr_owner_001",
       "name": "Amelia Hart",
       "email": "owner@equineelite.com",
@@ -34,6 +68,22 @@
       }
     },
     {
+      "id": "usr_owner_local_001",
+      "name": "Horse Owner",
+      "email": "owner@horserace.local",
+      "username": "owner.local",
+      "password": "Owner@123",
+      "role": "Owner",
+      "avatar": "HO",
+      "stable": "Hartwell Racing Syndicate",
+      "tokens": {
+        "accessToken": "mock_access_owner_local_001",
+        "refreshToken": "mock_refresh_owner_local_001",
+        "accessTokenExpiresInSeconds": 900,
+        "refreshTokenExpiresInSeconds": 604800
+      }
+    },
+    {
       "id": "usr_jockey_001",
       "name": "Liam Carter",
       "email": "jockey@equineelite.com",
@@ -45,6 +95,22 @@
       "tokens": {
         "accessToken": "mock_access_jockey_001",
         "refreshToken": "mock_refresh_jockey_001",
+        "accessTokenExpiresInSeconds": 900,
+        "refreshTokenExpiresInSeconds": 604800
+      }
+    },
+    {
+      "id": "usr_jockey_local_001",
+      "name": "Jockey Local",
+      "email": "jockey@horserace.local",
+      "username": "jockey.local",
+      "password": "Jockey@123",
+      "role": "Jockey",
+      "avatar": "JL",
+      "stable": "Flemington Pro Circuit",
+      "tokens": {
+        "accessToken": "mock_access_jockey_local_001",
+        "refreshToken": "mock_refresh_jockey_local_001",
         "accessTokenExpiresInSeconds": 900,
         "refreshTokenExpiresInSeconds": 604800
       }

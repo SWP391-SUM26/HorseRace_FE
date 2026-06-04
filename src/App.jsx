@@ -17,6 +17,15 @@ import ProtectedRoute from './components/ProtectedRoute';
 import DashboardLayout from './layouts/DashboardLayout';
 import DashboardHome from './pages/dashboard/DashboardHome';
 import AdminDashboard from './pages/Admin/UserManagement';
+import Overview from './pages/Owner/Overview';
+import StableManagement from './pages/Owner/StableManagement';
+
+const OwnerPlaceholder = ({ title }) => (
+  <div style={{ padding: '40px', textAlign: 'center', backgroundColor: '#ffffff', borderRadius: '12px', border: '1px solid #e2e8f0', boxShadow: '0 1px 3px rgba(0,0,0,0.02)' }}>
+    <h2 style={{ fontSize: '20px', fontWeight: '700', color: '#0f172a', marginBottom: '12px' }}>{title}</h2>
+    <p style={{ color: '#64748b' }}>Đường dẫn Router hoạt động tốt! Nội dung đang được cập nhật.</p>
+  </div>
+);
 
 export default function App() {
   return (
@@ -35,7 +44,11 @@ export default function App() {
         {/* DASHBOARDS */}
         <Route element={<ProtectedRoute roles={['Owner']} />}>
           <Route element={<DashboardLayout />}>
-            <Route path="/owner-dashboard" element={<DashboardHome />} />
+            <Route path="/owner-dashboard" element={<Overview />} />
+            <Route path="/owner-dashboard/stable" element={<StableManagement />} />
+            <Route path="/owner-dashboard/jockeys" element={<OwnerPlaceholder title="🏇 Jockey Market" />} />
+            <Route path="/owner-dashboard/calendar" element={<OwnerPlaceholder title="📅 Race Calendar" />} />
+            <Route path="/owner-dashboard/financials" element={<OwnerPlaceholder title="💵 Financials" />} />
           </Route>
         </Route>
 

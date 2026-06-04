@@ -13,10 +13,22 @@ export default function ForgotPasswordPage() {
     e.preventDefault(); // Chống reload trang khi submit form
     if (!email) return;
 
+    // Load users from localStorage mock DB
+    const raw = localStorage.getItem("equine_elite_mock_users");
+    const users = raw ? JSON.parse(raw) : [];
+    const normalizedEmail = email.trim().toLowerCase();
+    
+    const userExists = users.some(u => u.email.toLowerCase() === normalizedEmail);
+    if (!userExists) {
+      alert("This email address is not registered in the system.");
+      return;
+    }
+
     setLoading(true);
 
     setTimeout(() => {
       setLoading(false);
+      sessionStorage.setItem('reset_password_email', normalizedEmail);
       setSent(true);
     }, 1000);
   };

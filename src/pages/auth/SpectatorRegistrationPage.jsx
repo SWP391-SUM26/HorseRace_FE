@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { loginWithRole } from '../../services/auth';
+import { loginWithRole, registerOfflineUser, loginWithCredentials } from '../../services/auth';
 import styles from './SpectatorRegistrationPage.module.css';
 
 export default function SpectatorRegistrationPage() {
@@ -16,17 +16,60 @@ export default function SpectatorRegistrationPage() {
   });
 
   const [loading, setLoading] = useState(false);
+  const [showVerification, setShowVerification] = useState(false);
+  const [verificationCode, setVerificationCode] = useState('');
+  const [verificationLoading, setVerificationLoading] = useState(false);
 
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
 
   const handleRegister = (e) => {
     e.preventDefault();
+    if (!form.email || !form.password) {
+      alert("Please fill in email and password");
+      return;
+    }
+    if (form.password !== form.confirmPassword) {
+      alert("Passwords do not match");
+      return;
+    }
     setLoading(true);
     setTimeout(() => {
       setLoading(false);
-      console.log('Spectator Registration:', form);
-      loginWithRole('Spectator');
-      navigate('/spectator-dashboard');
+      setShowVerification(true);
+    }, 900);
+  };
+
+  const handleVerifyEmail = (e) => {
+    e.preventDefault();
+    if (verificationCode.length < 4) {
+      alert("Please enter a valid verification code.");
+      return;
+    }
+    setVerificationLoading(true);
+    setTimeout(() => {
+      setVerificationLoading(false);
+
+      // Register offline to localStorage
+      registerOfflineUser({
+        email: form.email,
+        password: form.password,
+        fullName: form.fullName,
+        role: 'Spectator',
+        phone: form.phone,
+        stable: "Elite Fan Zone"
+      });
+
+      // Auto login with the registered credentials
+      loginWithCredentials(form.email, form.password)
+        .then(() => {
+          navigate('/spectator-dashboard');
+        })
+        .catch(err => {
+          console.error(err);
+          // fallback
+          loginWithRole('Spectator');
+          navigate('/spectator-dashboard');
+        });
     }, 900);
   };
 
@@ -68,119 +111,160 @@ export default function SpectatorRegistrationPage() {
         {/* RIGHT FORM PANEL */}
         <section className={styles.rightPanel}>
           <div className={styles.formWrap}>
-            <h1 className={styles.formTitle}>Create Spectator Account</h1>
-            <p className={styles.formSubtitle}>
-              Enter your details to access the Elite Turf paddock.
-            </p>
+            {!showVerification ? (
+              <>
+                <h1 className={styles.formTitle}>Create Spectator Account</h1>
+                <p className={styles.formSubtitle}>
+                  Enter your details to access the Elite Turf paddock.
+                </p>
 
-            <form onSubmit={handleRegister}>
-              {/* Full Name */}
-              <div className={styles.fieldGroup}>
-                <label className={styles.fieldLabel}>Full Name</label>
-                <div className={styles.inputShell}>
-                  <UserIcon />
-                  <input
-                    className={styles.input}
-                    placeholder="e.g. John Doe"
-                    value={form.fullName}
-                    onChange={(e) => set('fullName', e.target.value)}
-                  />
+                <form onSubmit={handleRegister}>
+                  {/* Full Name */}
+                  <div className={styles.fieldGroup}>
+                    <label className={styles.fieldLabel}>Full Name</label>
+                    <div className={styles.inputShell}>
+                      <UserIcon />
+                      <input
+                        className={styles.input}
+                        placeholder="e.g. John Doe"
+                        value={form.fullName}
+                        onChange={(e) => set('fullName', e.target.value)}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Email Address */}
+                  <div className={styles.fieldGroup}>
+                    <label className={styles.fieldLabel}>Email Address</label>
+                    <div className={styles.inputShell}>
+                      <MailIcon />
+                      <input
+                        className={styles.input}
+                        type="email"
+                        placeholder="you@example.com"
+                        value={form.email}
+                        onChange={(e) => set('email', e.target.value)}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Phone Number */}
+                  <div className={styles.fieldGroup}>
+                    <label className={styles.fieldLabel}>Phone Number</label>
+                    <div className={styles.inputShell}>
+                      <PhoneIcon />
+                      <input
+                        className={styles.input}
+                        type="tel"
+                        placeholder="+1 (555) 000-0000"
+                        value={form.phone}
+                        onChange={(e) => set('phone', e.target.value)}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Password */}
+                  <div className={styles.fieldGroup}>
+                    <label className={styles.fieldLabel}>Password</label>
+                    <div className={styles.inputShell}>
+                      <LockIcon />
+                      <input
+                        className={styles.input}
+                        type="password"
+                        placeholder="••••••••"
+                        value={form.password}
+                        onChange={(e) => set('password', e.target.value)}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Confirm Password */}
+                  <div className={styles.fieldGroup}>
+                    <label className={styles.fieldLabel}>Confirm Password</label>
+                    <div className={styles.inputShell}>
+                      <ShieldCheckIcon />
+                      <input
+                        className={styles.input}
+                        type="password"
+                        placeholder="••••••••"
+                        value={form.confirmPassword}
+                        onChange={(e) => set('confirmPassword', e.target.value)}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Terms Checkbox */}
+                  <label className={styles.termsLabel}>
+                    <input
+                      type="checkbox"
+                      checked={form.agreeTerms}
+                      onChange={(e) => set('agreeTerms', e.target.checked)}
+                      className={styles.termsCheckbox}
+                    />
+                    <span className={styles.termsText}>
+                      I agree to the{' '}
+                      <button type="button" className={styles.termsLink}>Terms of Service</button>
+                      {' '}and{' '}
+                      <button type="button" className={styles.termsLink}>Privacy Policy</button>.
+                    </span>
+                  </label>
+
+                  {/* Submit Button */}
+                  <button
+                    className={styles.submitBtn}
+                    type="submit"
+                    disabled={loading || !form.agreeTerms}
+                  >
+                    {loading ? 'Creating Account...' : 'Create Spectator Account'}
+                  </button>
+                </form>
+
+                {/* Sign In Link */}
+                <div className={styles.signinPrompt}>
+                  Already have an account?{' '}
+                  <button type="button" className={styles.signinLink} onClick={() => navigate('/login')}>
+                    Sign In
+                  </button>
                 </div>
-              </div>
+              </>
+            ) : (
+              <form onSubmit={handleVerifyEmail}>
+                <h1 className={styles.formTitle}>Verify Your Email</h1>
+                <p className={styles.formSubtitle}>
+                  We've sent a 6-digit verification code to <strong>{form.email}</strong>. Enter any code to complete registration.
+                </p>
 
-              {/* Email Address */}
-              <div className={styles.fieldGroup}>
-                <label className={styles.fieldLabel}>Email Address</label>
-                <div className={styles.inputShell}>
-                  <MailIcon />
-                  <input
-                    className={styles.input}
-                    type="email"
-                    placeholder="you@example.com"
-                    value={form.email}
-                    onChange={(e) => set('email', e.target.value)}
-                  />
+                <div className={styles.fieldGroup} style={{ marginTop: '24px' }}>
+                  <label className={styles.fieldLabel}>VERIFICATION CODE</label>
+                  <div className={styles.inputShell}>
+                    <ShieldCheckIcon />
+                    <input
+                      className={styles.input}
+                      placeholder="e.g. 123456"
+                      value={verificationCode}
+                      onChange={(e) => setVerificationCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                      required
+                    />
+                  </div>
                 </div>
-              </div>
 
-              {/* Phone Number */}
-              <div className={styles.fieldGroup}>
-                <label className={styles.fieldLabel}>Phone Number</label>
-                <div className={styles.inputShell}>
-                  <PhoneIcon />
-                  <input
-                    className={styles.input}
-                    type="tel"
-                    placeholder="+1 (555) 000-0000"
-                    value={form.phone}
-                    onChange={(e) => set('phone', e.target.value)}
-                  />
+                <button
+                  className={styles.submitBtn}
+                  type="submit"
+                  disabled={verificationLoading}
+                  style={{ marginTop: '24px' }}
+                >
+                  {verificationLoading ? 'Verifying...' : 'Verify & Create Account'}
+                </button>
+
+                <div className={styles.signinPrompt}>
+                  Didn't receive code?{' '}
+                  <button type="button" className={styles.signinLink} onClick={() => alert("Simulated code resent!")}>
+                    Resend Code
+                  </button>
                 </div>
-              </div>
-
-              {/* Password */}
-              <div className={styles.fieldGroup}>
-                <label className={styles.fieldLabel}>Password</label>
-                <div className={styles.inputShell}>
-                  <LockIcon />
-                  <input
-                    className={styles.input}
-                    type="password"
-                    placeholder="••••••••"
-                    value={form.password}
-                    onChange={(e) => set('password', e.target.value)}
-                  />
-                </div>
-              </div>
-
-              {/* Confirm Password */}
-              <div className={styles.fieldGroup}>
-                <label className={styles.fieldLabel}>Confirm Password</label>
-                <div className={styles.inputShell}>
-                  <ShieldCheckIcon />
-                  <input
-                    className={styles.input}
-                    type="password"
-                    placeholder="••••••••"
-                    value={form.confirmPassword}
-                    onChange={(e) => set('confirmPassword', e.target.value)}
-                  />
-                </div>
-              </div>
-
-              {/* Terms Checkbox */}
-              <label className={styles.termsLabel}>
-                <input
-                  type="checkbox"
-                  checked={form.agreeTerms}
-                  onChange={(e) => set('agreeTerms', e.target.checked)}
-                  className={styles.termsCheckbox}
-                />
-                <span className={styles.termsText}>
-                  I agree to the{' '}
-                  <button type="button" className={styles.termsLink}>Terms of Service</button>
-                  {' '}and{' '}
-                  <button type="button" className={styles.termsLink}>Privacy Policy</button>.
-                </span>
-              </label>
-
-              {/* Submit Button */}
-              <button
-                className={styles.submitBtn}
-                type="submit"
-                disabled={loading || !form.agreeTerms}
-              >
-                {loading ? 'Creating Account...' : 'Create Spectator Account'}
-              </button>
-            </form>
-
-            {/* Sign In Link */}
-            <div className={styles.signinPrompt}>
-              Already have an account?{' '}
-              <button type="button" className={styles.signinLink} onClick={() => navigate('/login')}>
-                Sign In
-              </button>
-            </div>
+              </form>
+            )}
           </div>
         </section>
       </main>

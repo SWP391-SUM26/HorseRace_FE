@@ -1,0 +1,166 @@
+{
+  "estatePerformance": {
+    "totalStableValue": "$12.4M",
+    "stableValueChange": "+4.2%",
+    "activeHorses": 24,
+    "totalStalls": 30,
+    "careerWins": 142,
+    "winsChange": "+2 since May",
+    "totalPrizeMoney": "$4.82M",
+    "chartData": [
+      { "month": "JAN", "value": 52 },
+      { "month": "FEB", "value": 68 },
+      { "month": "MAR", "value": 82 },
+      { "month": "APR", "value": 80 },
+      { "month": "MAY", "value": 90 },
+      { "month": "JUN", "value": 75 }
+    ],
+    "showcaseHorse": {
+      "name": "Thunder Dash",
+      "tier": "ELITE",
+      "title": "Top Performer • Grade 1",
+      "condition": "98% Fit",
+      "lastWin": "Derby Cup",
+      "image": "/assets/thunder_dash.png"
+    },
+    "upcomingRaces": [
+      {
+        "date": "JUL 14",
+        "raceName": "Ascot Summer Stakes",
+        "location": "Ascot Racecourse",
+        "distance": "1,200m Sprint",
+        "horse": "Midnight Sun",
+        "jockey": "JOCKEY: J. DOE"
+      },
+      {
+        "date": "JUL 22",
+        "raceName": "The Gold Jubilee",
+        "location": "Epsom Downs",
+        "distance": "2,400m Turf",
+        "horse": "Royal Gaze",
+        "jockey": "JOCKEY: A. SMITH"
+      },
+      {
+        "date": "AUG 05",
+        "raceName": "Champions Cup",
+        "location": "York Racecourse",
+        "distance": "1,600m Mile",
+        "horse": "Thunder Dash",
+        "jockey": "JOCKEY: K. BROWN"
+      }
+    ],
+    "financialSummary": [
+      {
+        "transaction": "Prize Payout",
+        "details": "Derby Invitational • June 28",
+        "entity": "Thunder Dash",
+        "amount": "+$450,000",
+        "status": "COMPLETED"
+      },
+      {
+        "transaction": "Training Fees",
+        "details": "Stable Ops • June 25",
+        "entity": "24 Horses",
+        "amount": "-$12,400",
+        "status": "COMPLETED"
+      },
+      {
+        "transaction": "Veterinary Care",
+        "details": "Annual Exams • June 20",
+        "entity": "Silver Streak",
+        "amount": "-$4,250",
+        "status": "PENDING"
+      },
+      {
+        "transaction": "Stud Fee Payout",
+        "details": "Royal Bloodline • June 18",
+        "entity": "Morning Star",
+        "amount": "+$85,000",
+        "status": "COMPLETED"
+      }
+    ]
+  },
+  "stableOverview": {
+    "totalHorses": 24,
+    "fitForRacing": 18,
+    "winRate": "22%",
+    "ytdEarnings": "$1,450,200",
+    "ytdEarningsTrend": "+12.5%",
+    "unfitCount": 6,
+    "activeRoster": [
+      {
+        "id": "hr_001",
+        "name": "Midnight Runner",
+        "details": "3yo Colt",
+        "status": "FIT TO RACE",
+        "nextRace": "Oct 20, 2024",
+        "track": "Belmont Park"
+      },
+      {
+        "id": "hr_002",
+        "name": "Desert Mirage",
+        "details": "4yo Filly",
+        "status": "RESTING",
+        "nextRace": "No upcoming races",
+        "track": ""
+      },
+      {
+        "id": "hr_003",
+        "name": "Thunder Dash",
+        "details": "5yo Stallion",
+        "status": "FIT TO RACE",
+        "nextRace": "Aug 05, 2026",
+        "track": "York Racecourse"
+      },
+      {
+        "id": "hr_004",
+        "name": "Royal Gaze",
+        "details": "4yo Colt",
+        "status": "FIT TO RACE",
+        "nextRace": "Jul 22, 2026",
+        "track": "Epsom Downs"
+      },
+      {
+        "id": "hr_005",
+        "name": "Midnight Sun",
+        "details": "4yo Colt",
+        "status": "FIT TO RACE",
+        "nextRace": "Jul 14, 2026",
+        "track": "Ascot Racecourse"
+      },
+      {
+        "id": "hr_006",
+        "name": "Silver Streak",
+        "details": "3yo Colt",
+        "status": "RESTING",
+        "nextRace": "No upcoming races",
+        "track": ""
+      }
+    ],
+    "jockeyInvites": [
+      {
+        "id": "inv_001",
+        "horseName": "Midnight Runner",
+        "status": "PENDING",
+        "jockeyName": "J. Ortiz",
+        "race": "Belmont Stakes"
+      }
+    ],
+    "healthDocs": [
+      {
+        "id": "doc_001",
+        "horseName": "Desert Mirage",
+        "document": "Coggins",
+        "status": "Expiring",
+        "type": "warning"
+      },
+      {
+        "id": "doc_002",
+        "horseName": "Midnight Runner",
+        "document": "All documents",
+        "status": "Up to date",
+        "type": "success"
+      }
+    ]
+  }
+}

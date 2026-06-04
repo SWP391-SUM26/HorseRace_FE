@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { loginWithRole } from '../../services/auth';
+import { loginWithRole, registerOfflineUser, loginWithCredentials } from '../../services/auth';
 import styles from './OwnerRegistrationPage.module.css';
 
 export default function OwnerRegistrationPage() {
@@ -9,6 +9,7 @@ export default function OwnerRegistrationPage() {
   const [form, setForm] = useState({
     fullName: '',
     email: '',
+    password: '',
     contactNumber: '',
     primaryRegion: '',
     stableName: '',
@@ -29,12 +30,36 @@ export default function OwnerRegistrationPage() {
 
   const handleRegister = (e) => {
     e.preventDefault();
+    if (!form.email || !form.password) {
+      alert("Please fill in email and password");
+      return;
+    }
     setLoading(true);
     setTimeout(() => {
       setLoading(false);
       console.log('Owner Registration:', form, avatarFile);
-      loginWithRole('Owner');
-      navigate('/owner-dashboard');
+
+      // Register offline to localStorage
+      registerOfflineUser({
+        email: form.email,
+        password: form.password,
+        fullName: form.fullName,
+        role: 'Owner',
+        phone: form.contactNumber,
+        stable: form.stableName || "Hartwell Racing Syndicate"
+      });
+
+      // Auto login with the registered credentials
+      loginWithCredentials(form.email, form.password)
+        .then(() => {
+          navigate('/owner-dashboard');
+        })
+        .catch(err => {
+          console.error(err);
+          // fallback
+          loginWithRole('Owner');
+          navigate('/owner-dashboard');
+        });
     }, 900);
   };
 
@@ -139,6 +164,18 @@ export default function OwnerRegistrationPage() {
                     placeholder="owner@equine-elite.com"
                     value={form.email}
                     onChange={(e) => set('email', e.target.value)}
+                  />
+                </div>
+
+                <div className={styles.fieldGroup}>
+                  <label className={styles.fieldLabel}>Password</label>
+                  <input
+                    className={styles.input}
+                    type="password"
+                    placeholder="••••••••"
+                    value={form.password}
+                    onChange={(e) => set('password', e.target.value)}
+                    required
                   />
                 </div>
 

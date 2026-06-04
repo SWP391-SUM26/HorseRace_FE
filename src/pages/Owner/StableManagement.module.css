@@ -1,0 +1,1098 @@
+.stableContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+  position: relative;
+}
+
+/* ==========================================
+   1. PAGE HEADER
+   ========================================== */
+.pageHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.pageTitle {
+  font-size: 28px;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0;
+}
+
+.pageSubtitle {
+  font-size: 14px;
+  color: #64748b;
+  margin: 4px 0 0 0;
+}
+
+.btnPrimary {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background-color: #022c22;
+  color: #ffffff;
+  border: none;
+  padding: 12px 20px;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  box-shadow: 0 4px 6px -1px rgba(2, 44, 34, 0.1);
+}
+
+.btnPrimary:hover {
+  background-color: #064e3b;
+}
+
+.btnIcon {
+  font-size: 16px;
+  font-weight: 700;
+}
+
+/* ==========================================
+   2. STATS ROW LAYOUT
+   ========================================== */
+.statsRow {
+  display: grid;
+  grid-template-columns: 1.6fr 1fr;
+  gap: 24px;
+}
+
+/* Stable Overview Card */
+.statCard {
+  background-color: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.cardHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+.cardHeaderIcon {
+  font-size: 18px;
+}
+
+.cardHeaderTitle {
+  font-size: 15px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.statsWrapper {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex: 1;
+  padding: 12px 0;
+}
+
+.statBox {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.statLabel {
+  font-size: 10px;
+  font-weight: 700;
+  color: #64748b;
+  letter-spacing: 0.5px;
+  margin-bottom: 6px;
+}
+
+.statNumber {
+  font-size: 32px;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.statDivider {
+  width: 1px;
+  height: 48px;
+  background-color: #e2e8f0;
+  margin: 0 24px;
+}
+
+.cardFooter {
+  border-top: 1px solid #e2e8f0;
+  padding-top: 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 13px;
+  color: #64748b;
+  margin-top: 16px;
+}
+
+.footerLink {
+  color: #d97706;
+  text-decoration: none;
+  font-weight: 600;
+  transition: color 0.2s;
+}
+
+.footerLink:hover {
+  color: #b45309;
+}
+
+/* YTD Earnings Card (Forest Green style) */
+.earningsCard {
+  background-color: #022c22;
+  color: #ffffff;
+  border-radius: 12px;
+  padding: 28px;
+  box-shadow: 0 4px 10px rgba(2, 44, 34, 0.05);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.earningsLabel {
+  font-size: 10px;
+  font-weight: 700;
+  color: #a7f3d0;
+  letter-spacing: 0.5px;
+  display: block;
+}
+
+.earningsValue {
+  font-size: 36px;
+  font-weight: 800;
+  margin: 12px 0 6px 0;
+  letter-spacing: -0.5px;
+}
+
+.earningsTrendWrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+}
+
+.earningsTrend {
+  color: #a7f3d0;
+}
+
+.trendPercent {
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.progressBarBg {
+  background-color: rgba(255, 255, 255, 0.15);
+  height: 6px;
+  border-radius: 3px;
+  width: 100%;
+  overflow: hidden;
+  margin-top: 20px;
+}
+
+.progressBarFill {
+  background-color: #fbbf24; /* gold bar */
+  height: 100%;
+  border-radius: 3px;
+}
+
+/* ==========================================
+   3. LAYOUT SPLIT (ROSTER & SIDEBAR)
+   ========================================== */
+.layoutSplit {
+  display: grid;
+  grid-template-columns: 1.6fr 1fr;
+  gap: 24px;
+}
+
+/* Active Roster card */
+.rosterCard {
+  background-color: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+  overflow: hidden;
+}
+
+.rosterHeader {
+  padding: 20px 24px;
+  border-bottom: 1px solid #e2e8f0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.rosterTitle {
+  font-size: 16px;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0;
+}
+
+.viewAllBtn {
+  background: none;
+  border: none;
+  color: #16a34a;
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.viewAllBtn:hover {
+  color: #022c22;
+}
+
+/* Control filters bar */
+.controlBar {
+  padding: 16px 24px;
+  border-bottom: 1px solid #e2e8f0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: #f8fafc;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.searchWrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background-color: #ffffff;
+  border: 1px solid #cbd5e1;
+  padding: 8px 14px;
+  border-radius: 6px;
+  width: 260px;
+}
+
+.searchIcon {
+  color: #94a3b8;
+  font-size: 14px;
+}
+
+.searchInput {
+  background: none;
+  border: none;
+  outline: none;
+  width: 100%;
+  font-size: 13px;
+}
+
+.filtersGroup {
+  display: flex;
+  gap: 10px;
+}
+
+.selectFilter {
+  background-color: #ffffff;
+  border: 1px solid #cbd5e1;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #334155;
+  outline: none;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.selectFilter:focus {
+  border-color: #022c22;
+}
+
+/* Roster Table styling */
+.rosterTable {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+.rosterTable th {
+  background-color: #ffffff;
+  padding: 14px 24px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #64748b;
+  letter-spacing: 0.5px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.rosterRow {
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.rosterRow:hover {
+  background-color: #f8fafc;
+}
+
+.rosterRow td {
+  padding: 16px 24px;
+  border-bottom: 1px solid #e2e8f0;
+  font-size: 14px;
+  vertical-align: middle;
+}
+
+.rosterTable tr:last-child td {
+  border-bottom: none;
+}
+
+.horseCell {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.horseThumb {
+  width: 44px;
+  height: 44px;
+  border-radius: 8px;
+  object-fit: cover;
+  background-color: #f1f5f9;
+  border: 1px solid #e2e8f0;
+}
+
+.horseName {
+  font-size: 14px;
+  font-weight: 700;
+  color: #0f172a;
+  display: block;
+}
+
+.horseDesc {
+  font-size: 12px;
+  color: #64748b;
+}
+
+.statusBadge {
+  display: inline-flex;
+  padding: 4px 10px;
+  font-size: 11px;
+  font-weight: 700;
+  border-radius: 12px;
+  text-transform: uppercase;
+}
+
+.statusFit {
+  background-color: #dcfce7;
+  color: #15803d;
+}
+
+.statusResting {
+  background-color: #fee2e2;
+  color: #ef4444;
+}
+
+.nextRaceCell {
+  display: flex;
+  flex-direction: column;
+}
+
+.nextRaceDate {
+  font-size: 13px;
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.nextRaceTrack {
+  font-size: 11px;
+  color: #64748b;
+  margin-top: 2px;
+}
+
+.actionsWrap {
+  display: flex;
+  gap: 6px;
+  justify-content: flex-end;
+}
+
+.actionBtnIcon {
+  background-color: #f8fafc;
+  border: 1px solid #cbd5e1;
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s;
+}
+
+.actionBtnIcon:hover {
+  background-color: #f1f5f9;
+  border-color: #94a3b8;
+}
+
+.emptyTable {
+  padding: 40px !important;
+  text-align: center;
+  color: #64748b;
+  font-size: 14px;
+}
+
+/* Pagination bar style */
+.paginationBar {
+  padding: 16px 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-top: 1px solid #e2e8f0;
+}
+
+.paginationInfo {
+  font-size: 13px;
+  color: #64748b;
+}
+
+.paginationBtns {
+  display: flex;
+  gap: 4px;
+}
+
+.pageBtn {
+  background-color: #ffffff;
+  border: 1px solid #cbd5e1;
+  padding: 6px 12px;
+  font-size: 13px;
+  font-weight: 500;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.pageBtn:hover:not(:disabled) {
+  background-color: #f8fafc;
+}
+
+.pageBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.pageBtnActive {
+  background-color: #022c22;
+  color: #ffffff;
+  border-color: #022c22;
+}
+
+/* ==========================================
+   4. SIDEBAR WIDGETS
+   ========================================== */
+.sidebarSection {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.widgetCard {
+  background-color: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+  display: flex;
+  flex-direction: column;
+}
+
+.widgetHeader {
+  padding: 16px 20px;
+  border-bottom: 1px solid #e2e8f0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.widgetIcon {
+  font-size: 16px;
+}
+
+.widgetTitle {
+  font-size: 14px;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0;
+}
+
+.widgetBody {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* Jockey Invite Items */
+.inviteItem {
+  background-color: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+}
+
+.inviteHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.inviteHeader strong {
+  font-size: 13px;
+  color: #0f172a;
+}
+
+.inviteBadge {
+  font-size: 9px;
+  font-weight: 700;
+  color: #b45309;
+  background-color: #fef3c7;
+  padding: 2px 6px;
+  border-radius: 4px;
+  text-transform: uppercase;
+}
+
+.inviteText {
+  font-size: 12px;
+  color: #64748b;
+  margin: 0 0 12px 0;
+}
+
+.resendBtn {
+  align-self: flex-start;
+  background-color: #ffffff;
+  border: 1px solid #cbd5e1;
+  color: #334155;
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.resendBtn:hover {
+  background-color: #f8fafc;
+  border-color: #94a3b8;
+}
+
+/* Health Docs Items */
+.docItem {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.docIconWarning {
+  font-size: 16px;
+}
+
+.docIconSuccess {
+  font-size: 16px;
+}
+
+.docInfo {
+  display: flex;
+  flex-direction: column;
+}
+
+.docHorse {
+  font-size: 13px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.docStatusWarning {
+  font-size: 12px;
+  color: #ef4444;
+  font-weight: 600;
+}
+
+.docStatusSuccess {
+  font-size: 12px;
+  color: #16a34a;
+  font-weight: 600;
+}
+
+.widgetFooter {
+  border-top: 1px solid #e2e8f0;
+  padding: 14px 20px;
+  text-align: center;
+}
+
+.widgetFooterLink {
+  font-size: 12px;
+  font-weight: 600;
+  color: #022c22;
+  text-decoration: none;
+}
+
+.widgetFooterLink:hover {
+  text-decoration: underline;
+}
+
+/* ==========================================
+   5. INTERACTIVE MODALS & OVERLAY
+   ========================================== */
+.modalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(15, 23, 42, 0.4);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 999;
+}
+
+.modalContent {
+  background-color: #ffffff;
+  border-radius: 12px;
+  width: 100%;
+  max-width: 520px;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  animation: modalEnter 0.2s ease-out;
+}
+
+@keyframes modalEnter {
+  from { transform: scale(0.95); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+.modalHeader {
+  padding: 20px 24px;
+  border-bottom: 1px solid #e2e8f0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.modalTitle {
+  font-size: 18px;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0;
+}
+
+.modalCloseBtn {
+  background: none;
+  border: none;
+  font-size: 16px;
+  color: #94a3b8;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.modalCloseBtn:hover {
+  color: #0f172a;
+}
+
+.modalForm {
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.formGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.formGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.formLabel {
+  font-size: 10px;
+  font-weight: 700;
+  color: #475569;
+  letter-spacing: 0.5px;
+}
+
+.formInput {
+  background-color: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  padding: 10px 14px;
+  font-size: 14px;
+  outline: none;
+  transition: all 0.2s;
+  box-sizing: border-box;
+  width: 100%;
+}
+
+.formInput:focus {
+  border-color: #022c22;
+  box-shadow: 0 0 0 2px rgba(2, 44, 34, 0.05);
+}
+
+.formSelect {
+  background-color: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  padding: 10px 14px;
+  font-size: 14px;
+  outline: none;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-sizing: border-box;
+  width: 100%;
+}
+
+.formSelect:focus {
+  border-color: #022c22;
+}
+
+.imageUploadWrapper {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-top: 4px;
+}
+
+.uploadPreview {
+  width: 60px;
+  height: 60px;
+  border-radius: 8px;
+  object-fit: cover;
+  border: 1px solid #cbd5e1;
+}
+
+.imagePlaceholder {
+  width: 60px;
+  height: 60px;
+  border-radius: 8px;
+  background-color: #f1f5f9;
+  border: 1px dashed #cbd5e1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  color: #94a3b8;
+  text-align: center;
+}
+
+.imageUploadBtn {
+  background-color: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  padding: 8px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #334155;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.imageUploadBtn:hover {
+  background-color: #f8fafc;
+  border-color: #94a3b8;
+}
+
+.modalActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.btnGhost {
+  background-color: #ffffff;
+  border: 1px solid #cbd5e1;
+  color: #334155;
+  border-radius: 6px;
+  padding: 10px 16px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btnGhost:hover {
+  background-color: #f8fafc;
+}
+
+/* ==========================================
+   6. INTERACTIVE DRAWER: HORSE DETAILS
+   ========================================== */
+.drawerContent {
+  background-color: #ffffff;
+  width: 440px;
+  height: 100vh;
+  position: fixed;
+  right: 0;
+  top: 0;
+  box-shadow: -10px 0 25px -5px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+  animation: drawerEnter 0.25s ease-out;
+  overflow-y: auto;
+}
+
+@keyframes drawerEnter {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
+}
+
+.drawerHeader {
+  padding: 20px 24px;
+  border-bottom: 1px solid #e2e8f0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: #ffffff;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.drawerTitle {
+  font-size: 16px;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0;
+}
+
+.drawerCloseBtn {
+  background: none;
+  border: none;
+  font-size: 16px;
+  color: #94a3b8;
+  cursor: pointer;
+}
+
+.drawerBody {
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+
+.detailHero {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.detailLargeImage {
+  width: 120px;
+  height: 120px;
+  border-radius: 60px;
+  object-fit: cover;
+  border: 3px solid #ffffff;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  background-color: #f1f5f9;
+}
+
+.detailName {
+  font-size: 22px;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0;
+}
+
+.detailPills {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  justify-content: center;
+}
+
+.detailPill {
+  background-color: #f1f5f9;
+  color: #475569;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 12px;
+}
+
+.drawerInlineActions {
+  display: flex;
+  gap: 10px;
+}
+
+/* Drawer Detail Subsections */
+.detailSection {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  border-top: 1px solid #e2e8f0;
+  padding-top: 20px;
+}
+
+.sectionHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sectionTitleIcon {
+  font-size: 16px;
+}
+
+.sectionTitle {
+  font-size: 13px;
+  font-weight: 700;
+  color: #0f172a;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin: 0;
+}
+
+.medicalBox {
+  background-color: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.medicalField {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+}
+
+.medicalField span {
+  color: #64748b;
+  font-weight: 600;
+}
+
+.medicalField strong {
+  color: #0f172a;
+}
+
+.medicalToggleBtn {
+  margin-top: 8px;
+  background-color: #ffffff;
+  border: 1px solid #cbd5e1;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #022c22;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.medicalToggleBtn:hover {
+  background-color: #e6f2ed;
+  border-color: #022c22;
+}
+
+.assignForm {
+  display: flex;
+  flex-direction: column;
+}
+
+/* History List Log */
+.historyList {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.historyRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 12px 16px;
+}
+
+.historyMeta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.historyMeta strong {
+  font-size: 13px;
+  color: #0f172a;
+}
+
+.historyMeta span {
+  font-size: 11px;
+  color: #64748b;
+}
+
+.historyStats {
+  text-align: right;
+  display: flex;
+  flex-direction: column;
+}
+
+.historyPlace {
+  font-size: 13px;
+  font-weight: 700;
+  color: #16a34a;
+}
+
+.historyPrize {
+  font-size: 11px;
+  font-weight: 600;
+  color: #64748b;
+}
+
+.emptyHistory {
+  text-align: center;
+  font-size: 12px;
+  color: #94a3b8;
+  padding: 16px;
+}
+
+/* Toast styling */
+.toast {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  background-color: #022c22;
+  color: #ffffff;
+  padding: 14px 24px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  z-index: 1000;
+  animation: toastEnter 0.2s ease-out;
+}
+
+@keyframes toastEnter {
+  from { transform: translateY(20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+/* Responsive grid layouts */
+@media (max-width: 1100px) {
+  .statsRow, .layoutSplit {
+    grid-template-columns: 1fr;
+  }
+}

@@ -38,9 +38,46 @@ export default function ResetPasswordPage() {
 
   const handleReset = (e) => {
     e.preventDefault();
+    const email = sessionStorage.getItem('reset_password_email');
+    if (!email) {
+      alert("Session expired or invalid email. Please start over from Forgot Password page.");
+      navigate('/forgot-password');
+      return;
+    }
+
+    if (!newPass || newPass !== confirm) {
+      alert("Passwords do not match or are empty.");
+      return;
+    }
+
     setLoading(true);
     setTimeout(() => {
+      // Load and update password in localStorage mock DB
+      const raw = localStorage.getItem("equine_elite_mock_users");
+      let users = raw ? JSON.parse(raw) : [];
+      
+      let userIndex = users.findIndex(u => u.email.toLowerCase() === email.toLowerCase());
+      if (userIndex !== -1) {
+        users[userIndex].password = newPass;
+        localStorage.setItem("equine_elite_mock_users", JSON.stringify(users));
+        
+        // Also update equine_elite_edited_users to sync profile details if edited before
+        const editedRaw = localStorage.getItem("equine_elite_edited_users");
+        if (editedRaw) {
+          try {
+            const edited = JSON.parse(editedRaw);
+            const targetId = users[userIndex].id;
+            if (edited[targetId]) {
+              edited[targetId].password = newPass;
+              localStorage.setItem("equine_elite_edited_users", JSON.stringify(edited));
+            }
+          } catch (err) {}
+        }
+      }
+
       setLoading(false);
+      alert("Password has been reset successfully! You can now log in.");
+      sessionStorage.removeItem('reset_password_email');
       navigate('/login');
     }, 900);
   };
