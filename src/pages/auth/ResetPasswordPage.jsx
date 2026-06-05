@@ -1,5 +1,6 @@
 import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
+import api from '../../services/api';
 import styles from './ResetPasswordPage.module.css';
 
 export default function ResetPasswordPage() {
@@ -36,7 +37,7 @@ export default function ResetPasswordPage() {
   const strength = newPass.length === 0 ? 0 : newPass.length < 6 ? 1 : newPass.length < 10 ? 2 : 3;
   const LABELS = ['', 'Weak', 'Good', 'Strong'];
 
-  const handleReset = (e) => {
+  const handleReset = async (e) => {
     e.preventDefault();
     const email = sessionStorage.getItem('reset_password_email');
     if (!email) {
@@ -51,35 +52,24 @@ export default function ResetPasswordPage() {
     }
 
     setLoading(true);
-    setTimeout(() => {
-      // Load and update password in localStorage mock DB
-      const raw = localStorage.getItem("equine_elite_mock_users");
-      let users = raw ? JSON.parse(raw) : [];
-      
-      let userIndex = users.findIndex(u => u.email.toLowerCase() === email.toLowerCase());
-      if (userIndex !== -1) {
-        users[userIndex].password = newPass;
-        localStorage.setItem("equine_elite_mock_users", JSON.stringify(users));
-        
-        // Also update equine_elite_edited_users to sync profile details if edited before
-        const editedRaw = localStorage.getItem("equine_elite_edited_users");
-        if (editedRaw) {
-          try {
-            const edited = JSON.parse(editedRaw);
-            const targetId = users[userIndex].id;
-            if (edited[targetId]) {
-              edited[targetId].password = newPass;
-              localStorage.setItem("equine_elite_edited_users", JSON.stringify(edited));
-            }
-          } catch (err) {}
-        }
-      }
+    
+    try {
+      await api.post('/api/v1/auth/reset-password', {
+        email: email,
+        code: otp.join(''),
+        newPassword: newPass,
+        confirmPassword: confirm
+      });
 
-      setLoading(false);
       alert("Password has been reset successfully! You can now log in.");
       sessionStorage.removeItem('reset_password_email');
       navigate('/login');
-    }, 900);
+    } catch (err) {
+      console.error(err);
+      alert(err.response?.data?.message || err.message || "Failed to reset password. Invalid or expired code.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (

@@ -1,5 +1,4 @@
 import api from "./api";
-import DATA_FROM_JSON from "../data/UserMock.json";
 
 const API_ROLE_TO_APP_ROLE = {
   ADMIN: "Admin",
@@ -9,23 +8,6 @@ const API_ROLE_TO_APP_ROLE = {
   RACE_REFEREE: "Referee",
   SPECTATOR: "Spectator",
 };
-
-const EDITED_USERS_KEY = "equine_elite_edited_users";
-
-function getLocalEditedUsers() {
-  const raw = localStorage.getItem(EDITED_USERS_KEY);
-  return raw ? JSON.parse(raw) : {};
-}
-
-function mergeEditedUsers(userList) {
-  const edited = getLocalEditedUsers();
-  return userList.map(u => {
-    if (edited[u.id]) {
-      return { ...u, ...edited[u.id] };
-    }
-    return u;
-  });
-}
 
 // Normalizes API UserResponse to application-wide user structures
 function normalizeUser(user) {
@@ -58,50 +40,34 @@ function normalizeUser(user) {
   };
 }
 
-// Loads local Mock fallback data
-function getMockUsers() {
-  const raw = localStorage.getItem("equine_elite_mock_users");
-  const list = raw ? JSON.parse(raw) : (DATA_FROM_JSON.users || []);
-  return list.map(u => normalizeUser(u));
-}
-
 // Fetch all users
 export async function getAllUsers() {
-  let list = [];
   try {
     const response = await api.get("/api/v1/users");
     const data = response.data?.data || response.data;
     if (Array.isArray(data)) {
-      list = data.map(u => normalizeUser(u));
+      return data.map(u => normalizeUser(u));
     }
+    return [];
   } catch (err) {
-    console.warn("API getAllUsers failed, falling back to mock data:", err.message);
-    list = getMockUsers();
+    console.error("API getAllUsers failed:", err.message);
+    throw err;
   }
-  if (list.length === 0) {
-    list = getMockUsers();
-  }
-  return mergeEditedUsers(list);
 }
 
 // Fetch single user profile by ID
 export async function getUserById(id) {
-  const edited = getLocalEditedUsers();
-  if (edited[id]) {
-    return edited[id];
-  }
   try {
     const response = await api.get(`/api/v1/users/${id}`);
     const data = response.data?.data || response.data;
     if (data) {
       return normalizeUser(data);
     }
+    return null;
   } catch (err) {
-    console.warn(`API getUserById for ${id} failed, falling back to mock data:`, err.message);
+    console.error(`API getUserById for ${id} failed:`, err.message);
+    throw err;
   }
-  const mockList = getMockUsers();
-  const found = mockList.find(u => u.id === id) || null;
-  return found;
 }
 
 // Update own profile
@@ -117,57 +83,28 @@ export async function updateMyProfile(profileData) {
       return normalizeUser(data);
     }
   } catch (err) {
-    console.warn("API updateMyProfile failed:", err.message);
+    console.error("API updateMyProfile failed:", err.message);
     throw err;
   }
 }
 
-// Update profile of any user by ID (speculative admin call with fallback)
+// Update profile of any user by ID (admin call)
 export async function updateUserProfile(id, profileData) {
-  const rawSession = localStorage.getItem("equine_elite_session");
-  let currentUserId = "";
-  if (rawSession) {
-    try {
-      const session = JSON.parse(rawSession);
-      currentUserId = session?.user?.id || session?.user?.userId || "";
-    } catch (e) {}
-  }
-
-  // If editing self, hit PUT /api/v1/users/me
-  if (currentUserId && currentUserId === id) {
-    try {
-      const updatedSelf = await updateMyProfile({
-        fullName: profileData.name,
-        phone: profileData.phone || "",
-        avatarUrl: profileData.avatarUrl || null
-      });
-      
-      const current = getLocalEditedUsers();
-      current[id] = updatedSelf;
-      localStorage.setItem(EDITED_USERS_KEY, JSON.stringify(current));
-      
-      return updatedSelf;
-    } catch (err) {
-      console.error("Failed to update my profile on server:", err);
-      throw err;
+  try {
+    // Assuming the backend has a PUT endpoint for admin to update user profiles
+    const response = await api.put(`/api/v1/users/${id}`, {
+      fullName: profileData.name,
+      email: profileData.email,
+      stable: profileData.stable,
+      phone: profileData.phone
+    });
+    const data = response.data?.data || response.data;
+    if (data) {
+      return normalizeUser(data);
     }
+  } catch (err) {
+    console.error(`API updateUserProfile for ${id} failed:`, err.message);
+    throw err;
   }
-
-  // For other users: ONLY perform local mock update in localStorage (don't hit PUT /api/v1/users/{id})
-  const existing = await getUserById(id);
-  const updated = {
-    ...existing,
-    id,
-    userId: id,
-    name: profileData.name,
-    fullName: profileData.name,
-    email: profileData.email,
-    stable: profileData.stable
-  };
-
-  const current = getLocalEditedUsers();
-  current[id] = updated;
-  localStorage.setItem(EDITED_USERS_KEY, JSON.stringify(current));
-
-  return updated;
 }
+

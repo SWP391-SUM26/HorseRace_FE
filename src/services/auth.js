@@ -1,4 +1,4 @@
-import authMock from "../data/authMock.json";
+
 import api from "./api";
 
 const SESSION_KEY = "equine_elite_session";

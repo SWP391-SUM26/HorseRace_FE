@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import jockeyImage from '../../assets/Jockey preparing for race.png';
-import { loginWithRole, registerOfflineUser, loginWithCredentials } from '../../services/auth';
+import { loginWithRole, loginWithCredentials } from '../../services/auth';
+import api from '../../services/api';
 import styles from './JockeyRegistrationPage.module.css';
 
 export default function JockeyRegistrationPage() {
@@ -27,7 +28,7 @@ export default function JockeyRegistrationPage() {
       [k]: v,
     }));
 
-  const handleRegister = (event) => {
+  const handleRegister = async (event) => {
     event.preventDefault();
     if (!form.email || !form.password) {
       alert("Please fill in email and password");
@@ -35,31 +36,31 @@ export default function JockeyRegistrationPage() {
     }
     setLoading(true);
 
-    setTimeout(() => {
-      setLoading(false);
-      console.log(form);
-      
-      // Register offline to localStorage
-      registerOfflineUser({
+    try {
+      const fullName = `${form.firstName} ${form.lastName}`.trim() || 'Jockey User';
+      // Mặc định confirmPassword giống password, firstName/lastName nếu trống thì lấy phần của email
+      const payload = {
         email: form.email,
         password: form.password,
-        fullName: `${form.firstName} ${form.lastName}`.trim(),
-        role: 'Jockey',
-        stable: 'Flemington Pro Circuit'
-      });
+        confirmPassword: form.password, 
+        firstName: form.firstName || form.email.split('@')[0],
+        lastName: form.lastName || 'Jockey',
+        fullName: fullName,
+        phone: '0900000000', // Default phone nếu UI chưa có
+        // Các trường phụ như age, weight... tạm thời lưu hoặc bỏ qua tùy BE
+      };
 
-      // Auto login with the registered credentials
-      loginWithCredentials(form.email, form.password)
-        .then(() => {
-          navigate('/jockey-dashboard');
-        })
-        .catch(err => {
-          console.error(err);
-          // fallback
-          loginWithRole('Jockey');
-          navigate('/jockey-dashboard');
-        });
-    }, 900);
+      await api.post('/api/v1/auth/register/jockey', payload);
+      
+      // Auto login after successful registration
+      await loginWithCredentials(form.email, form.password);
+      navigate('/jockey-dashboard');
+    } catch (err) {
+      console.error(err);
+      alert(err.response?.data?.message || err.message || "Registration failed");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (

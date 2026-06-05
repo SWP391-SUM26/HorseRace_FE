@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import api from '../../services/api';
 import styles from './ForgotPasswordPage.module.css';
 
 export default function ForgotPasswordPage() {
@@ -9,28 +10,23 @@ export default function ForgotPasswordPage() {
   const [sent, setSent] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  const handleSend = (e) => {
+  const handleSend = async (e) => {
     e.preventDefault(); // Chống reload trang khi submit form
     if (!email) return;
 
-    // Load users from localStorage mock DB
-    const raw = localStorage.getItem("equine_elite_mock_users");
-    const users = raw ? JSON.parse(raw) : [];
-    const normalizedEmail = email.trim().toLowerCase();
-    
-    const userExists = users.some(u => u.email.toLowerCase() === normalizedEmail);
-    if (!userExists) {
-      alert("This email address is not registered in the system.");
-      return;
-    }
-
     setLoading(true);
+    const normalizedEmail = email.trim().toLowerCase();
 
-    setTimeout(() => {
-      setLoading(false);
+    try {
+      await api.post('/api/v1/auth/forgot-password', { email: normalizedEmail });
       sessionStorage.setItem('reset_password_email', normalizedEmail);
       setSent(true);
-    }, 1000);
+    } catch (err) {
+      console.error(err);
+      alert(err.response?.data?.message || err.message || "Failed to send reset code.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
