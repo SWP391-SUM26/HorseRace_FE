@@ -21,10 +21,13 @@ const registrationRouteByRole = {
 
 const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 const isGoogleConfigured =
-  Boolean(googleClientId) && !googleClientId.startsWith("your-google-web-client-id");
+  Boolean(googleClientId) &&
+  !googleClientId.startsWith("your-google-web-client-id");
 
 function loadGoogleIdentityScript() {
-  const existingScript = document.querySelector('script[src="https://accounts.google.com/gsi/client"]');
+  const existingScript = document.querySelector(
+    'script[src="https://accounts.google.com/gsi/client"]',
+  );
 
   if (existingScript) {
     return new Promise((resolve, reject) => {
@@ -117,7 +120,11 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      const session = await loginWithCredentials(identifier, password, rememberMe);
+      const session = await loginWithCredentials(
+        identifier,
+        password,
+        rememberMe,
+      );
       navigate(dashboardByRole[session.user.role] || "/");
     } catch (loginError) {
       setError(loginError.message);
@@ -127,7 +134,9 @@ export default function LoginPage() {
   }
 
   function handleMissingGoogleConfig() {
-    setError("Google Client ID is missing. Please update VITE_GOOGLE_CLIENT_ID in .env and restart the frontend.");
+    setError(
+      "Google Client ID is missing. Please update VITE_GOOGLE_CLIENT_ID in .env and restart the frontend.",
+    );
   }
 
   function registrationByRole(role) {
@@ -142,7 +151,11 @@ export default function LoginPage() {
     <main className={styles.loginPage}>
       <section className={styles.loginPanel} aria-label="Equine Elite login">
         <div className={styles.formWrap}>
-          <button className={styles.brandButton} type="button" onClick={() => navigate("/")}>
+          <button
+            className={styles.brandButton}
+            type="button"
+            onClick={() => navigate("/")}
+          >
             <span className={styles.brandMark}></span>
             Equine Elite
           </button>
@@ -192,8 +205,8 @@ export default function LoginPage() {
                 />
                 <span>Remember Me</span>
               </label>
-              <button 
-                className={styles.textButton} 
+              <button
+                className={styles.textButton}
                 type="button"
                 onClick={() => navigate("/forgot-password")}
               >
@@ -202,7 +215,11 @@ export default function LoginPage() {
             </div>
 
             {error && <div className={styles.errorMessage}>{error}</div>}
-            <button className={styles.loginButton} type="submit" disabled={loading}>
+            <button
+              className={styles.loginButton}
+              type="submit"
+              disabled={loading}
+            >
               {loading ? "Logging in..." : "Login"}
               {!loading && <ArrowRightIcon />}
             </button>
@@ -216,10 +233,18 @@ export default function LoginPage() {
 
           {isGoogleConfigured ? (
             <div className={styles.googleButtonHost} ref={googleButtonRef}>
-              {googleLoading && <span className={styles.googleLoadingText}>Signing in with Google...</span>}
+              {googleLoading && (
+                <span className={styles.googleLoadingText}>
+                  Signing in with Google...
+                </span>
+              )}
             </div>
           ) : (
-            <button className={styles.googleButton} type="button" onClick={handleMissingGoogleConfig}>
+            <button
+              className={styles.googleButton}
+              type="button"
+              onClick={handleMissingGoogleConfig}
+            >
               <GoogleIcon />
               Sign in with Google
             </button>
@@ -231,7 +256,6 @@ export default function LoginPage() {
             <span></span>
           </div>
 
-          
           <div className={styles.roleGrid}>
             {roleOptions.map((role) => (
               <button
@@ -249,7 +273,11 @@ export default function LoginPage() {
       </section>
 
       <section className={styles.visualPanel} aria-label="Elite Performance">
-        <img src={horseImage} alt="Running horse" className={styles.horseImage} />
+        <img
+          src={horseImage}
+          alt="Running horse"
+          className={styles.horseImage}
+        />
         <div className={styles.visualShade}></div>
         <div className={styles.performanceCard}>
           <div className={styles.performanceIcon}>
@@ -258,7 +286,10 @@ export default function LoginPage() {
           <div>
             <span>Elite Performance</span>
             <h2>Data-Driven Excellence</h2>
-            <p>Manage race assets with precision analytics and championship stable controls.</p>
+            <p>
+              Manage race assets with precision analytics and championship
+              stable controls.
+            </p>
           </div>
         </div>
       </section>

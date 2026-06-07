@@ -1,86 +1,61 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { loginWithRole, loginWithCredentials } from '../../services/auth';
-import api from '../../services/api';
-import styles from './SpectatorRegistrationPage.module.css';
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { loginWithCredentials } from "../../services/auth";
+import api from "../../services/api";
+import styles from "./SpectatorRegistrationPage.module.css";
 
 export default function SpectatorRegistrationPage() {
   const navigate = useNavigate();
 
   const [form, setForm] = useState({
-    fullName: '',
-    email: '',
-    phone: '',
-    password: '',
-    confirmPassword: '',
+    fullName: "",
+    email: "",
+    phone: "",
+    password: "",
+    confirmPassword: "",
     agreeTerms: false,
   });
 
   const [loading, setLoading] = useState(false);
-  const [showVerification, setShowVerification] = useState(false);
-  const [verificationCode, setVerificationCode] = useState('');
-  const [verificationLoading, setVerificationLoading] = useState(false);
 
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
 
   const handleRegister = async (e) => {
     e.preventDefault();
-    if (!form.email || !form.password) {
-      alert("Please fill in email and password");
+    if (!form.fullName.trim() || !form.email.trim() || !form.password) {
+      alert("Please fill in your full name, email, and password");
       return;
     }
     if (form.password !== form.confirmPassword) {
       alert("Passwords do not match");
       return;
     }
-    setLoading(true);
-    try {
-      const nameParts = form.fullName ? form.fullName.split(' ') : ['Spectator', 'User'];
-      const payload = {
-        email: form.email,
-        password: form.password,
-        confirmPassword: form.confirmPassword,
-        firstName: nameParts[0],
-        lastName: nameParts.slice(1).join(' ') || 'Spectator',
-        fullName: form.fullName || 'Spectator User',
-        phone: form.phone || '0900000000',
-      };
-
-      await api.post('/api/v1/auth/register/spectator', payload);
-      
-      // Auto login after successful registration (if BE allows login before verification)
-      // If BE requires verification first, we should handle that, but for now we'll show the verification screen
-      setShowVerification(true);
-    } catch (err) {
-      console.error(err);
-      alert(err.response?.data?.message || err.message || "Registration failed");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleVerifyEmail = async (e) => {
-    e.preventDefault();
-    if (verificationCode.length < 4) {
-      alert("Please enter a valid verification code.");
+    if (!form.agreeTerms) {
+      alert("You must agree to the Terms of Service and Privacy Policy");
       return;
     }
-    setVerificationLoading(true);
-    try {
-      // Call the API to verify the code
-      await api.post('/api/v1/auth/verify-code', {
-        email: form.email,
-        code: verificationCode
-      });
 
-      // Code verified successfully, login the user
+    setLoading(true);
+    try {
+      const payload = {
+        fullName: form.fullName.trim(),
+        email: form.email.trim().toLowerCase(),
+        phone: form.phone.trim(),
+        password: form.password,
+        confirmPassword: form.confirmPassword,
+        agreedToTerms: form.agreeTerms,
+      };
+
+      await api.post("/api/v1/auth/register/spectator", payload);
       await loginWithCredentials(form.email, form.password);
-      navigate('/spectator-dashboard');
+      navigate("/spectator-dashboard");
     } catch (err) {
-      console.error("Verification error:", err);
-      alert(err.response?.data?.message || err.message || "Invalid verification code.");
+      console.error(err);
+      alert(
+        err.response?.data?.message || err.message || "Registration failed",
+      );
     } finally {
-      setVerificationLoading(false);
+      setLoading(false);
     }
   };
 
@@ -88,12 +63,22 @@ export default function SpectatorRegistrationPage() {
     <div className={styles.page}>
       {/* NAVBAR */}
       <header className={styles.navbar}>
-        <button className={styles.navBrand} type="button" onClick={() => navigate('/')}>
+        <button
+          className={styles.navBrand}
+          type="button"
+          onClick={() => navigate("/")}
+        >
           Equine Elite
         </button>
         <div className={styles.navActions}>
-          <button className={styles.navLink} type="button">Support</button>
-          <button className={styles.navLoginBtn} type="button" onClick={() => navigate('/login')}>
+          <button className={styles.navLink} type="button">
+            Support
+          </button>
+          <button
+            className={styles.navLoginBtn}
+            type="button"
+            onClick={() => navigate("/login")}
+          >
             Login
           </button>
         </div>
@@ -114,7 +99,8 @@ export default function SpectatorRegistrationPage() {
               Join the Elite. Predict the Winners.
             </h2>
             <p className={styles.leftDesc}>
-              Experience the thrill of the race with unparalleled data, insights, and exclusive spectator access.
+              Experience the thrill of the race with unparalleled data,
+              insights, and exclusive spectator access.
             </p>
           </div>
         </aside>
@@ -122,14 +108,12 @@ export default function SpectatorRegistrationPage() {
         {/* RIGHT FORM PANEL */}
         <section className={styles.rightPanel}>
           <div className={styles.formWrap}>
-            {!showVerification ? (
-              <>
-                <h1 className={styles.formTitle}>Create Spectator Account</h1>
-                <p className={styles.formSubtitle}>
-                  Enter your details to access the Elite Turf paddock.
-                </p>
+            <h1 className={styles.formTitle}>Create Spectator Account</h1>
+            <p className={styles.formSubtitle}>
+              Enter your details to access the Elite Turf paddock.
+            </p>
 
-                <form onSubmit={handleRegister}>
+            <form onSubmit={handleRegister}>
                   {/* Full Name */}
                   <div className={styles.fieldGroup}>
                     <label className={styles.fieldLabel}>Full Name</label>
@@ -139,7 +123,7 @@ export default function SpectatorRegistrationPage() {
                         className={styles.input}
                         placeholder="e.g. John Doe"
                         value={form.fullName}
-                        onChange={(e) => set('fullName', e.target.value)}
+                        onChange={(e) => set("fullName", e.target.value)}
                       />
                     </div>
                   </div>
@@ -154,7 +138,7 @@ export default function SpectatorRegistrationPage() {
                         type="email"
                         placeholder="you@example.com"
                         value={form.email}
-                        onChange={(e) => set('email', e.target.value)}
+                        onChange={(e) => set("email", e.target.value)}
                       />
                     </div>
                   </div>
@@ -169,7 +153,7 @@ export default function SpectatorRegistrationPage() {
                         type="tel"
                         placeholder="+1 (555) 000-0000"
                         value={form.phone}
-                        onChange={(e) => set('phone', e.target.value)}
+                        onChange={(e) => set("phone", e.target.value)}
                       />
                     </div>
                   </div>
@@ -184,14 +168,16 @@ export default function SpectatorRegistrationPage() {
                         type="password"
                         placeholder="••••••••"
                         value={form.password}
-                        onChange={(e) => set('password', e.target.value)}
+                        onChange={(e) => set("password", e.target.value)}
                       />
                     </div>
                   </div>
 
                   {/* Confirm Password */}
                   <div className={styles.fieldGroup}>
-                    <label className={styles.fieldLabel}>Confirm Password</label>
+                    <label className={styles.fieldLabel}>
+                      Confirm Password
+                    </label>
                     <div className={styles.inputShell}>
                       <ShieldCheckIcon />
                       <input
@@ -199,7 +185,7 @@ export default function SpectatorRegistrationPage() {
                         type="password"
                         placeholder="••••••••"
                         value={form.confirmPassword}
-                        onChange={(e) => set('confirmPassword', e.target.value)}
+                        onChange={(e) => set("confirmPassword", e.target.value)}
                       />
                     </div>
                   </div>
@@ -209,14 +195,19 @@ export default function SpectatorRegistrationPage() {
                     <input
                       type="checkbox"
                       checked={form.agreeTerms}
-                      onChange={(e) => set('agreeTerms', e.target.checked)}
+                      onChange={(e) => set("agreeTerms", e.target.checked)}
                       className={styles.termsCheckbox}
                     />
                     <span className={styles.termsText}>
-                      I agree to the{' '}
-                      <button type="button" className={styles.termsLink}>Terms of Service</button>
-                      {' '}and{' '}
-                      <button type="button" className={styles.termsLink}>Privacy Policy</button>.
+                      I agree to the{" "}
+                      <button type="button" className={styles.termsLink}>
+                        Terms of Service
+                      </button>{" "}
+                      and{" "}
+                      <button type="button" className={styles.termsLink}>
+                        Privacy Policy
+                      </button>
+                      .
                     </span>
                   </label>
 
@@ -226,56 +217,23 @@ export default function SpectatorRegistrationPage() {
                     type="submit"
                     disabled={loading || !form.agreeTerms}
                   >
-                    {loading ? 'Creating Account...' : 'Create Spectator Account'}
+                    {loading
+                      ? "Creating Account..."
+                      : "Create Spectator Account"}
                   </button>
-                </form>
+            </form>
 
-                {/* Sign In Link */}
-                <div className={styles.signinPrompt}>
-                  Already have an account?{' '}
-                  <button type="button" className={styles.signinLink} onClick={() => navigate('/login')}>
-                    Sign In
-                  </button>
-                </div>
-              </>
-            ) : (
-              <form onSubmit={handleVerifyEmail}>
-                <h1 className={styles.formTitle}>Verify Your Email</h1>
-                <p className={styles.formSubtitle}>
-                  We've sent a 6-digit verification code to <strong>{form.email}</strong>. Enter any code to complete registration.
-                </p>
-
-                <div className={styles.fieldGroup} style={{ marginTop: '24px' }}>
-                  <label className={styles.fieldLabel}>VERIFICATION CODE</label>
-                  <div className={styles.inputShell}>
-                    <ShieldCheckIcon />
-                    <input
-                      className={styles.input}
-                      placeholder="e.g. 123456"
-                      value={verificationCode}
-                      onChange={(e) => setVerificationCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                      required
-                    />
-                  </div>
-                </div>
-
-                <button
-                  className={styles.submitBtn}
-                  type="submit"
-                  disabled={verificationLoading}
-                  style={{ marginTop: '24px' }}
-                >
-                  {verificationLoading ? 'Verifying...' : 'Verify & Create Account'}
-                </button>
-
-                <div className={styles.signinPrompt}>
-                  Didn't receive code?{' '}
-                  <button type="button" className={styles.signinLink} onClick={() => alert("Simulated code resent!")}>
-                    Resend Code
-                  </button>
-                </div>
-              </form>
-            )}
+            {/* Sign In Link */}
+            <div className={styles.signinPrompt}>
+              Already have an account?{" "}
+              <button
+                type="button"
+                className={styles.signinLink}
+                onClick={() => navigate("/login")}
+              >
+                Sign In
+              </button>
+            </div>
           </div>
         </section>
       </main>
@@ -285,12 +243,22 @@ export default function SpectatorRegistrationPage() {
         <div className={styles.footerInner}>
           <div className={styles.footerBrand}>Equine Elite</div>
           <div className={styles.footerLinks}>
-            <button type="button" className={styles.footerLink}>Terms of Service</button>
-            <button type="button" className={styles.footerLink}>Privacy Policy</button>
-            <button type="button" className={styles.footerLink}>Betting Integrity</button>
-            <button type="button" className={styles.footerLink}>Platform Status</button>
+            <button type="button" className={styles.footerLink}>
+              Terms of Service
+            </button>
+            <button type="button" className={styles.footerLink}>
+              Privacy Policy
+            </button>
+            <button type="button" className={styles.footerLink}>
+              Betting Integrity
+            </button>
+            <button type="button" className={styles.footerLink}>
+              Platform Status
+            </button>
           </div>
-          <div className={styles.footerCopy}>© 2024 Equine Elite Racing. All Rights Reserved.</div>
+          <div className={styles.footerCopy}>
+            © 2024 Equine Elite Racing. All Rights Reserved.
+          </div>
         </div>
       </footer>
     </div>
@@ -300,7 +268,17 @@ export default function SpectatorRegistrationPage() {
 /* ========== SVG ICON COMPONENTS ========== */
 function UserIcon() {
   return (
-    <svg className="field-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg
+      className="field-icon"
+      width="18"
+      height="18"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
       <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
       <circle cx="12" cy="7" r="4" />
     </svg>
@@ -309,7 +287,17 @@ function UserIcon() {
 
 function MailIcon() {
   return (
-    <svg className="field-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg
+      className="field-icon"
+      width="18"
+      height="18"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
       <rect x="3" y="5" width="18" height="14" rx="2" />
       <path d="m3 7 9 7 9-7" />
     </svg>
@@ -318,7 +306,17 @@ function MailIcon() {
 
 function PhoneIcon() {
   return (
-    <svg className="field-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg
+      className="field-icon"
+      width="18"
+      height="18"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
       <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
     </svg>
   );
@@ -326,7 +324,17 @@ function PhoneIcon() {
 
 function LockIcon() {
   return (
-    <svg className="field-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg
+      className="field-icon"
+      width="18"
+      height="18"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
       <rect x="5" y="10" width="14" height="10" rx="2" />
       <path d="M8 10V7a4 4 0 0 1 8 0v3" />
     </svg>
@@ -335,7 +343,17 @@ function LockIcon() {
 
 function ShieldCheckIcon() {
   return (
-    <svg className="field-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg
+      className="field-icon"
+      width="18"
+      height="18"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
       <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
       <polyline points="9 11 11 13 15 9" />
     </svg>

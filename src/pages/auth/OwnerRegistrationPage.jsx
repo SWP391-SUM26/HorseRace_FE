@@ -1,20 +1,20 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { loginWithRole, loginWithCredentials } from '../../services/auth';
-import api from '../../services/api';
-import styles from './OwnerRegistrationPage.module.css';
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { loginWithCredentials } from "../../services/auth";
+import api from "../../services/api";
+import styles from "./OwnerRegistrationPage.module.css";
 
 export default function OwnerRegistrationPage() {
   const navigate = useNavigate();
 
   const [form, setForm] = useState({
-    fullName: '',
-    email: '',
-    password: '',
-    contactNumber: '',
-    primaryRegion: '',
-    stableName: '',
-    bio: '',
+    fullName: "",
+    email: "",
+    password: "",
+    contactNumber: "",
+    primaryRegion: "",
+    stableName: "",
+    bio: "",
     agreeTerms: false,
   });
 
@@ -37,29 +37,37 @@ export default function OwnerRegistrationPage() {
     }
     setLoading(true);
     try {
-      const nameParts = form.fullName ? form.fullName.split(' ') : ['Owner', 'User'];
+      const nameParts = form.fullName
+        ? form.fullName.split(" ")
+        : ["Owner", "User"];
       const payload = {
         email: form.email,
         password: form.password,
         confirmPassword: form.password,
         firstName: nameParts[0],
-        lastName: nameParts.slice(1).join(' ') || 'Owner',
-        fullName: form.fullName || 'Owner User',
-        phone: form.contactNumber || '0900000000',
+        lastName: nameParts.slice(1).join(" ") || "Owner",
+        fullName: form.fullName || "Owner User",
+        contactNumber: form.contactNumber,
+        primaryRegion: form.primaryRegion,
+        stableName: form.stableName,
+        bio: form.bio,
+        agreedToTerms: form.agreeTerms,
         // Optional fields could be passed here if BE supports them
         // stableName: form.stableName,
         // primaryRegion: form.primaryRegion,
         // bio: form.bio
       };
 
-      await api.post('/api/v1/auth/register/owner', payload);
+      await api.post("/api/v1/auth/register/owner", payload);
 
       // Auto login after successful registration
       await loginWithCredentials(form.email, form.password);
-      navigate('/owner-dashboard');
+      navigate("/owner-dashboard");
     } catch (err) {
       console.error(err);
-      alert(err.response?.data?.message || err.message || "Registration failed");
+      alert(
+        err.response?.data?.message || err.message || "Registration failed",
+      );
     } finally {
       setLoading(false);
     }
@@ -69,12 +77,22 @@ export default function OwnerRegistrationPage() {
     <div className={styles.page}>
       {/* NAVBAR */}
       <header className={styles.navbar}>
-        <button className={styles.navBrand} type="button" onClick={() => navigate('/')}>
+        <button
+          className={styles.navBrand}
+          type="button"
+          onClick={() => navigate("/")}
+        >
           Equine Elite
         </button>
         <div className={styles.navActions}>
-          <button className={styles.navLink} type="button">Support</button>
-          <button className={styles.navLoginBtn} type="button" onClick={() => navigate('/login')}>
+          <button className={styles.navLink} type="button">
+            Support
+          </button>
+          <button
+            className={styles.navLoginBtn}
+            type="button"
+            onClick={() => navigate("/login")}
+          >
             Login
           </button>
         </div>
@@ -88,7 +106,8 @@ export default function OwnerRegistrationPage() {
             <div className={styles.leftContent}>
               <h2 className={styles.leftTitle}>Welcome to the Inner Circle</h2>
               <p className={styles.leftDesc}>
-                Register as an Owner to access the industry's most advanced bloodline analytics and race management platform.
+                Register as an Owner to access the industry's most advanced
+                bloodline analytics and race management platform.
               </p>
 
               <ul className={styles.featureList}>
@@ -129,7 +148,8 @@ export default function OwnerRegistrationPage() {
                 <div className={styles.uploadInfo}>
                   <h3 className={styles.uploadTitle}>Stable Identity</h3>
                   <p className={styles.uploadDesc}>
-                    Upload your racing silks, stable logo, or professional avatar. High-resolution PNG or JPG preferred.
+                    Upload your racing silks, stable logo, or professional
+                    avatar. High-resolution PNG or JPG preferred.
                   </p>
                   <label className={styles.chooseFileBtn}>
                     Choose File
@@ -154,7 +174,7 @@ export default function OwnerRegistrationPage() {
                     className={styles.input}
                     placeholder="e.g. Alistair Sterling"
                     value={form.fullName}
-                    onChange={(e) => set('fullName', e.target.value)}
+                    onChange={(e) => set("fullName", e.target.value)}
                   />
                 </div>
 
@@ -165,7 +185,7 @@ export default function OwnerRegistrationPage() {
                     type="email"
                     placeholder="owner@equine-elite.com"
                     value={form.email}
-                    onChange={(e) => set('email', e.target.value)}
+                    onChange={(e) => set("email", e.target.value)}
                   />
                 </div>
 
@@ -176,7 +196,7 @@ export default function OwnerRegistrationPage() {
                     type="password"
                     placeholder="••••••••"
                     value={form.password}
-                    onChange={(e) => set('password', e.target.value)}
+                    onChange={(e) => set("password", e.target.value)}
                     required
                   />
                 </div>
@@ -188,7 +208,7 @@ export default function OwnerRegistrationPage() {
                     type="tel"
                     placeholder="+1 (555) 000-0000"
                     value={form.contactNumber}
-                    onChange={(e) => set('contactNumber', e.target.value)}
+                    onChange={(e) => set("contactNumber", e.target.value)}
                   />
                 </div>
 
@@ -198,7 +218,7 @@ export default function OwnerRegistrationPage() {
                     <select
                       className={styles.select}
                       value={form.primaryRegion}
-                      onChange={(e) => set('primaryRegion', e.target.value)}
+                      onChange={(e) => set("primaryRegion", e.target.value)}
                     >
                       <option value="">Select region</option>
                       <option>Kentucky, USA</option>
@@ -210,7 +230,16 @@ export default function OwnerRegistrationPage() {
                       <option>Tokyo, Japan</option>
                     </select>
                     <div className={styles.selectArrow}>
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <svg
+                        width="14"
+                        height="14"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2.5"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
                         <polyline points="6 9 12 15 18 9" />
                       </svg>
                     </div>
@@ -218,24 +247,26 @@ export default function OwnerRegistrationPage() {
                 </div>
               </div>
 
-              <div className={styles.fieldGroup} style={{ marginTop: '20px' }}>
+              <div className={styles.fieldGroup} style={{ marginTop: "20px" }}>
                 <label className={styles.fieldLabel}>Stable Name</label>
                 <input
                   className={styles.input}
                   placeholder="Sterling Racing Stables"
                   value={form.stableName}
-                  onChange={(e) => set('stableName', e.target.value)}
+                  onChange={(e) => set("stableName", e.target.value)}
                 />
               </div>
 
-              <div className={styles.fieldGroup} style={{ marginTop: '20px' }}>
-                <label className={styles.fieldLabel}>Professional Bio / Credentials</label>
+              <div className={styles.fieldGroup} style={{ marginTop: "20px" }}>
+                <label className={styles.fieldLabel}>
+                  Professional Bio / Credentials
+                </label>
                 <textarea
                   className={styles.textarea}
                   placeholder="Briefly describe your racing history, notable wins, and breeding philosophy..."
                   rows={4}
                   value={form.bio}
-                  onChange={(e) => set('bio', e.target.value)}
+                  onChange={(e) => set("bio", e.target.value)}
                 />
               </div>
 
@@ -244,13 +275,16 @@ export default function OwnerRegistrationPage() {
                 <input
                   type="checkbox"
                   checked={form.agreeTerms}
-                  onChange={(e) => set('agreeTerms', e.target.checked)}
+                  onChange={(e) => set("agreeTerms", e.target.checked)}
                   className={styles.termsCheckbox}
                 />
                 <span className={styles.termsText}>
-                  I agree to the{' '}
-                  <button type="button" className={styles.termsLink}>Terms of Service</button>
-                  {' '}and confirm that I hold valid ownership credentials for my listed stable.
+                  I agree to the{" "}
+                  <button type="button" className={styles.termsLink}>
+                    Terms of Service
+                  </button>{" "}
+                  and confirm that I hold valid ownership credentials for my
+                  listed stable.
                 </span>
               </label>
 
@@ -260,14 +294,18 @@ export default function OwnerRegistrationPage() {
                 type="submit"
                 disabled={loading || !form.agreeTerms}
               >
-                {loading ? 'Registering...' : 'Register Account →'}
+                {loading ? "Registering..." : "Register Account →"}
               </button>
             </form>
 
             {/* SIGN IN LINK */}
             <div className={styles.signinPrompt}>
-              Already have an account?{' '}
-              <button type="button" className={styles.signinLink} onClick={() => navigate('/login')}>
+              Already have an account?{" "}
+              <button
+                type="button"
+                className={styles.signinLink}
+                onClick={() => navigate("/login")}
+              >
                 Sign In
               </button>
             </div>
@@ -280,12 +318,20 @@ export default function OwnerRegistrationPage() {
         <div className={styles.footerInner}>
           <div className={styles.footerLeft}>
             <div className={styles.footerBrand}>Equine Elite</div>
-            <p className={styles.footerCopy}>© 2024 Equine Elite Analytics. All rights reserved.</p>
+            <p className={styles.footerCopy}>
+              © 2024 Equine Elite Analytics. All rights reserved.
+            </p>
           </div>
           <div className={styles.footerLinks}>
-            <button type="button" className={styles.footerLink}>Terms of Service</button>
-            <button type="button" className={styles.footerLink}>Privacy Policy</button>
-            <button type="button" className={styles.footerLink}>Help Center</button>
+            <button type="button" className={styles.footerLink}>
+              Terms of Service
+            </button>
+            <button type="button" className={styles.footerLink}>
+              Privacy Policy
+            </button>
+            <button type="button" className={styles.footerLink}>
+              Help Center
+            </button>
           </div>
         </div>
       </footer>
@@ -296,7 +342,17 @@ export default function OwnerRegistrationPage() {
 /* SVG ICON COMPONENTS */
 function CheckCircleIcon() {
   return (
-    <svg className="check-circle-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#34d399" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+    <svg
+      className="check-circle-icon"
+      width="20"
+      height="20"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="#34d399"
+      strokeWidth="2.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
       <circle cx="12" cy="12" r="10" />
       <path d="m9 12 2 2 4-4" />
     </svg>
@@ -305,7 +361,16 @@ function CheckCircleIcon() {
 
 function CameraLogoIcon() {
   return (
-    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+    <svg
+      width="28"
+      height="28"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
       <rect x="3" y="3" width="18" height="18" rx="3" ry="3" />
       <circle cx="12" cy="11" r="3" />
       <path d="M9 7h6" />
