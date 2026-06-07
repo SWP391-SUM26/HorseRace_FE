@@ -1,0 +1,138 @@
+[
+  {
+    "id": "hr_001",
+    "name": "Midnight Runner",
+    "details": "3yo Colt",
+    "age": "3yo",
+    "breed": "Colt",
+    "status": "FIT TO RACE",
+    "nextRace": "Oct 20, 2026",
+    "track": "Belmont Park",
+    "medicalStatus": "Fit for Racing",
+    "cogginsTest": "Up to date",
+    "vaccines": "Current",
+    "image": "/assets/silver_streak.png",
+    "raceHistory": [
+      { "date": "May 10, 2026", "race": "Preakness Stakes", "jockey": "J. Ortiz", "place": "2nd", "prize": "$150,000" },
+      { "date": "Apr 12, 2026", "race": "Kentucky Derby", "jockey": "L. Saez", "place": "4th", "prize": "$50,000" }
+    ]
+  },
+  {
+    "id": "hr_002",
+    "name": "Desert Mirage",
+    "details": "4yo Filly",
+    "age": "4yo",
+    "breed": "Filly",
+    "status": "RESTING",
+    "nextRace": "No upcoming races",
+    "track": "",
+    "medicalStatus": "Resting/Unfit",
+    "cogginsTest": "Expiring Soon",
+    "vaccines": "Current",
+    "image": "/assets/dashboard_monitor.png",
+    "raceHistory": [
+      { "date": "Mar 15, 2026", "race": "Dubai World Cup", "jockey": "F. Prat", "place": "1st", "prize": "$2,000,000" }
+    ]
+  },
+  {
+    "id": "hr_003",
+    "name": "Thunder Dash",
+    "details": "5yo Stallion",
+    "age": "5yo",
+    "breed": "Stallion",
+    "status": "FIT TO RACE",
+    "nextRace": "Aug 05, 2026",
+    "track": "York Racecourse",
+    "medicalStatus": "Fit for Racing",
+    "cogginsTest": "Up to date",
+    "vaccines": "Current",
+    "image": "/assets/thunder_dash.png",
+    "raceHistory": [
+      { "date": "Jun 28, 2026", "race": "Derby Invitational", "jockey": "K. Brown", "place": "1st", "prize": "$450,000" },
+      { "date": "May 20, 2026", "race": "Pimlico Special", "jockey": "K. Brown", "place": "3rd", "prize": "$75,000" }
+    ]
+  },
+  {
+    "id": "hr_004",
+    "name": "Royal Gaze",
+    "details": "4yo Colt",
+    "age": "4yo",
+    "breed": "Colt",
+    "status": "FIT TO RACE",
+    "nextRace": "Jul 22, 2026",
+    "track": "Epsom Downs",
+    "medicalStatus": "Fit for Racing",
+    "cogginsTest": "Up to date",
+    "vaccines": "Current",
+    "image": "/assets/silver_streak.png",
+    "raceHistory": [
+      { "date": "Jun 01, 2026", "race": "Metropolitan Handicap", "jockey": "I. Ortiz Jr.", "place": "1st", "prize": "$300,000" }
+    ]
+  },
+  {
+    "id": "hr_005",
+    "name": "Midnight Sun",
+    "details": "4yo Colt",
+    "age": "4yo",
+    "breed": "Colt",
+    "status": "FIT TO RACE",
+    "nextRace": "Jul 14, 2026",
+    "track": "Ascot Racecourse",
+    "medicalStatus": "Fit for Racing",
+    "cogginsTest": "Up to date",
+    "vaccines": "Current",
+    "image": "/assets/dashboard_monitor.png",
+    "raceHistory": [
+      { "date": "Feb 18, 2026", "race": "Saudi Cup", "jockey": "J. Rosario", "place": "5th", "prize": "$200,000" }
+    ]
+  },
+  {
+    "id": "hr_006",
+    "name": "Silver Streak",
+    "details": "3yo Colt",
+    "age": "3yo",
+    "breed": "Colt",
+    "status": "RESTING",
+    "nextRace": "No upcoming races",
+    "track": "",
+    "medicalStatus": "Resting/Unfit",
+    "cogginsTest": "Up to date",
+    "vaccines": "Current",
+    "image": "/assets/silver_streak.png",
+    "raceHistory": [
+      { "date": "Jan 05, 2026", "race": "Pegasus World Cup", "jockey": "L. Dettori", "place": "2nd", "prize": "$600,000" }
+    ]
+  },
+  {
+    "id": "hr_007",
+    "name": "Wind Dancer",
+    "details": "3yo Filly",
+    "age": "3yo",
+    "breed": "Filly",
+    "status": "FIT TO RACE",
+    "nextRace": "No upcoming races",
+    "track": "",
+    "medicalStatus": "Fit for Racing",
+    "cogginsTest": "Up to date",
+    "vaccines": "Current",
+    "image": "/assets/dashboard_monitor.png",
+    "raceHistory": []
+  },
+  {
+    "id": "hr_008",
+    "name": "Fleet Foot",
+    "details": "5yo Gelding",
+    "age": "5yo",
+    "breed": "Gelding",
+    "status": "RESTING",
+    "nextRace": "No upcoming races",
+    "track": "",
+    "medicalStatus": "Resting/Unfit",
+    "cogginsTest": "Up to date",
+    "vaccines": "Pending",
+    "image": "/assets/silver_streak.png",
+    "raceHistory": [
+      { "date": "Nov 12, 2025", "race": "Breeders' Cup Classic", "jockey": "R. Santana", "place": "6th", "prize": "$20,000" }
+    ]
+  }
+]

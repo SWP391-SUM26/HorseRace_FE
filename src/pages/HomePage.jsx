@@ -1,11 +1,60 @@
-import React from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import styles from "./HomePage.module.css";
 import silverStreakImg from "../assets/silver_streak.png";
 import dashboardMonitorImg from "../assets/dashboard_monitor.png";
 
+// Import file mock data JSON
+import homePageMock from "../data/homePageMock.json"; 
+
 export default function HomePage() {
   const navigate = useNavigate();
+
+  // Bóc tách dữ liệu từ JSON làm dữ liệu khởi tạo ban đầu
+  const { 
+    homeMarketLeaders, 
+    homeLeaderboard, 
+    homeEcosystemWidgets, 
+    homeVirtualPaddock 
+  } = homePageMock;
+
+  // Khởi tạo các State để chạy hiệu ứng động cho phần Live Race
+  const [countdown, setCountdown] = useState(homeMarketLeaders.countdown);
+  const [raceStatus, setRaceStatus] = useState(homeMarketLeaders.race.status);
+
+  // EFFECT xử lý bộ đếm ngược tự động chạy mỗi giây
+  useEffect(() => {
+    // 1. Hàm chuyển đổi chuỗi "HH:MM:SS" thành tổng số giây để dễ tính toán
+    const timeToSeconds = (timeStr) => {
+      const [h, m, s] = timeStr.split(":").map(Number);
+      return h * 3600 + m * 60 + s;
+    };
+
+    // 2. Hàm chuyển ngược từ tổng số giây về lại chuỗi định dạng "HH:MM:SS"
+    const secondsToTime = (totalSeconds) => {
+      if (totalSeconds <= 0) return "00:00:00";
+      const h = Math.floor(totalSeconds / 3600).toString().padStart(2, "0");
+      const m = Math.floor((totalSeconds % 3600) / 60).toString().padStart(2, "0");
+      const s = (totalSeconds % 60).toString().padStart(2, "0");
+      return `${h}:${m}:${s}`;
+    };
+
+    let currentSeconds = timeToSeconds(homeMarketLeaders.countdown);
+
+    // 3. Thiết lập Interval chạy chu kỳ 1000ms (1 giây)
+    const interval = setInterval(() => {
+      if (currentSeconds <= 0) {
+        clearInterval(interval);
+        setRaceStatus("LIVE"); // Đổi trạng thái hiển thị khi hết giờ
+        return;
+      }
+      currentSeconds -= 1;
+      setCountdown(secondsToTime(currentSeconds));
+    }, 1000);
+
+    // Hủy bỏ interval khi component bị unmount để tránh rò rỉ bộ nhớ (memory leak)
+    return () => clearInterval(interval);
+  }, [homeMarketLeaders.countdown]);
 
   return (
     <div className={styles.appContainer}>
@@ -71,49 +120,35 @@ export default function HomePage() {
             <div>
               <div className={styles.marketLive}>
                 <span className={styles.livePulseDot}></span>
-                Live: Royal Ascot
+                {/* Hiển thị Trạng thái Động (UPCOMING / LIVE) */}
+                Status: {raceStatus} | {homeMarketLeaders.tournament.name}
               </div>
               <div className={styles.marketMeta}>
-                Ascot, UK | Track: Good to Firm (2.4)
+                {homeMarketLeaders.tournament.location} | Track: {homeMarketLeaders.race.track_condition}
               </div>
             </div>
 
             <div className={styles.postTime}>
               <span>NEXT POST TIME</span>
-              <h2>04:12:35</h2>
+              {/* Hiển thị Đồng hồ Đếm ngược Động */}
+              <h2>{countdown}</h2>
             </div>
           </div>
 
-          <h3 className={styles.marketTitle}>MARKET LEADERS (R5)</h3>
+          <h3 className={styles.marketTitle}>MARKET LEADERS ({homeMarketLeaders.race.race_code.split('-').pop()})</h3>
 
           <div className={styles.marketContent}>
             <div className={styles.runners}>
-              <div className={styles.runnerCard}>
-                <div className={styles.runnerIndex}>1</div>
-                <div className={styles.runnerInfo}>
-                  <strong>Midnight Banner</strong>
-                  <span>J: R. Moore | T: A. O'Brien</span>
+              {homeMarketLeaders.runners.map((runner, index) => (
+                <div className={styles.runnerCard} key={index}>
+                  <div className={styles.runnerIndex}>{runner.entry_no}</div>
+                  <div className={styles.runnerInfo}>
+                    <strong>{runner.horse_name}</strong>
+                    <span>J: {runner.jockey_name} | T: {runner.trainer_name}</span>
+                  </div>
+                  <div className={styles.oddsBox}>{runner.odds}</div>
                 </div>
-                <div className={styles.oddsBox}>2/1</div>
-              </div>
-
-              <div className={styles.runnerCard}>
-                <div className={styles.runnerIndex}>4</div>
-                <div className={styles.runnerInfo}>
-                  <strong>Desert Storm</strong>
-                  <span>J: W. Buick | T: C. Appleby</span>
-                </div>
-                <div className={styles.oddsBox}>4/1</div>
-              </div>
-
-              <div className={styles.runnerCard}>
-                <div className={styles.runnerIndex}>7</div>
-                <div className={styles.runnerInfo}>
-                  <strong>Ocean Pearl</strong>
-                  <span>J: J. McDonald | T: C. Waller</span>
-                </div>
-                <div className={styles.oddsBox}>11/2</div>
-              </div>
+              ))}
             </div>
 
             {/* AI Insights Card */}
@@ -122,16 +157,20 @@ export default function HomePage() {
                 <span className={styles.aiBrainIcon}>🧠</span> AI Predictor Insights
               </h4>
               <p className={styles.aiCardText}>
-                Track conditions favor low-draw sprinters today. Midnight Runner has
-                a 68% win probability based on morning works and pedigree analysis.
+                {homeMarketLeaders.aiInsights.summary}
               </p>
               
               <div className={styles.aiConfidenceHeader}>
                 <span>CONFIDENCE SCORE</span>
-                <strong className={styles.confidenceValue}>68% HIGH</strong>
+                <strong className={styles.confidenceValue}>
+                  {homeMarketLeaders.aiInsights.confidence_score}% {homeMarketLeaders.aiInsights.confidence_label}
+                </strong>
               </div>
               <div className={styles.aiProgressBar}>
-                <div className={styles.aiProgressBarFill} style={{ width: '68%' }}></div>
+                <div 
+                  className={styles.aiProgressBarFill} 
+                  style={{ width: `${homeMarketLeaders.aiInsights.confidence_score}%` }}
+                ></div>
               </div>
             </div>
           </div>
@@ -144,32 +183,20 @@ export default function HomePage() {
           </h3>
 
           <div className={styles.leaderboardList}>
-            <div className={styles.rankItem}>
-              <span className={styles.rankNum}>01</span>
-              <div className={styles.rankDetails}>
-                <strong>Flightline</strong>
-                <small>Rating: 140</small>
+            {homeLeaderboard.map((item, index) => (
+              <div className={styles.rankItem} key={index}>
+                <span className={styles.rankNum}>
+                  {item.rank < 10 ? `0${item.rank}` : item.rank}
+                </span>
+                <div className={styles.rankDetails}>
+                  <strong>{item.name}</strong>
+                  <small>{item.stat_label}: {item.stat_value}</small>
+                </div>
+                <span className={`${styles.roleBadge} ${item.badge === 'Horse' ? styles.badgeHorse : styles.badgeJockey}`}>
+                  {item.badge}
+                </span>
               </div>
-              <span className={`${styles.roleBadge} ${styles.badgeHorse}`}>Horse</span>
-            </div>
-
-            <div className={styles.rankItem}>
-              <span className={styles.rankNum}>02</span>
-              <div className={styles.rankDetails}>
-                <strong>Baaeed</strong>
-                <small>Rating: 135</small>
-              </div>
-              <span className={`${styles.roleBadge} ${styles.badgeHorse}`}>Horse</span>
-            </div>
-
-            <div className={styles.rankItem}>
-              <span className={styles.rankNum}>03</span>
-              <div className={styles.rankDetails}>
-                <strong>James McDonald</strong>
-                <small>Wins: 142</small>
-              </div>
-              <span className={`${styles.roleBadge} ${styles.badgeJockey}`}>Jockey</span>
-            </div>
+            ))}
           </div>
 
           <button className={styles.viewRankingsBtn}>View All Rankings</button>
@@ -205,35 +232,23 @@ export default function HomePage() {
               <div className={styles.cardWidget}>
                 <div className={styles.widgetHeader}>
                   <span className={styles.widgetLabel}>PORTFOLIO ROI</span>
-                  <span className={styles.roiValue}>+14.2%</span>
+                  <span className={styles.roiValue}>{homeEcosystemWidgets.owner.portfolioROI}</span>
                 </div>
                 <div className={styles.progressBarBg}>
-                  <div className={styles.progressBarFill} style={{ width: '70%' }}></div>
+                  <div className={styles.progressBarFill} style={{ width: `${homeEcosystemWidgets.owner.roiProgress}%` }}></div>
                 </div>
               </div>
 
               <ul className={styles.portalFeatures}>
-                <li className={styles.portalFeature}>
-                  <svg className={`${styles.checkIcon} ${styles.ownerCheck}`} width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                    <circle cx="12" cy="12" r="10" />
-                    <path d="m9 12 2 2 4-4" />
-                  </svg>
-                  Horse Registration
-                </li>
-                <li className={styles.portalFeature}>
-                  <svg className={`${styles.checkIcon} ${styles.ownerCheck}`} width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                    <circle cx="12" cy="12" r="10" />
-                    <path d="m9 12 2 2 4-4" />
-                  </svg>
-                  Financial Ledgering
-                </li>
-                <li className={styles.portalFeature}>
-                  <svg className={`${styles.checkIcon} ${styles.ownerCheck}`} width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                    <circle cx="12" cy="12" r="10" />
-                    <path d="m9 12 2 2 4-4" />
-                  </svg>
-                  Health Reports
-                </li>
+                {homeEcosystemWidgets.owner.features.map((feature, idx) => (
+                  <li className={styles.portalFeature} key={idx}>
+                    <svg className={`${styles.checkIcon} ${styles.ownerCheck}`} width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <circle cx="12" cy="12" r="10" />
+                      <path d="m9 12 2 2 4-4" />
+                    </svg>
+                    {feature}
+                  </li>
+                ))}
               </ul>
             </div>
 
@@ -266,42 +281,30 @@ export default function HomePage() {
               <div className={styles.cardWidget}>
                 <div className={styles.widgetHeader}>
                   <span className={styles.widgetLabel}>NEXT BOOKING</span>
-                  <span className={styles.statusBadge}>Confirmed</span>
+                  <span className={styles.statusBadge}>{homeEcosystemWidgets.jockey.nextBooking.status}</span>
                 </div>
                 <div className={styles.bookingDetails}>
-                  <div className={styles.bookingTitle}>Race 7 @ Flemington</div>
-                  <div className={styles.bookingTime}>Post time: 15:45 (Local)</div>
+                  <div className={styles.bookingTitle}>{homeEcosystemWidgets.jockey.nextBooking.race_name}</div>
+                  <div className={styles.bookingTime}>Post time: {homeEcosystemWidgets.jockey.nextBooking.post_time}</div>
                 </div>
               </div>
 
               <ul className={styles.portalFeatures}>
-                <li className={styles.portalFeature}>
-                  <svg className={`${styles.checkIcon} ${styles.jockeyCheck}`} width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                    <circle cx="12" cy="12" r="10" />
-                    <path d="m9 12 2 2 4-4" />
-                  </svg>
-                  Ride Schedule Management
-                </li>
-                <li className={styles.portalFeature}>
-                  <svg className={`${styles.checkIcon} ${styles.jockeyCheck}`} width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                    <circle cx="12" cy="12" r="10" />
-                    <path d="m9 12 2 2 4-4" />
-                  </svg>
-                  Agent Communication
-                </li>
-                <li className={styles.portalFeature}>
-                  <svg className={`${styles.checkIcon} ${styles.jockeyCheck}`} width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                    <circle cx="12" cy="12" r="10" />
-                    <path d="m9 12 2 2 4-4" />
-                  </svg>
-                  Weight Analytics
-                </li>
+                {homeEcosystemWidgets.jockey.features.map((feature, idx) => (
+                  <li className={styles.portalFeature} key={idx}>
+                    <svg className={`${styles.checkIcon} ${styles.jockeyCheck}`} width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <circle cx="12" cy="12" r="10" />
+                      <path d="m9 12 2 2 4-4" />
+                    </svg>
+                    {feature}
+                  </li>
+                ))}
               </ul>
             </div>
 
             <div className={styles.portalCardFooter}>
               <button className={`${styles.portalLaunchBtn} ${styles.jockeyBtn}`} onClick={() => navigate('/login')}>
-                View Ride Deck
+                Launch Jockey Portal
               </button>
             </div>
           </div>
@@ -326,7 +329,7 @@ export default function HomePage() {
                 <div className={styles.widgetHeader}>
                   <span className={styles.widgetLabel}>LIVE STREAM</span>
                   <span className={styles.liveIndicator}>
-                    <span className={styles.liveDot}></span>
+                    {homeEcosystemWidgets.spectator.liveStreamActive && <span className={styles.liveDot}></span>}
                   </span>
                 </div>
                 <div className={styles.videoPlayer}>
@@ -339,27 +342,15 @@ export default function HomePage() {
               </div>
 
               <ul className={styles.portalFeatures}>
-                <li className={styles.portalFeature}>
-                  <svg className={`${styles.checkIcon} ${styles.spectatorCheck}`} width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                    <circle cx="12" cy="12" r="10" />
-                    <path d="m9 12 2 2 4-4" />
-                  </svg>
-                  Real-time Results Feed
-                </li>
-                <li className={styles.portalFeature}>
-                  <svg className={`${styles.checkIcon} ${styles.spectatorCheck}`} width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                    <circle cx="12" cy="12" r="10" />
-                    <path d="m9 12 2 2 4-4" />
-                  </svg>
-                  Community Predictions
-                </li>
-                <li className={styles.portalFeature}>
-                  <svg className={`${styles.checkIcon} ${styles.spectatorCheck}`} width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                    <circle cx="12" cy="12" r="10" />
-                    <path d="m9 12 2 2 4-4" />
-                  </svg>
-                  Digital Collectibles
-                </li>
+                {homeEcosystemWidgets.spectator.features.map((feature, idx) => (
+                  <li className={styles.portalFeature} key={idx}>
+                    <svg className={`${styles.checkIcon} ${styles.spectatorCheck}`} width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <circle cx="12" cy="12" r="10" />
+                      <path d="m9 12 2 2 4-4" />
+                    </svg>
+                    {feature}
+                  </li>
+                ))}
               </ul>
             </div>
 
@@ -386,20 +377,20 @@ export default function HomePage() {
             <img src={silverStreakImg} alt="Silver Streak Thoroughbred" className={styles.horseImg} />
             
             <div className={styles.paddockOverlay}>
-              <span className={styles.horseBadge}>HORSE OF THE DAY</span>
-              <h3 className={styles.horseName}>SILVER STREAK</h3>
+              <span className={styles.horseBadge}>{homeVirtualPaddock.badge}</span>
+              <h3 className={styles.horseName}>{homeVirtualPaddock.horse_name}</h3>
               
               <div className={styles.horseStats}>
                 <div className={styles.statBox}>
-                  <strong>4</strong>
+                  <strong>{homeVirtualPaddock.age}</strong>
                   <span>AGE</span>
                 </div>
                 <div className={styles.statBox}>
-                  <strong>12</strong>
+                  <strong>{homeVirtualPaddock.wins}</strong>
                   <span>WINS</span>
                 </div>
                 <div className={styles.statBox}>
-                  <strong>88%</strong>
+                  <strong>{homeVirtualPaddock.win_rate}</strong>
                   <span>WIN RATE</span>
                 </div>
               </div>
@@ -415,30 +406,30 @@ export default function HomePage() {
             <div className={styles.metricItem}>
               <div className={styles.metricHeader}>
                 <span>Stamina</span>
-                <strong>92</strong>
+                <strong>{homeVirtualPaddock.metrics.stamina}</strong>
               </div>
               <div className={styles.metricBar}>
-                <div className={styles.metricFill} style={{ width: '92%' }} />
+                <div className={styles.metricFill} style={{ width: `${homeVirtualPaddock.metrics.stamina}%` }} />
               </div>
             </div>
 
             <div className={styles.metricItem}>
               <div className={styles.metricHeader}>
                 <span>Speed</span>
-                <strong>88</strong>
+                <strong>{homeVirtualPaddock.metrics.speed}</strong>
               </div>
               <div className={styles.metricBar}>
-                <div className={styles.metricFill} style={{ width: '88%' }} />
+                <div className={styles.metricFill} style={{ width: `${homeVirtualPaddock.metrics.speed}%` }} />
               </div>
             </div>
 
             <div className={styles.metricItem}>
               <div className={styles.metricHeader}>
                 <span>Temperament</span>
-                <strong>95</strong>
+                <strong>{homeVirtualPaddock.metrics.temperament}</strong>
               </div>
               <div className={styles.metricBar}>
-                <div className={styles.metricFill} style={{ width: '95%' }} />
+                <div className={styles.metricFill} style={{ width: `${homeVirtualPaddock.metrics.temperament}%` }} />
               </div>
             </div>
 
