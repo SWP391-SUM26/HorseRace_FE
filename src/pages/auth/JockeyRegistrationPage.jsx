@@ -67,227 +67,160 @@ export default function JockeyRegistrationPage() {
   };
 
   return (
-    <main className={styles.registrationPage}>
-      {/* CỘT TRÁI - PANEL ẢNH NỀN THẨM MỸ */}
-      <section className={styles.visualPanel} aria-label="Elite Performance">
-        <img
-          src={jockeyImage}
-          alt="Professional Jockey"
-          className={styles.jockeyImage}
-        />
-        <div className={styles.visualShade}></div>
-        <div className={styles.brandCard}>
-          <div className={styles.brandName}>
-            <CheckeredFlagIcon />
-            Equine Elite
+    <div className={styles.page}>
+      <main className={styles.registrationPage}>
+        {/* CỘT TRÁI - PANEL ẢNH NỀN THẨM MỸ */}
+        <section className={styles.visualPanel} aria-label="Elite Performance">
+          <img
+            src={jockeyImage}
+            alt="Professional Jockey preparing for a race"
+            className={styles.jockeyImage}
+          />
+          <div className={styles.visualShade}></div>
+          <div className={styles.brandCard}>
+            <div className={styles.brandName}></div>
           </div>
-          <p className={styles.brandDesc}>
-            Join the premier platform for elite racing management. Register your
-            credentials to access high-performance analytics and top-tier stable
-            invitations.
-          </p>
-        </div>
-      </section>
+        </section>
 
-      {/* CỘT PHẢI - BIỂU MẪU ĐĂNG KÝ */}
-      <section className={styles.formPanel} aria-label="Jockey registration">
-        <div className={styles.formWrap}>
-          <h2 className={styles.title}>Jockey Registration</h2>
-          <p className={styles.subtitle}>
-            Complete your profile to gain access to the Jockey Portal.
-          </p>
+        {/* CỘT PHẢI - BIỂU MẪU ĐĂNG KÝ */}
+        <section className={styles.formPanel} aria-label="Jockey registration">
+          <div className={styles.formWrap}>
+            <h2 className={styles.title}>Jockey Registration</h2>
+            <p className={styles.subtitle}>
+              Complete your profile to gain access to the Jockey Portal.
+            </p>
 
-          <form onSubmit={handleRegister}>
-            {/* 0. ACCOUNT CREDENTIALS */}
-            <div className={styles.card}>
-              <div className={styles.cardHeader}>
-                <div className={styles.headerIconWrapper}>
-                  <ShieldCheckIcon />
-                </div>
-                <h3 className={styles.cardTitle}>0. Account Credentials</h3>
-              </div>
-
-              <div className={styles.cardBody}>
-                <div className={styles.grid2}>
-                  <div className={styles.inputField}>
-                    <label className={styles.fieldLabel} htmlFor="email">
-                      EMAIL ADDRESS
-                    </label>
-                    <div className={styles.inputShell}>
-                      <input
-                        id="email"
-                        type="email"
-                        value={form.email}
-                        onChange={(e) => set("email", e.target.value)}
-                        placeholder="jockey@horserace.local"
-                        required
-                      />
-                    </div>
+            <form onSubmit={handleRegister}>
+              {/* 0. ACCOUNT CREDENTIALS */}
+              <div className={styles.card}>
+                <div className={styles.cardHeader}>
+                  <div className={styles.headerIconWrapper}>
+                    <ShieldCheckIcon />
                   </div>
+                  <h3 className={styles.cardTitle}>Account Credentials</h3>
+                </div>
 
-                  <div className={styles.inputField}>
-                    <label className={styles.fieldLabel} htmlFor="password">
-                      PASSWORD
-                    </label>
-                    <div className={styles.inputShell}>
-                      <input
-                        id="password"
-                        type="password"
-                        value={form.password}
-                        onChange={(e) => set("password", e.target.value)}
-                        placeholder="••••••••"
-                        required
-                      />
+                <div className={styles.cardBody}>
+                  <div className={styles.grid2}>
+                    <div className={styles.inputField}>
+                      <label className={styles.fieldLabel} htmlFor="email">
+                        EMAIL ADDRESS
+                      </label>
+                      <div className={styles.inputShell}>
+                        <input
+                          id="email"
+                          type="email"
+                          value={form.email}
+                          onChange={(e) => set("email", e.target.value)}
+                          placeholder="jockey@horserace.local"
+                          required
+                        />
+                      </div>
+                    </div>
+
+                    <div className={styles.inputField}>
+                      <label className={styles.fieldLabel} htmlFor="password">
+                        PASSWORD
+                      </label>
+                      <div className={styles.inputShell}>
+                        <input
+                          id="password"
+                          type="password"
+                          value={form.password}
+                          onChange={(e) => set("password", e.target.value)}
+                          placeholder="••••••••"
+                          required
+                        />
+                      </div>
                     </div>
                   </div>
                 </div>
               </div>
-            </div>
 
-            {/* 1. PERSONAL IDENTITY CARD */}
-            <div className={styles.card}>
-              <div className={styles.cardHeader}>
-                <div className={styles.headerIconWrapper}>
-                  <IdCardIcon />
-                </div>
-                <h3 className={styles.cardTitle}>1. Personal Identity</h3>
-              </div>
-
-              <div className={styles.cardBody}>
-                <div className={styles.grid2}>
-                  <div className={styles.inputField}>
-                    <label className={styles.fieldLabel} htmlFor="firstName">
-                      FIRST NAME
-                    </label>
-                    <div className={styles.inputShell}>
-                      <input
-                        id="firstName"
-                        value={form.firstName}
-                        onChange={(e) => set("firstName", e.target.value)}
-                        placeholder="e.g. William"
-                      />
-                    </div>
+              {/* 1. PERSONAL IDENTITY CARD */}
+              <div className={styles.card}>
+                <div className={styles.cardHeader}>
+                  <div className={styles.headerIconWrapper}>
+                    <IdCardIcon />
                   </div>
-
-                  <div className={styles.inputField}>
-                    <label className={styles.fieldLabel} htmlFor="lastName">
-                      LAST NAME
-                    </label>
-                    <div className={styles.inputShell}>
-                      <input
-                        id="lastName"
-                        value={form.lastName}
-                        onChange={(e) => set("lastName", e.target.value)}
-                        placeholder="e.g. Buick"
-                      />
-                    </div>
-                  </div>
-
-                  <div className={styles.inputField}>
-                    <label className={styles.fieldLabel} htmlFor="age">
-                      AGE
-                    </label>
-                    <div className={styles.inputShell}>
-                      <input
-                        id="age"
-                        type="number"
-                        value={form.age}
-                        onChange={(e) => set("age", e.target.value)}
-                        placeholder="Years"
-                      />
-                    </div>
-                  </div>
-
-                  <div className={styles.inputField}>
-                    <label className={styles.fieldLabel} htmlFor="weight">
-                      WEIGHT (LBS)
-                    </label>
-                    <div className={styles.inputShell}>
-                      <input
-                        id="weight"
-                        type="number"
-                        value={form.weight}
-                        onChange={(e) => set("weight", e.target.value)}
-                        placeholder="e.g. 118"
-                      />
-                    </div>
-                  </div>
+                  <h3 className={styles.cardTitle}>Personal Identity</h3>
                 </div>
 
-                <div className={styles.selectWrap}>
-                  <label className={styles.fieldLabel}>NATIONALITY</label>
-                  <div className={styles.selectContainer}>
-                    <select
-                      className={styles.select}
-                      value={form.nationality}
-                      onChange={(e) => set("nationality", e.target.value)}
-                    >
-                      <option value="">Select your nationality</option>
-                      <option>United States</option>
-                      <option>United Kingdom</option>
-                      <option>Ireland</option>
-                      <option>France</option>
-                      <option>Australia</option>
-                    </select>
-                    <div className={styles.selectArrow}>
-                      <svg
-                        width="14"
-                        height="14"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2.5"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      >
-                        <polyline points="6 9 12 15 18 9" />
-                      </svg>
+                <div className={styles.cardBody}>
+                  <div className={styles.grid2}>
+                    <div className={styles.inputField}>
+                      <label className={styles.fieldLabel} htmlFor="firstName">
+                        FIRST NAME
+                      </label>
+                      <div className={styles.inputShell}>
+                        <input
+                          id="firstName"
+                          value={form.firstName}
+                          onChange={(e) => set("firstName", e.target.value)}
+                          placeholder="e.g. William"
+                        />
+                      </div>
+                    </div>
+
+                    <div className={styles.inputField}>
+                      <label className={styles.fieldLabel} htmlFor="lastName">
+                        LAST NAME
+                      </label>
+                      <div className={styles.inputShell}>
+                        <input
+                          id="lastName"
+                          value={form.lastName}
+                          onChange={(e) => set("lastName", e.target.value)}
+                          placeholder="e.g. Buick"
+                        />
+                      </div>
+                    </div>
+
+                    <div className={styles.inputField}>
+                      <label className={styles.fieldLabel} htmlFor="age">
+                        AGE
+                      </label>
+                      <div className={styles.inputShell}>
+                        <input
+                          id="age"
+                          type="number"
+                          value={form.age}
+                          onChange={(e) => set("age", e.target.value)}
+                          placeholder="Years"
+                        />
+                      </div>
+                    </div>
+
+                    <div className={styles.inputField}>
+                      <label className={styles.fieldLabel} htmlFor="weight">
+                        WEIGHT (LBS)
+                      </label>
+                      <div className={styles.inputShell}>
+                        <input
+                          id="weight"
+                          type="number"
+                          value={form.weight}
+                          onChange={(e) => set("weight", e.target.value)}
+                          placeholder="e.g. 118"
+                        />
+                      </div>
                     </div>
                   </div>
-                </div>
-              </div>
-            </div>
 
-            {/* 2. EXPERIENCE CARD */}
-            <div className={styles.card}>
-              <div className={styles.cardHeader}>
-                <div className={styles.headerIconWrapper}>
-                  <ClockIcon />
-                </div>
-                <h3 className={styles.cardTitle}>2. Experience</h3>
-              </div>
-
-              <div className={styles.cardBody}>
-                <div className={styles.grid2}>
-                  <div className={styles.inputField}>
-                    <label className={styles.fieldLabel} htmlFor="yearsActive">
-                      YEARS ACTIVE
-                    </label>
-                    <div className={styles.inputShell}>
-                      <input
-                        id="yearsActive"
-                        type="number"
-                        value={form.yearsActive}
-                        onChange={(e) => set("yearsActive", e.target.value)}
-                        placeholder="Professional years"
-                      />
-                    </div>
-                  </div>
-
-                  <div className={styles.selectWrap} style={{ marginTop: 0 }}>
-                    <label className={styles.fieldLabel}>
-                      PRIMARY RIDING STYLE
-                    </label>
+                  <div className={styles.selectWrap}>
+                    <label className={styles.fieldLabel}>NATIONALITY</label>
                     <div className={styles.selectContainer}>
                       <select
                         className={styles.select}
-                        value={form.ridingStyle}
-                        onChange={(e) => set("ridingStyle", e.target.value)}
+                        value={form.nationality}
+                        onChange={(e) => set("nationality", e.target.value)}
                       >
-                        <option value="">Select riding style</option>
-                        <option>Front Runner</option>
-                        <option>Stalker / Closer</option>
-                        <option>Come-from-behind</option>
+                        <option value="">Select your nationality</option>
+                        <option>United States</option>
+                        <option>United Kingdom</option>
+                        <option>Ireland</option>
+                        <option>France</option>
+                        <option>Australia</option>
                       </select>
                       <div className={styles.selectArrow}>
                         <svg
@@ -307,104 +240,174 @@ export default function JockeyRegistrationPage() {
                   </div>
                 </div>
               </div>
-            </div>
 
-            {/* 3. CREDENTIALS CARD */}
-            <div className={styles.card}>
-              <div className={styles.cardHeader}>
-                <div className={styles.headerIconWrapper}>
-                  <ShieldCheckIcon />
+              {/* 2. EXPERIENCE CARD */}
+              <div className={styles.card}>
+                <div className={styles.cardHeader}>
+                  <div className={styles.headerIconWrapper}>
+                    <ClockIcon />
+                  </div>
+                  <h3 className={styles.cardTitle}>Experience</h3>
                 </div>
-                <h3 className={styles.cardTitle}>3. Credentials</h3>
-              </div>
 
-              <div className={styles.cardBody}>
-                {/* License Upload */}
-                <div className={styles.uploadContainer}>
-                  <span className={styles.fieldLabel}>JOCKEY LICENSE COPY</span>
-                  <div className={styles.uploadArea}>
-                    <div className={styles.uploadIcon}>
-                      <DocumentUploadIcon />
+                <div className={styles.cardBody}>
+                  <div className={styles.grid2}>
+                    <div className={styles.inputField}>
+                      <label
+                        className={styles.fieldLabel}
+                        htmlFor="yearsActive"
+                      >
+                        YEARS ACTIVE
+                      </label>
+                      <div className={styles.inputShell}>
+                        <input
+                          id="yearsActive"
+                          type="number"
+                          value={form.yearsActive}
+                          onChange={(e) => set("yearsActive", e.target.value)}
+                          placeholder="Professional years"
+                        />
+                      </div>
                     </div>
-                    <div className={styles.uploadText}>
-                      <span className={styles.highlightText}>
-                        Upload a file
-                      </span>{" "}
-                      or drag and drop
-                    </div>
-                    <div className={styles.uploadHint}>
-                      PDF, PNG, JPG up to 10MB
+
+                    <div className={styles.selectWrap} style={{ marginTop: 0 }}>
+                      <label className={styles.fieldLabel}>
+                        PRIMARY RIDING STYLE
+                      </label>
+                      <div className={styles.selectContainer}>
+                        <select
+                          className={styles.select}
+                          value={form.ridingStyle}
+                          onChange={(e) => set("ridingStyle", e.target.value)}
+                        >
+                          <option value="">Select riding style</option>
+                          <option>Front Runner</option>
+                          <option>Stalker / Closer</option>
+                          <option>Come-from-behind</option>
+                        </select>
+                        <div className={styles.selectArrow}>
+                          <svg
+                            width="14"
+                            height="14"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2.5"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          >
+                            <polyline points="6 9 12 15 18 9" />
+                          </svg>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
+              </div>
 
-                {/* Fitness Certificate Upload */}
-                <div className={styles.uploadContainer}>
-                  <span className={styles.fieldLabel}>
-                    CURRENT FITNESS CERTIFICATE
-                  </span>
-                  <div className={styles.uploadArea}>
-                    <div className={styles.uploadIcon}>
-                      <ShieldPlusIcon />
+              {/* 3. CREDENTIALS CARD */}
+              <div className={styles.card}>
+                <div className={styles.cardHeader}>
+                  <div className={styles.headerIconWrapper}>
+                    <ShieldCheckIcon />
+                  </div>
+                  <h3 className={styles.cardTitle}>Credentials</h3>
+                </div>
+
+                <div className={styles.cardBody}>
+                  {/* License Upload */}
+                  <div className={styles.uploadContainer}>
+                    <span className={styles.fieldLabel}>
+                      JOCKEY LICENSE COPY
+                    </span>
+                    <div className={styles.uploadArea}>
+                      <div className={styles.uploadIcon}>
+                        <DocumentUploadIcon />
+                      </div>
+                      <div className={styles.uploadText}>
+                        <span className={styles.highlightText}>
+                          Upload a file
+                        </span>{" "}
+                        or drag and drop
+                      </div>
+                      <div className={styles.uploadHint}>
+                        PDF, PNG, JPG up to 10MB
+                      </div>
                     </div>
-                    <div className={styles.uploadText}>
-                      <span className={styles.highlightText}>
-                        Upload a file
-                      </span>{" "}
-                      or drag and drop
-                    </div>
-                    <div className={styles.uploadHint}>
-                      PDF, PNG, JPG up to 10MB
+                  </div>
+
+                  {/* Fitness Certificate Upload */}
+                  <div className={styles.uploadContainer}>
+                    <span className={styles.fieldLabel}>
+                      CURRENT FITNESS CERTIFICATE
+                    </span>
+                    <div className={styles.uploadArea}>
+                      <div className={styles.uploadIcon}>
+                        <ShieldPlusIcon />
+                      </div>
+                      <div className={styles.uploadText}>
+                        <span className={styles.highlightText}>
+                          Upload a file
+                        </span>{" "}
+                        or drag and drop
+                      </div>
+                      <div className={styles.uploadHint}>
+                        PDF, PNG, JPG up to 10MB
+                      </div>
                     </div>
                   </div>
                 </div>
               </div>
-            </div>
 
-            {/* ACTION FOOTER */}
-            <div className={styles.actionFooter}>
-              <button
-                className={styles.backBtn}
-                type="button"
-                onClick={() => navigate("/login")}
-              >
-                ← Back to Login
-              </button>
+              {/* ACTION FOOTER */}
+              <div className={styles.actionFooter}>
+                <button
+                  className={styles.backBtn}
+                  type="button"
+                  onClick={() => navigate("/login")}
+                >
+                  ← Back to Login
+                </button>
 
-              <button
-                className={styles.submitBtn}
-                type="submit"
-                disabled={loading}
-              >
-                {loading ? "Submitting..." : "Submit Registration →"}
-              </button>
-            </div>
-          </form>
+                <button
+                  className={styles.submitBtn}
+                  type="submit"
+                  disabled={loading}
+                >
+                  {loading ? "Submitting..." : "Submit Registration →"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </section>
+      </main>
+
+      <footer className={styles.footer}>
+        <div className={styles.footerInner}>
+          <div>
+            <div className={styles.footerBrand}>Equine Elite</div>
+            <p className={styles.footerCopy}>
+              © 2026 Equine Elite Racing. All rights reserved.
+            </p>
+          </div>
+          <div className={styles.footerLinks}>
+            <button type="button" className={styles.footerLink}>
+              Terms of Service
+            </button>
+            <button type="button" className={styles.footerLink}>
+              Privacy Policy
+            </button>
+            <button type="button" className={styles.footerLink}>
+              Help Center
+            </button>
+          </div>
         </div>
-      </section>
-    </main>
+      </footer>
+    </div>
   );
 }
 
 /* SVG ICON COMPONENTS */
-function CheckeredFlagIcon() {
-  return (
-    <svg
-      width="22"
-      height="22"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2.5"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      style={{ marginRight: "10px" }}
-    >
-      <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z" />
-      <line x1="4" y1="22" x2="4" y2="15" />
-    </svg>
-  );
-}
 
 function IdCardIcon() {
   return (
