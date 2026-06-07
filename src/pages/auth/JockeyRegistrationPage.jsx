@@ -97,7 +97,7 @@ export default function JockeyRegistrationPage() {
                   <div className={styles.headerIconWrapper}>
                     <ShieldCheckIcon />
                   </div>
-                  <h3 className={styles.cardTitle}>0. Account Credentials</h3>
+                  <h3 className={styles.cardTitle}>Account Credentials</h3>
                 </div>
 
                 <div className={styles.cardBody}>
@@ -143,7 +143,7 @@ export default function JockeyRegistrationPage() {
                   <div className={styles.headerIconWrapper}>
                     <IdCardIcon />
                   </div>
-                  <h3 className={styles.cardTitle}>1. Personal Identity</h3>
+                  <h3 className={styles.cardTitle}>Personal Identity</h3>
                 </div>
 
                 <div className={styles.cardBody}>
@@ -247,7 +247,7 @@ export default function JockeyRegistrationPage() {
                   <div className={styles.headerIconWrapper}>
                     <ClockIcon />
                   </div>
-                  <h3 className={styles.cardTitle}>2. Experience</h3>
+                  <h3 className={styles.cardTitle}>Experience</h3>
                 </div>
 
                 <div className={styles.cardBody}>
@@ -311,7 +311,7 @@ export default function JockeyRegistrationPage() {
                   <div className={styles.headerIconWrapper}>
                     <ShieldCheckIcon />
                   </div>
-                  <h3 className={styles.cardTitle}>3. Credentials</h3>
+                  <h3 className={styles.cardTitle}>Credentials</h3>
                 </div>
 
                 <div className={styles.cardBody}>
