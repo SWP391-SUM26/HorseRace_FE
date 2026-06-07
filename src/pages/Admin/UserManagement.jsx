@@ -1,7 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { Routes, Route, Link, useLocation, useNavigate, Navigate } from 'react-router-dom';
 import styles from './UserManagement.module.css';
-import DATA_FROM_JSON from '../../data/UserMock.json';
 import { getStoredSession, logout } from '../../services/auth';
 import { getAllUsers, getUserById, updateMyProfile, updateUserProfile } from '../../services/user';
 
@@ -120,35 +119,7 @@ const Sidebar = () => {
 };
 
 // Chuẩn hóa dữ liệu ban đầu
-const INITIAL_USERS = [
-  ...(DATA_FROM_JSON.users || []),
-  DATA_FROM_JSON.googleAccount
-].filter(Boolean).map(user => ({
-  ...user,
-  roleIcon:
-    user.role === 'Owner'
-      ? '🏪'
-      : user.role === 'Jockey'
-        ? '🏁'
-        : user.role === 'Referee'
-          ? '⚖️'
-          : '👁️',
-  status:
-    user.role === 'Owner' || user.role === 'Spectator (VIP)' || user.role === 'Spectator'
-      ? 'ACTIVE'
-      : user.role === 'Jockey'
-        ? 'PENDING'
-        : 'SUSPENDED',
-  lastAuth:
-    user.role === 'Owner'
-      ? 'Today, 08:42 AM'
-      : user.role === 'Jockey'
-        ? 'Oct 24, 14:30 PM'
-        : user.role === 'Referee'
-          ? 'Sep 12, 09:15 AM'
-          : 'Oct 25, 18:05 PM',
-  avatarUrl: null
-}));
+// Không dùng INITIAL_USERS mock nữa, dữ liệu sẽ được load hoàn toàn từ API.
 
 // ==========================================
 // SUB-PAGES VIEW MANAGEMENT

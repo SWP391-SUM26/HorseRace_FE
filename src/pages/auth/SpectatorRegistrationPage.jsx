@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { loginWithRole, registerOfflineUser, loginWithCredentials } from '../../services/auth';
+import { loginWithRole, loginWithCredentials } from '../../services/auth';
+import api from '../../services/api';
 import styles from './SpectatorRegistrationPage.module.css';
 
 export default function SpectatorRegistrationPage() {
@@ -22,7 +23,7 @@ export default function SpectatorRegistrationPage() {
 
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
 
-  const handleRegister = (e) => {
+  const handleRegister = async (e) => {
     e.preventDefault();
     if (!form.email || !form.password) {
       alert("Please fill in email and password");
@@ -33,44 +34,54 @@ export default function SpectatorRegistrationPage() {
       return;
     }
     setLoading(true);
-    setTimeout(() => {
-      setLoading(false);
+    try {
+      const nameParts = form.fullName ? form.fullName.split(' ') : ['Spectator', 'User'];
+      const payload = {
+        email: form.email,
+        password: form.password,
+        confirmPassword: form.confirmPassword,
+        firstName: nameParts[0],
+        lastName: nameParts.slice(1).join(' ') || 'Spectator',
+        fullName: form.fullName || 'Spectator User',
+        phone: form.phone || '0900000000',
+      };
+
+      await api.post('/api/v1/auth/register/spectator', payload);
+      
+      // Auto login after successful registration (if BE allows login before verification)
+      // If BE requires verification first, we should handle that, but for now we'll show the verification screen
       setShowVerification(true);
-    }, 900);
+    } catch (err) {
+      console.error(err);
+      alert(err.response?.data?.message || err.message || "Registration failed");
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleVerifyEmail = (e) => {
+  const handleVerifyEmail = async (e) => {
     e.preventDefault();
     if (verificationCode.length < 4) {
       alert("Please enter a valid verification code.");
       return;
     }
     setVerificationLoading(true);
-    setTimeout(() => {
-      setVerificationLoading(false);
-
-      // Register offline to localStorage
-      registerOfflineUser({
+    try {
+      // Call the API to verify the code
+      await api.post('/api/v1/auth/verify-code', {
         email: form.email,
-        password: form.password,
-        fullName: form.fullName,
-        role: 'Spectator',
-        phone: form.phone,
-        stable: "Elite Fan Zone"
+        code: verificationCode
       });
 
-      // Auto login with the registered credentials
-      loginWithCredentials(form.email, form.password)
-        .then(() => {
-          navigate('/spectator-dashboard');
-        })
-        .catch(err => {
-          console.error(err);
-          // fallback
-          loginWithRole('Spectator');
-          navigate('/spectator-dashboard');
-        });
-    }, 900);
+      // Code verified successfully, login the user
+      await loginWithCredentials(form.email, form.password);
+      navigate('/spectator-dashboard');
+    } catch (err) {
+      console.error("Verification error:", err);
+      alert(err.response?.data?.message || err.message || "Invalid verification code.");
+    } finally {
+      setVerificationLoading(false);
+    }
   };
 
   return (

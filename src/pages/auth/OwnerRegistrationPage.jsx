@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { loginWithRole, registerOfflineUser, loginWithCredentials } from '../../services/auth';
+import { loginWithRole, loginWithCredentials } from '../../services/auth';
+import api from '../../services/api';
 import styles from './OwnerRegistrationPage.module.css';
 
 export default function OwnerRegistrationPage() {
@@ -28,39 +29,40 @@ export default function OwnerRegistrationPage() {
     }
   };
 
-  const handleRegister = (e) => {
+  const handleRegister = async (e) => {
     e.preventDefault();
     if (!form.email || !form.password) {
       alert("Please fill in email and password");
       return;
     }
     setLoading(true);
-    setTimeout(() => {
-      setLoading(false);
-      console.log('Owner Registration:', form, avatarFile);
-
-      // Register offline to localStorage
-      registerOfflineUser({
+    try {
+      const nameParts = form.fullName ? form.fullName.split(' ') : ['Owner', 'User'];
+      const payload = {
         email: form.email,
         password: form.password,
-        fullName: form.fullName,
-        role: 'Owner',
-        phone: form.contactNumber,
-        stable: form.stableName || "Hartwell Racing Syndicate"
-      });
+        confirmPassword: form.password,
+        firstName: nameParts[0],
+        lastName: nameParts.slice(1).join(' ') || 'Owner',
+        fullName: form.fullName || 'Owner User',
+        phone: form.contactNumber || '0900000000',
+        // Optional fields could be passed here if BE supports them
+        // stableName: form.stableName,
+        // primaryRegion: form.primaryRegion,
+        // bio: form.bio
+      };
 
-      // Auto login with the registered credentials
-      loginWithCredentials(form.email, form.password)
-        .then(() => {
-          navigate('/owner-dashboard');
-        })
-        .catch(err => {
-          console.error(err);
-          // fallback
-          loginWithRole('Owner');
-          navigate('/owner-dashboard');
-        });
-    }, 900);
+      await api.post('/api/v1/auth/register/owner', payload);
+
+      // Auto login after successful registration
+      await loginWithCredentials(form.email, form.password);
+      navigate('/owner-dashboard');
+    } catch (err) {
+      console.error(err);
+      alert(err.response?.data?.message || err.message || "Registration failed");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
