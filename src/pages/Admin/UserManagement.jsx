@@ -1,125 +1,19 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { Routes, Route, Link, useLocation, useNavigate, Navigate } from 'react-router-dom';
+import { Routes, Route, useNavigate, Navigate } from 'react-router-dom';
 import styles from './UserManagement.module.css';
-import { getStoredSession, logout } from '../../services/auth';
+import { getStoredSession } from '../../services/auth';
 import { getAllUsers, getUserById, updateMyProfile, updateUserProfile } from '../../services/user';
 
-// ==========================================
-// CÁC COMPONENT GIAO DIỆN NỘI BỘ (INTERNAL COMPONENTS)
-// ==========================================
-
-const Badge = ({ variant, children }) => {
-  const badgeClass = `${styles.badge} ${styles[`badge_${variant.toLowerCase()}`]}`;
-  return <span className={badgeClass}>{children}</span>;
-};
-
-const Button = ({ variant = 'primary', icon, children, ...props }) => {
-  const btnClass = `${styles.button} ${styles[`btn_${variant}`]}`;
-  return (
-    <button className={btnClass} {...props}>
-      {icon && <span className={styles.btnIcon}>{icon}</span>}
-      {children}
-    </button>
-  );
-};
-
-const Card = ({ children, style }) => {
-  return <div className={styles.card} style={style}>{children}</div>;
-};
-
-const Topbar = ({ title, systemStatus }) => {
-  const navigate = useNavigate();
-  const session = getStoredSession();
-  const adminName = session?.user?.name || "System Admin";
-  const adminAvatar = session?.user?.avatar || "AD";
-
-  const handleLogout = () => {
-    logout();
-    navigate('/login');
-  };
-
-  return (
-    <header className={styles.topbar}>
-      <div className={styles.topbarLeft}>
-        <span className={styles.topbarTitle}>{title}</span>
-        <span className={styles.topbarStatus}>{systemStatus}</span>
-      </div>
-      <div className={styles.topbarActions}>
-        <button className={styles.topbarIconBtn} title="Notifications">🔔<span className={styles.topbarBadge} /></button>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <span style={{ fontSize: '14px', fontWeight: '500', color: '#475569' }}>{adminName}</span>
-          <button 
-            onClick={handleLogout} 
-            className={styles.userAvatar} 
-            style={{ border: 'none', cursor: 'pointer', width: '32px', height: '32px' }}
-            title="Sign out"
-          >
-            {adminAvatar}
-          </button>
-        </div>
-      </div>
-    </header>
-  );
-};
-
-const Sidebar = () => {
-  const location = useLocation();
-
-  const menuItems = [
-    { path: '/admin/users', icon: '👥', label: 'User Management' },
-    { path: '/admin/tournaments', icon: '🏆', label: 'Tournaments' },
-    { path: '/admin/races', icon: '✅', label: 'Race Approval' },
-    { path: '/admin/staffing', icon: '📋', label: 'Staffing' },
-    { path: '/admin/settings', icon: '⚙️', label: 'Settings' },
-    { path: '/admin/logs', icon: '📄', label: 'Audit Logs' },
-  ];
-
-  return (
-    <aside className={styles.sidebar}>
-      <div className={styles.sidebarLogo}>
-        <span className={styles.logoIcon}>🛡️</span>
-        <div className={styles.logoText}>
-          <div className={styles.logoTitle}>Equine Elite</div>
-          <div className={styles.logoSubtitle}>ADMIN MANAGEMENT</div>
-        </div>
-      </div>
-      <nav className={styles.sidebarNav}>
-        {menuItems.slice(0, 4).map(item => {
-          const isActive = location.pathname === item.path || (item.path === '/admin/users' && (location.pathname === '/admin' || location.pathname === '/admin/'));
-          return (
-            <Link
-              key={item.path}
-              to={item.path}
-              className={`${styles.sidebarItem} ${isActive ? styles.sidebarItemActive : ''}`}
-            >
-              <span className={styles.sidebarItemIcon}>{item.icon}</span>
-              <span>{item.label}</span>
-            </Link>
-          );
-        })}
-      </nav>
-      <div className={styles.sidebarBottom}>
-        {menuItems.slice(4).map(item => {
-          const isActive = location.pathname === item.path;
-          return (
-            <Link
-              key={item.path}
-              to={item.path}
-              className={`${styles.sidebarItem} ${isActive ? styles.sidebarItemActive : ''}`}
-            >
-              <span className={styles.sidebarItemIcon}>{item.icon}</span>
-              <span>{item.label}</span>
-            </Link>
-          );
-        })}
-        <button className={styles.systemReportBtn}>System Report</button>
-      </div>
-    </aside>
-  );
-};
-
-// Chuẩn hóa dữ liệu ban đầu
-// Không dùng INITIAL_USERS mock nữa, dữ liệu sẽ được load hoàn toàn từ API.
+// Import newly extracted components
+import Badge from '../../components/ui/Badge';
+import Button from '../../components/ui/Button';
+import StatCard, { Card } from '../../components/ui/StatCard';
+import PageHeader from '../../components/ui/PageHeader';
+import SearchFilterBar from '../../components/ui/SearchFilterBar';
+import DataTable from '../../components/ui/DataTable';
+import Sidebar from '../../components/layout/Sidebar';
+import Navbar from '../../components/layout/Navbar';
+import { DownloadIcon, UserPlusIcon, TrendingUpIcon, OwnerIcon, JockeyIcon, RefereeIcon, EyeIcon, CameraIcon } from '../../components/ui/Icons';
 
 // ==========================================
 // SUB-PAGES VIEW MANAGEMENT
@@ -131,6 +25,14 @@ const UserManagementView = () => {
   const [search, setSearch] = useState('');
   const [selectedUser, setSelectedUser] = useState(null);
   const [editForm, setEditForm] = useState({ name: '', email: '', username: '', stable: '' });
+  const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
+
+  const showToast = (message, type = 'success') => {
+    setToast({ show: true, message, type });
+    setTimeout(() => {
+      setToast(prev => ({ ...prev, show: false }));
+    }, 3000);
+  };
 
   // Fetch list of users from the server on mount
   useEffect(() => {
@@ -141,12 +43,12 @@ const UserManagementView = () => {
         ...u,
         roleIcon:
           u.role === 'Owner'
-            ? '🏪'
+            ? OwnerIcon
             : u.role === 'Jockey'
-              ? '🏁'
+              ? JockeyIcon
               : u.role === 'Referee'
-                ? '⚖️'
-                : '👁️',
+                ? RefereeIcon
+                : EyeIcon,
         lastAuth:
           u.role === 'Owner'
             ? 'Today, 08:42 AM'
@@ -199,12 +101,12 @@ const UserManagementView = () => {
       ...freshUser,
       roleIcon:
         freshUser.role === 'Owner'
-          ? '🏪'
+          ? OwnerIcon
           : freshUser.role === 'Jockey'
-            ? '🏁'
+            ? JockeyIcon
             : freshUser.role === 'Referee'
-              ? '⚖️'
-              : '👁️',
+              ? RefereeIcon
+              : EyeIcon,
       lastAuth: user.lastAuth
     };
     
@@ -233,7 +135,6 @@ const UserManagementView = () => {
           avatarUrl: selectedUser.avatarUrl
         });
 
-        // Update in list
         const processedSelf = {
           ...updatedSelf,
           roleIcon: selectedUser.roleIcon,
@@ -242,30 +143,33 @@ const UserManagementView = () => {
         
         setUsers(users.map(u => u.id === selectedUser.id ? processedSelf : u));
         setSelectedUser(processedSelf);
-        alert('Hồ sơ cá nhân của bạn đã được cập nhật thành công trên server!');
+        showToast('Hồ sơ cá nhân của bạn đã được cập nhật thành công trên server!', 'success');
         return;
       } catch (err) {
-        alert('Lỗi cập nhật hồ sơ: ' + err.message);
+        showToast('Lỗi cập nhật hồ sơ: ' + err.message, 'error');
         return;
       }
     }
 
-    // Call the updateUserProfile API (falls back to mock update internally)
-    const updatedData = await updateUserProfile(selectedUser.id, {
-      name: editForm.name,
-      email: editForm.email,
-      stable: editForm.stable
-    });
+    try {
+      const updatedData = await updateUserProfile(selectedUser.id, {
+        name: editForm.name,
+        email: editForm.email,
+        stable: editForm.stable
+      });
 
-    const processedUpdated = {
-      ...selectedUser,
-      ...updatedData,
-      avatar: newAvatar
-    };
+      const processedUpdated = {
+        ...selectedUser,
+        ...updatedData,
+        avatar: newAvatar
+      };
 
-    setUsers(users.map(u => u.id === selectedUser.id ? processedUpdated : u));
-    setSelectedUser(processedUpdated);
-    alert('Hồ sơ thành viên đã được cập nhật thành công!');
+      setUsers(users.map(u => u.id === selectedUser.id ? processedUpdated : u));
+      setSelectedUser(processedUpdated);
+      showToast('Hồ sơ thành viên đã được cập nhật thành công!', 'success');
+    } catch (err) {
+      showToast('Lỗi cập nhật hồ sơ: ' + (err.response?.data?.message || err.message), 'error');
+    }
   };
 
   const handleAvatarUpload = (e) => {
@@ -276,42 +180,49 @@ const UserManagementView = () => {
     setSelectedUser(prev => ({ ...prev, avatarUrl: localAvatarUrl }));
   };
 
+  const tableColumns = ['USER DETAILS', 'SYSTEM ROLE', 'CLEARANCE STATUS', 'LAST AUTHENTICATION'];
+
   return (
     <>
-      <div className={styles.pageHeader}>
-        <div>
-          <h1 className={styles.pageTitle}>User Management</h1>
-          <p className={styles.pageSubtitle}>Oversee roles, permissions, and system access for all personnel.</p>
-        </div>
-        <div className={styles.headerActions}>
-          <Button variant="ghost" icon="📥">Export CSV</Button>
-          <Button icon="👤+">Provision User</Button>
-        </div>
-      </div>
+      <PageHeader 
+        title="User Management" 
+        subtitle="Oversee roles, permissions, and system access for all personnel." 
+        actions={
+          <>
+            <Button variant="ghost" icon={DownloadIcon}>Export CSV</Button>
+            <Button icon={UserPlusIcon}>Provision User</Button>
+          </>
+        }
+      />
 
       <div className={styles.statsGrid}>
-        <Card>
-          <div className={styles.statHeader}><span className={styles.statLabel}>GLOBAL USER GROWTH</span><span>📈</span></div>
-          <div className={styles.statValue}>12,482</div>
-          <div><span className={styles.statGrowth}>+14.2%</span><span className={styles.statNote}> vs. previous 30 days</span></div>
-        </Card>
-        <Card>
-          <div className={styles.statHeader}><span className={styles.statLabel}>ACTIVE SESSIONS</span><div className={styles.liveIndicator} /></div>
-          <div className={styles.statValue}>847</div>
-          <div className={styles.statNote}>Current live connections</div>
-        </Card>
-        <Card>
-          <div className={styles.statHeader} style={{ marginBottom: 12 }}><span className={styles.statLabel}>ROLE DISTRIBUTION</span><span>📊</span></div>
-          {roleDistribution.map(({ role, pct, color }) => (
-            <div key={role} className={styles.roleRow}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span style={{ background: color, width: '8px', height: '8px', borderRadius: '50%' }} />
-                <span>{role === 'Spectator (VIP)' ? role : `${role}s`}</span>
+        <StatCard 
+          title="GLOBAL USER GROWTH" 
+          icon={TrendingUpIcon} 
+          value="12,482" 
+          growth="+14.2%" 
+          note="vs. previous 30 days" 
+        />
+        <StatCard 
+          title="ACTIVE SESSIONS" 
+          live={true} 
+          value="847" 
+          note="Current live connections" 
+        />
+        <StatCard 
+          title="ROLE DISTRIBUTION" 
+          customContent={
+            roleDistribution.map(({ role, pct, color }) => (
+              <div key={role} className={styles.roleRow}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span style={{ background: color, width: '8px', height: '8px', borderRadius: '50%' }} />
+                  <span>{role === 'Spectator (VIP)' ? role : `${role}s`}</span>
+                </div>
+                <span>{pct}%</span>
               </div>
-              <span>{pct}%</span>
-            </div>
-          ))}
-        </Card>
+            ))
+          } 
+        />
       </div>
 
       {selectedUser && (
@@ -326,12 +237,16 @@ const UserManagementView = () => {
             <div className={styles.profileLeftBox}>
               <div className={styles.avatarWrapper}>
                 {selectedUser.avatarUrl ? <img src={selectedUser.avatarUrl} alt="Avatar" className={styles.largeAvatarImg} /> : <div className={styles.largeAvatarPlaceholder}>{selectedUser.avatar}</div>}
-                <label className={styles.uploadLabel}>📷<input type="file" accept="image/*" onChange={handleAvatarUpload} style={{ display: 'none' }} /></label>
+                <label className={styles.uploadLabel}><CameraIcon className={styles.cameraIcon} /><input type="file" accept="image/*" onChange={handleAvatarUpload} style={{ display: 'none' }} /></label>
               </div>
               <div className={styles.profileId}>{selectedUser.id}</div>
               <h3 className={styles.profileName}>{selectedUser.name}</h3>
-              <div style={{ display: 'flex', gap: '6px', justifyContent: 'center' }}>
-                <Badge variant="ghost">{selectedUser.roleIcon} {selectedUser.role}</Badge>
+              <div style={{ display: 'flex', gap: '6px', justifyContent: 'center', alignItems: 'center' }}>
+                <Badge variant="ghost">
+                  <span style={{display: 'flex', alignItems: 'center', gap: '4px'}}>
+                    <selectedUser.roleIcon className={styles.roleIconSmall} /> {selectedUser.role}
+                  </span>
+                </Badge>
                 <Badge variant={selectedUser.status === 'ACTIVE' ? 'success' : selectedUser.status === 'PENDING' ? 'warning' : 'suspended'}>{selectedUser.status}</Badge>
               </div>
             </div>
@@ -351,25 +266,19 @@ const UserManagementView = () => {
       )}
 
       <Card style={{ padding: 0 }}>
-        <div className={styles.tableHeader}>
-          <div className={styles.searchWrap}>
-            <span className={styles.searchIcon}>🔍</span>
-            <input className={styles.searchInput} value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search by name, site, stable..." />
-          </div>
-          <button className={styles.filterBtn}>≡ Filter</button>
-        </div>
-        <table className={styles.table}>
-          <thead>
-            <tr>{['USER DETAILS', 'SYSTEM ROLE', 'CLEARANCE STATUS', 'LAST AUTHENTICATION'].map(h => <th key={h} className={styles.th}>{h}</th>)}</tr>
-          </thead>
-          <tbody>
-            {loading ? (
-              <tr>
-                <td colSpan="4" style={{ padding: '24px', textAlign: 'center', color: '#64748b', fontSize: '14px' }}>
-                  Loading users registry...
-                </td>
-              </tr>
-            ) : filteredUsers.map((u) => (
+        <SearchFilterBar 
+          searchValue={search}
+          onSearchChange={(e) => setSearch(e.target.value)}
+          searchPlaceholder="Search by name, site, stable..."
+        />
+        <DataTable 
+          columns={tableColumns}
+          data={filteredUsers}
+          loading={loading}
+          totalItems={users.length}
+          renderRow={(u) => {
+            const RoleIcon = u.roleIcon;
+            return (
               <tr key={u.id} onClick={() => handleSelectUser(u)} className={`${styles.tableRow} ${selectedUser?.id === u.id ? styles.tableRowSelected : ''}`}>
                 <td className={styles.td}>
                   <div className={styles.userCell}>
@@ -377,23 +286,27 @@ const UserManagementView = () => {
                     <div><div className={styles.userName}>{u.name}</div><div className={styles.userEmail}>{u.email}</div></div>
                   </div>
                 </td>
-                <td className={styles.td}><div className={styles.roleCell}>{u.roleIcon} {u.role}</div></td>
+                <td className={styles.td}>
+                  <div className={styles.roleCell}>
+                    <RoleIcon className={styles.roleIconSmall} /> {u.role}
+                  </div>
+                </td>
                 <td className={styles.td}><Badge variant={u.status === 'ACTIVE' ? 'success' : u.status === 'PENDING' ? 'warning' : 'suspended'}>{u.status}</Badge></td>
                 <td className={styles.td} style={{ fontSize: 13, color: '#64748b' }}>{u.lastAuth}</td>
               </tr>
-            ))}
-          </tbody>
-        </table>
-        <div className={styles.pagination}>
-          <span className={styles.paginationInfo}>Showing 1 to {filteredUsers.length} of 12,482 entries</span>
-          <div className={styles.paginationBtns}>
-            <button className={styles.pageBtn} disabled>&lt;</button>
-            <button className={`${styles.pageBtn} ${styles.active}`}>1</button>
-            <button className={styles.pageBtn}>2</button>
-            <button className={styles.pageBtn}>&gt;</button>
-          </div>
-        </div>
+            );
+          }}
+        />
       </Card>
+
+      {toast.show && (
+        <div className={`${styles.toast} ${styles[`toast_${toast.type}`]}`}>
+          <span className={styles.toastIcon}>
+            {toast.type === 'success' ? '✅' : '❌'}
+          </span>
+          <span>{toast.message}</span>
+        </div>
+      )}
     </>
   );
 };
@@ -408,12 +321,12 @@ const PlaceholderView = ({ title }) => (
 // ==========================================
 // MAIN APP ROUTER INTEGRATION
 // ==========================================
-function DashboardLayout() {
+function AdminDashboardLayout() {
   return (
     <div className={styles.layoutContainer}>
       <Sidebar />
       <div className={styles.mainContent}>
-        <Topbar title="Equine Elite Admin" systemStatus="System Status: Healthy" />
+        <Navbar title="Equine Elite Admin" systemStatus="System Status: Healthy" />
         <div className={styles.pageBody}>
           <Routes>
             <Route path="/" element={<UserManagementView />} />
@@ -439,7 +352,7 @@ export default function UserManagement() {
 
   return (
     <Routes>
-      <Route path="/*" element={<DashboardLayout />} />
+      <Route path="/*" element={<AdminDashboardLayout />} />
     </Routes>
   );
 }
