@@ -638,34 +638,88 @@
 }
 
 /* ==========================================
-   8. TOAST NOTIFICATIONS
+   8. MODAL NOTIFICATIONS
    ========================================== */
-.toast {
+.modalOverlay {
     position: fixed;
-    bottom: 24px;
-    right: 24px;
-    padding: 16px 24px;
-    border-radius: 8px;
-    background-color: #ffffff;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: rgba(15, 23, 42, 0.4);
     display: flex;
     align-items: center;
-    gap: 12px;
+    justify-content: center;
     z-index: 9999;
-    animation: slideIn 0.3s ease-out forwards;
-    font-size: 14px;
-    font-weight: 500;
+    backdrop-filter: blur(2px);
 }
 
-@keyframes slideIn {
+.modalBox {
+    background-color: #ffffff;
+    border-radius: 4px; /* Hình chữ nhật, góc hơi bo nhẹ cho tinh tế */
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+    width: 400px;
+    max-width: 90vw;
+    animation: modalPopIn 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+    display: flex;
+    flex-direction: column;
+}
+
+@keyframes modalPopIn {
     from {
-        transform: translateX(100%);
+        transform: scale(0.9);
         opacity: 0;
     }
     to {
-        transform: translateX(0);
+        transform: scale(1);
         opacity: 1;
     }
+}
+
+.modal_success {
+    border-top: 4px solid #16a34a;
+}
+
+.modal_error {
+    border-top: 4px solid #ef4444;
+}
+
+.modalContent {
+    padding: 24px;
+    display: flex;
+    gap: 16px;
+    align-items: flex-start;
+}
+
+.modalIcon {
+    font-size: 24px;
+}
+
+.modalText {
+    flex: 1;
+}
+
+.modalTitle {
+    font-size: 18px;
+    font-weight: 700;
+    color: #0f172a;
+    margin: 0 0 8px 0;
+}
+
+.modalMessage {
+    font-size: 14px;
+    color: #475569;
+    line-height: 1.5;
+    margin: 0;
+}
+
+.modalActions {
+    padding: 16px 24px;
+    background-color: #f8fafc;
+    border-top: 1px solid #e2e8f0;
+    display: flex;
+    justify-content: flex-end;
+    border-radius: 0 0 4px 4px;
 }
 
 .toast_success {

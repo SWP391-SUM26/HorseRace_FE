@@ -29,9 +29,6 @@ const UserManagementView = () => {
 
   const showToast = (message, type = 'success') => {
     setToast({ show: true, message, type });
-    setTimeout(() => {
-      setToast(prev => ({ ...prev, show: false }));
-    }, 3000);
   };
 
   // Fetch list of users from the server on mount
@@ -300,11 +297,25 @@ const UserManagementView = () => {
       </Card>
 
       {toast.show && (
-        <div className={`${styles.toast} ${styles[`toast_${toast.type}`]}`}>
-          <span className={styles.toastIcon}>
-            {toast.type === 'success' ? '✅' : '❌'}
-          </span>
-          <span>{toast.message}</span>
+        <div className={styles.modalOverlay}>
+          <div className={`${styles.modalBox} ${styles[`modal_${toast.type}`]}`}>
+            <div className={styles.modalContent}>
+              <span className={styles.modalIcon}>
+                {toast.type === 'success' ? '✅' : '❌'}
+              </span>
+              <div className={styles.modalText}>
+                <h3 className={styles.modalTitle}>
+                  {toast.type === 'success' ? 'Thành công' : 'Thất bại'}
+                </h3>
+                <p className={styles.modalMessage}>{toast.message}</p>
+              </div>
+            </div>
+            <div className={styles.modalActions}>
+              <Button onClick={() => setToast({ ...toast, show: false })}>
+                Đóng
+              </Button>
+            </div>
+          </div>
         </div>
       )}
     </>
