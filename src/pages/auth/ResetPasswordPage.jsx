@@ -135,6 +135,7 @@ export default function ResetPasswordPage() {
                       className={styles.inputWithIcon}
                       // 2. Thay đổi type động dựa trên State showNewPass
                       type={showNewPass ? 'text' : 'password'}
+                      autoComplete="new-password"
                       placeholder="Enter new password"
                       value={newPass}
                       onChange={e => setNewPass(e.target.value)}
@@ -175,6 +176,7 @@ export default function ResetPasswordPage() {
                       className={styles.inputWithIcon}
                       // Thay đổi type động dựa trên State showConfirm
                       type={showConfirm ? 'text' : 'password'}
+                      autoComplete="new-password"
                       placeholder="Confirm new password"
                       value={confirm}
                       onChange={e => setConfirm(e.target.value)}
