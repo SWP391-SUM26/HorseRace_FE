@@ -138,6 +138,7 @@ export default function ResetPasswordPage() {
                       placeholder="Enter new password"
                       value={newPass}
                       onChange={e => setNewPass(e.target.value)}
+                      autoComplete="new-password"
                       required
                     />
                     {/* 3. Nút bấm Icon Con Mắt thay đổi giao diện tương ứng */}
@@ -178,6 +179,7 @@ export default function ResetPasswordPage() {
                       placeholder="Confirm new password"
                       value={confirm}
                       onChange={e => setConfirm(e.target.value)}
+                      autoComplete="new-password"
                       required
                     />
                     <button
