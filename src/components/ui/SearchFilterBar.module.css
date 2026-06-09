@@ -1,0 +1,50 @@
+.tableHeader {
+  padding: 16px 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.searchWrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background-color: #f1f5f9;
+  padding: 8px 14px;
+  border-radius: 6px;
+  width: 320px;
+}
+
+.searchIcon {
+  color: #94a3b8;
+  width: 16px;
+  height: 16px;
+}
+
+.searchInput {
+  background: none;
+  border: none;
+  outline: none;
+  width: 100%;
+  font-size: 14px;
+}
+
+.filterBtn {
+  background-color: #ffffff;
+  border: 1px solid #cbd5e1;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #334155;
+}
+
+.filterIcon {
+  width: 16px;
+  height: 16px;
+}
