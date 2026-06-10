@@ -19,6 +19,8 @@ import DashboardHome from './pages/dashboard/DashboardHome';
 import AdminDashboard from './pages/Admin/UserManagement';
 import Overview from './pages/Owner/Overview';
 import StableManagement from './pages/Owner/StableManagement';
+import JockeyMarket from './pages/Owner/JockeyMarket';
+import JockeyDetail from './pages/Owner/JockeyDetail';
 
 const OwnerPlaceholder = ({ title }) => (
   <div style={{ padding: '40px', textAlign: 'center', backgroundColor: '#ffffff', borderRadius: '12px', border: '1px solid #e2e8f0', boxShadow: '0 1px 3px rgba(0,0,0,0.02)' }}>
@@ -46,7 +48,9 @@ export default function App() {
           <Route element={<DashboardLayout />}>
             <Route path="/owner-dashboard" element={<Overview />} />
             <Route path="/owner-dashboard/stable" element={<StableManagement />} />
-            <Route path="/owner-dashboard/jockeys" element={<OwnerPlaceholder title="🏇 Jockey Market" />} />
+            <Route path="/owner/jockey-market" element={<JockeyMarket />} />
+            <Route path="/owner/jockey-market/:jockeyId" element={<JockeyDetail />} />
+            <Route path="/owner-dashboard/jockeys" element={<JockeyMarket />} />
             <Route path="/owner-dashboard/calendar" element={<OwnerPlaceholder title="📅 Race Calendar" />} />
             <Route path="/owner-dashboard/financials" element={<OwnerPlaceholder title="💵 Financials" />} />
           </Route>
