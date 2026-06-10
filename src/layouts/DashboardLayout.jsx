@@ -6,7 +6,7 @@ const roleNavItems = {
   Owner: [
     { label: "Overview", to: "/owner-dashboard" },
     { label: "Stable Management", to: "/owner-dashboard/stable", permission: "horses:manage" },
-    { label: "Jockey Market", to: "/owner-dashboard/jockeys" },
+    { label: "Jockey Market", to: "/owner/jockey-market" },
     { label: "Race Calendar", to: "/owner-dashboard/calendar" },
     { label: "Financials", to: "/owner-dashboard/financials", permission: "finance:view" },
   ],
