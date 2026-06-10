@@ -13,6 +13,7 @@ import SearchFilterBar from '../../components/ui/SearchFilterBar';
 import DataTable from '../../components/ui/DataTable';
 import Sidebar from '../../components/layout/Sidebar';
 import Navbar from '../../components/layout/Navbar';
+import TournamentOrchestration from './TournamentOrchestration';
 import { DownloadIcon, UserPlusIcon, TrendingUpIcon, OwnerIcon, JockeyIcon, RefereeIcon, EyeIcon, CameraIcon } from '../../components/ui/Icons';
 
 // ==========================================
@@ -342,7 +343,7 @@ function AdminDashboardLayout() {
           <Routes>
             <Route path="/" element={<UserManagementView />} />
             <Route path="/users" element={<UserManagementView />} />
-            <Route path="/tournaments" element={<PlaceholderView title="🏆 Tournaments" />} />
+            <Route path="/tournaments" element={<TournamentOrchestration />} />
             <Route path="/races" element={<PlaceholderView title="✅ Race Approval" />} />
             <Route path="/staffing" element={<PlaceholderView title="📋 Staffing" />} />
             <Route path="/settings" element={<PlaceholderView title="⚙️ Settings" />} />
