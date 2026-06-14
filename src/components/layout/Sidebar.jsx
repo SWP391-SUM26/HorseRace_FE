@@ -1,4 +1,3 @@
-import React from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import styles from './Sidebar.module.css';
 import { ShieldIcon, UsersIcon, TrophyIcon, CheckSquareIcon, ClipboardIcon, SettingsIcon, FileTextIcon, BarChartIcon } from '../ui/Icons';
@@ -9,7 +8,8 @@ export default function Sidebar() {
   const menuItems = [
     { path: '/admin/users', icon: UsersIcon, label: 'User Management' },
     { path: '/admin/tournaments', icon: TrophyIcon, label: 'Tournaments' },
-    { path: '/admin/races', icon: CheckSquareIcon, label: 'Race Approval' },
+    { path: '/admin/races', icon: CheckSquareIcon, label: 'Race Management' },
+    { path: '/admin/race-approval', icon: FileTextIcon, label: 'Race Approval' },
     { path: '/admin/staffing', icon: ClipboardIcon, label: 'Staffing' },
     { path: '/admin/settings', icon: SettingsIcon, label: 'Settings' },
     { path: '/admin/logs', icon: FileTextIcon, label: 'Audit Logs' },
@@ -26,7 +26,7 @@ export default function Sidebar() {
       </div>
       
       <nav className={styles.sidebarNav}>
-        {menuItems.slice(0, 4).map(item => {
+        {menuItems.slice(0, 5).map(item => {
           const isActive = location.pathname === item.path || 
                            (item.path === '/admin/users' && (location.pathname === '/admin' || location.pathname === '/admin/'));
           
@@ -44,7 +44,7 @@ export default function Sidebar() {
       </nav>
       
       <div className={styles.sidebarBottom}>
-        {menuItems.slice(4).map(item => {
+        {menuItems.slice(5).map(item => {
           const isActive = location.pathname === item.path;
           return (
             <NavLink
