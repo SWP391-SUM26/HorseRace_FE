@@ -12,6 +12,7 @@ const roleNavItems = {
   ],
   Jockey: [
     { label: "Overview", to: "/jockey-dashboard" },
+    { label: "Invitations", to: "/jockey/invitations" },
     { label: "Ride Schedule", to: "/jockey-dashboard", permission: "schedule:manage" },
     { label: "Performance", to: "/jockey-dashboard", permission: "performance:view" },
   ],

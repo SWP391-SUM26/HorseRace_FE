@@ -1,0 +1,386 @@
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  color: #0f172a;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.header > div > span {
+  color: #047857;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.header h2 {
+  margin: 5px 0 6px;
+  font-size: 30px;
+}
+
+.header p {
+  margin: 0;
+  color: #64748b;
+}
+
+.invitationCount {
+  min-width: 140px;
+  padding: 16px 20px;
+  border-radius: 10px;
+  background: #022c22;
+  color: #ffffff;
+  text-align: center;
+}
+
+.invitationCount strong,
+.invitationCount span {
+  display: block;
+}
+
+.invitationCount strong {
+  font-size: 25px;
+}
+
+.invitationCount span {
+  margin-top: 3px;
+  color: #a7f3d0;
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.notice {
+  padding: 13px 16px;
+  border: 1px solid;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.noticeSuccess {
+  border-color: #86efac;
+  background: #f0fdf4;
+  color: #166534;
+}
+
+.noticeError {
+  border-color: #fecaca;
+  background: #fef2f2;
+  color: #b91c1c;
+}
+
+.controlBar {
+  display: grid;
+  grid-template-columns: minmax(260px, 1fr) 220px;
+  gap: 14px;
+  padding: 18px;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  background: #ffffff;
+}
+
+.controlBar label,
+.reasonField {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.controlBar label > span,
+.reasonField > span {
+  color: #475569;
+  font-size: 10px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.controlBar input,
+.controlBar select,
+.reasonField textarea {
+  box-sizing: border-box;
+  width: 100%;
+  border: 1px solid #cbd5e1;
+  border-radius: 7px;
+  padding: 10px 12px;
+  background: #ffffff;
+  color: #0f172a;
+  font: inherit;
+  outline: none;
+}
+
+.controlBar input:focus,
+.controlBar select:focus,
+.reasonField textarea:focus {
+  border-color: #047857;
+  box-shadow: 0 0 0 3px rgba(4, 120, 87, 0.1);
+}
+
+.listCard {
+  overflow: hidden;
+  border: 1px solid #e2e8f0;
+  border-radius: 11px;
+  background: #ffffff;
+  box-shadow: 0 3px 14px rgba(15, 23, 42, 0.04);
+}
+
+.tableViewport {
+  overflow-x: auto;
+}
+
+.listCard table {
+  width: 100%;
+  min-width: 1100px;
+  border-collapse: collapse;
+}
+
+.listCard th {
+  padding: 13px 15px;
+  background: #f8fafc;
+  color: #64748b;
+  text-align: left;
+  font-size: 9px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.listCard td {
+  max-width: 230px;
+  padding: 16px 15px;
+  border-top: 1px solid #e2e8f0;
+  color: #334155;
+  font-size: 12px;
+  vertical-align: middle;
+}
+
+.listCard td strong,
+.listCard td small {
+  display: block;
+}
+
+.listCard td small {
+  margin-top: 4px;
+  color: #64748b;
+  font-size: 10px;
+}
+
+.listCard code {
+  color: #047857;
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.messageCell {
+  color: #64748b !important;
+  line-height: 1.5;
+}
+
+.statusBadge {
+  display: inline-flex;
+  padding: 4px 8px;
+  border-radius: 999px;
+  font-size: 9px;
+  font-weight: 900;
+}
+
+.statusINVITED {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.statusACCEPTED {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.statusDECLINED,
+.statusCANCELLED {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.actions {
+  display: flex;
+  gap: 7px;
+}
+
+.actions button,
+.pagination button,
+.modalActions button {
+  border-radius: 6px;
+  padding: 8px 11px;
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.acceptButton {
+  border: 1px solid #047857;
+  background: #047857;
+  color: #ffffff;
+}
+
+.rejectButton {
+  border: 1px solid #fecaca;
+  background: #ffffff;
+  color: #b91c1c;
+}
+
+.actions button:disabled,
+.pagination button:disabled,
+.modalActions button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.noAction {
+  color: #94a3b8;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.stateCell {
+  padding: 60px !important;
+  color: #64748b !important;
+  text-align: center;
+}
+
+.stateError {
+  color: #b91c1c !important;
+}
+
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 18px;
+  border-top: 1px solid #e2e8f0;
+  background: #f8fafc;
+  color: #64748b;
+  font-size: 12px;
+}
+
+.pagination div {
+  display: flex;
+  gap: 8px;
+}
+
+.pagination button,
+.modalActions > button:first-child {
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  color: #334155;
+}
+
+.overlay {
+  position: fixed;
+  z-index: 1000;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgba(15, 23, 42, 0.58);
+  backdrop-filter: blur(3px);
+}
+
+.modal {
+  width: min(500px, 100%);
+  overflow: hidden;
+  border-radius: 12px;
+  background: #ffffff;
+  box-shadow: 0 24px 70px rgba(15, 23, 42, 0.3);
+}
+
+.modal header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 19px 22px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.modal header span {
+  color: #b91c1c;
+  font-size: 9px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.modal h3 {
+  margin: 4px 0 0;
+}
+
+.modal header button {
+  border: 0;
+  background: transparent;
+  color: #64748b;
+  cursor: pointer;
+  font-size: 18px;
+}
+
+.modal form {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding: 22px;
+}
+
+.rejectSummary {
+  padding: 13px;
+  border-radius: 7px;
+  background: #f8fafc;
+}
+
+.rejectSummary strong,
+.rejectSummary span {
+  display: block;
+}
+
+.rejectSummary span {
+  margin-top: 4px;
+  color: #64748b;
+  font-size: 11px;
+}
+
+.reasonField textarea {
+  min-height: 110px;
+  resize: vertical;
+}
+
+.reasonField small {
+  align-self: flex-end;
+  color: #94a3b8;
+}
+
+.modalActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 9px;
+}
+
+.confirmReject {
+  border: 1px solid #b91c1c;
+  background: #b91c1c;
+  color: #ffffff;
+}
+
+@media (max-width: 650px) {
+  .header {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .controlBar {
+    grid-template-columns: 1fr;
+  }
+
+  .invitationCount {
+    width: auto;
+  }
+}

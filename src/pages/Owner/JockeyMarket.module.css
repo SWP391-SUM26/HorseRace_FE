@@ -209,6 +209,84 @@
   line-height: 1.6;
 }
 
+.sentInvitationList {
+  display: flex;
+  flex-direction: column;
+  padding: 4px 14px 10px;
+}
+
+.sentInvitation {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 2px;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.sentInvitation:last-child {
+  border-bottom: 0;
+}
+
+.sentInvitation strong,
+.sentInvitation > div > span {
+  display: block;
+}
+
+.sentInvitation strong {
+  font-size: 12px;
+}
+
+.sentInvitation > div > span {
+  margin-top: 3px;
+  color: #64748b;
+  font-size: 10px;
+}
+
+.invitationStatusRow {
+  display: flex;
+  align-items: flex-end;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.invitationStatus {
+  padding: 3px 7px;
+  border-radius: 999px;
+  font-size: 8px;
+  font-weight: 900;
+}
+
+.invitationINVITED {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.invitationACCEPTED {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.invitationDECLINED,
+.invitationCANCELLED {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.invitationStatusRow button {
+  border: 0;
+  background: transparent;
+  color: #b91c1c;
+  cursor: pointer;
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.invitationStatusRow button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 .jockeySection {
   min-width: 0;
   overflow: visible;

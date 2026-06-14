@@ -1,9 +1,11 @@
-import { useEffect, useMemo, useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { useLocation, useNavigate, useOutletContext } from "react-router-dom";
 import jockeyMock from "../../data/jockeyMock.json";
 import {
+  cancelInvitation,
+  getInvitationList,
   getJockeyList,
-  sendJockeyInvitation,
+  sendInvitation,
 } from "../../services/jockey";
 import styles from "./JockeyMarket.module.css";
 
@@ -40,6 +42,7 @@ function getErrorMessage(error, fallback) {
 export default function JockeyMarket() {
   const navigate = useNavigate();
   const location = useLocation();
+  const { session } = useOutletContext();
   const [jockeys, setJockeys] = useState([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
@@ -59,6 +62,9 @@ export default function JockeyMarket() {
   const [message, setMessage] = useState("");
   const [sending, setSending] = useState(false);
   const [notice, setNotice] = useState(null);
+  const [sentInvitations, setSentInvitations] = useState([]);
+  const [invitationLoading, setInvitationLoading] = useState(true);
+  const [cancellingId, setCancellingId] = useState("");
 
   const selectedHorse = useMemo(
     () =>
@@ -76,6 +82,24 @@ export default function JockeyMarket() {
   );
   const invitationJockey =
     selectedJockey || (selectedHorseId ? requestedJockey : null);
+
+  const loadSentInvitations = useCallback(async () => {
+    setInvitationLoading(true);
+    try {
+      const result = await getInvitationList({
+        ownerId: session.user.id,
+        page: 1,
+        pageSize: 5,
+        sortBy: "invitedAt",
+        sortOrder: "desc",
+      });
+      setSentInvitations(result.items);
+    } catch {
+      setSentInvitations([]);
+    } finally {
+      setInvitationLoading(false);
+    }
+  }, [session.user.id]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -133,6 +157,11 @@ export default function JockeyMarket() {
     status,
   ]);
 
+  useEffect(() => {
+    const timer = window.setTimeout(loadSentInvitations, 0);
+    return () => window.clearTimeout(timer);
+  }, [loadSentInvitations]);
+
   function resetPageAndSet(setter, value) {
     setter(value);
     setCurrentPage(1);
@@ -170,10 +199,11 @@ export default function JockeyMarket() {
 
     setSending(true);
     try {
-      await sendJockeyInvitation({
+      await sendInvitation({
         horseId: selectedHorse.id,
         raceId: selectedHorse.race.id,
         jockeyId: invitationJockey.id,
+        ownerId: session.user.id,
         message: message.trim(),
       });
       setNotice({
@@ -188,6 +218,7 @@ export default function JockeyMarket() {
           state: { selectedHorseId },
         });
       }
+      await loadSentInvitations();
     } catch (error) {
       setNotice({
         type: "error",
@@ -195,6 +226,27 @@ export default function JockeyMarket() {
       });
     } finally {
       setSending(false);
+    }
+  }
+
+  async function handleCancelInvitation(invitation) {
+    if (!window.confirm(`Cancel invitation for ${invitation.horseName}?`)) return;
+    const invitationId = invitation.assignmentId || invitation.id;
+    setCancellingId(invitationId);
+    try {
+      await cancelInvitation(invitationId);
+      setNotice({
+        type: "success",
+        text: "Invitation cancelled successfully.",
+      });
+      await loadSentInvitations();
+    } catch (error) {
+      setNotice({
+        type: "error",
+        text: getErrorMessage(error, "Unable to cancel the invitation."),
+      });
+    } finally {
+      setCancellingId("");
     }
   }
 
@@ -297,6 +349,60 @@ export default function JockeyMarket() {
                 Select a horse to review its upcoming race.
               </p>
             )}
+          </section>
+
+          <section className={styles.panel}>
+            <div className={styles.panelHeader}>
+              <h3>Sent Invitations</h3>
+              <span>{sentInvitations.length}</span>
+            </div>
+            <div className={styles.sentInvitationList}>
+              {invitationLoading ? (
+                <p className={styles.emptySelection}>Loading invitations...</p>
+              ) : sentInvitations.length === 0 ? (
+                <p className={styles.emptySelection}>No invitations sent yet.</p>
+              ) : (
+                sentInvitations.map((invitation) => {
+                  const invitationId =
+                    invitation.assignmentId || invitation.id;
+                  return (
+                    <article
+                      className={styles.sentInvitation}
+                      key={invitationId}
+                    >
+                      <div>
+                        <strong>{invitation.jockeyName}</strong>
+                        <span>
+                          {invitation.horseName} / {invitation.raceName}
+                        </span>
+                      </div>
+                      <div className={styles.invitationStatusRow}>
+                        <span
+                          className={`${styles.invitationStatus} ${
+                            styles[`invitation${invitation.status}`]
+                          }`}
+                        >
+                          {invitation.status}
+                        </span>
+                        {invitation.status === "INVITED" && (
+                          <button
+                            type="button"
+                            disabled={cancellingId === invitationId}
+                            onClick={() =>
+                              handleCancelInvitation(invitation)
+                            }
+                          >
+                            {cancellingId === invitationId
+                              ? "Cancelling..."
+                              : "Cancel"}
+                          </button>
+                        )}
+                      </div>
+                    </article>
+                  );
+                })
+              )}
+            </div>
           </section>
         </aside>
 

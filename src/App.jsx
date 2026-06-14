@@ -21,6 +21,7 @@ import Overview from './pages/Owner/Overview';
 import StableManagement from './pages/Owner/StableManagement';
 import JockeyMarket from './pages/Owner/JockeyMarket';
 import JockeyDetail from './pages/Owner/JockeyDetail';
+import InvitationList from './pages/Jockey/InvitationList';
 
 const OwnerPlaceholder = ({ title }) => (
   <div style={{ padding: '40px', textAlign: 'center', backgroundColor: '#ffffff', borderRadius: '12px', border: '1px solid #e2e8f0', boxShadow: '0 1px 3px rgba(0,0,0,0.02)' }}>
@@ -59,6 +60,7 @@ export default function App() {
         <Route element={<ProtectedRoute roles={['Jockey']} />}>
           <Route element={<DashboardLayout />}>
             <Route path="/jockey-dashboard" element={<DashboardHome />} />
+            <Route path="/jockey/invitations" element={<InvitationList />} />
           </Route>
         </Route>
 
