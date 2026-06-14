@@ -20,6 +20,7 @@ import Sidebar from '../../components/layout/Sidebar';
 import Navbar from '../../components/layout/Navbar';
 import { DownloadIcon, UserPlusIcon, TrendingUpIcon, OwnerIcon, JockeyIcon, RefereeIcon, EyeIcon, CameraIcon } from '../../components/ui/Icons';
 import TournamentOrchestration from './TournamentOrchestration';
+import StaffingManagement from './StaffingManagement';
 
 // ==========================================
 // SUB-PAGES VIEW MANAGEMENT
@@ -543,7 +544,7 @@ function AdminDashboardLayout() {
             <Route path="/users" element={<UserManagementView />} />
             <Route path="/tournaments" element={<TournamentOrchestration />} />
             <Route path="/races" element={<PlaceholderView title="✅ Race Approval" />} />
-            <Route path="/staffing" element={<PlaceholderView title="📋 Staffing" />} />
+            <Route path="/staffing" element={<StaffingManagement />} />
             <Route path="/settings" element={<PlaceholderView title="⚙️ Settings" />} />
             <Route path="/logs" element={<PlaceholderView title="📄 Audit Logs" />} />
           </Routes>
