@@ -1,0 +1,135 @@
+{
+  "registrations": [
+    {
+      "id": "REG-2026-001",
+      "horse": {
+        "id": "HRS-1042",
+        "name": "Midnight Runner",
+        "image": "/src/assets/silver_streak.png",
+        "age": 4,
+        "stable": "Green Valley Racing",
+        "breed": "Thoroughbred",
+        "sire": "Northern Dancer",
+        "dam": "Moonlit Grace"
+      },
+      "owner": { "id": "OWN-019", "name": "Owen Hart" },
+      "tournament": { "id": "tour_001", "name": "Elite Turf Championship" },
+      "race": { "id": "race_001", "name": "Qualifier Round A" },
+      "status": "PENDING",
+      "submittedAt": "2026-06-14T09:20:00Z",
+      "eligibility": {
+        "vaccinationRecords": "VALID",
+        "fitnessCertification": "VALID",
+        "passportScan": "VALID",
+        "weightVerification": "VALID",
+        "medicalExamination": "VALID"
+      },
+      "refereeNotes": ""
+    },
+    {
+      "id": "REG-2026-002",
+      "horse": {
+        "id": "HRS-1077",
+        "name": "Desert Mirage",
+        "image": "/src/assets/dashboard_monitor.png",
+        "age": 5,
+        "stable": "Emirates Racing",
+        "breed": "Arabian",
+        "sire": "Desert Crown",
+        "dam": "Golden Dawn"
+      },
+      "owner": { "id": "OWN-031", "name": "Maya Sterling" },
+      "tournament": { "id": "tour_002", "name": "Royal Ascot Invitational" },
+      "race": { "id": "race_002", "name": "Semi Final Heat 1" },
+      "status": "PENDING",
+      "submittedAt": "2026-06-13T14:45:00Z",
+      "eligibility": {
+        "vaccinationRecords": "VALID",
+        "fitnessCertification": "MISSING",
+        "passportScan": "VALID",
+        "weightVerification": "VALID",
+        "medicalExamination": "VALID"
+      },
+      "refereeNotes": ""
+    },
+    {
+      "id": "REG-2026-003",
+      "horse": {
+        "id": "HRS-1091",
+        "name": "Thunder Dash",
+        "image": "/src/assets/Jockey preparing for race.png",
+        "age": 5,
+        "stable": "Westfield Stables",
+        "breed": "Thoroughbred",
+        "sire": "Storm Front",
+        "dam": "Rapid Belle"
+      },
+      "owner": { "id": "OWN-044", "name": "Liam West" },
+      "tournament": { "id": "tour_003", "name": "Golden Track Cup" },
+      "race": { "id": "race_003", "name": "Final Race" },
+      "status": "APPROVED",
+      "submittedAt": "2026-06-11T08:10:00Z",
+      "eligibility": {
+        "vaccinationRecords": "VALID",
+        "fitnessCertification": "VALID",
+        "passportScan": "VALID",
+        "weightVerification": "VALID",
+        "medicalExamination": "VALID"
+      },
+      "refereeNotes": "All documents verified."
+    },
+    {
+      "id": "REG-2026-004",
+      "horse": {
+        "id": "HRS-1108",
+        "name": "Royal Gaze",
+        "image": "/src/assets/silver_streak.png",
+        "age": 4,
+        "stable": "Kingsley Farm",
+        "breed": "Thoroughbred",
+        "sire": "Royal Standard",
+        "dam": "Emerald Gaze"
+      },
+      "owner": { "id": "OWN-052", "name": "Sophia King" },
+      "tournament": { "id": "tour_001", "name": "Elite Turf Championship" },
+      "race": { "id": "race_005", "name": "Northern Qualifier" },
+      "status": "REJECTED",
+      "submittedAt": "2026-06-09T16:30:00Z",
+      "eligibility": {
+        "vaccinationRecords": "FAILED",
+        "fitnessCertification": "VALID",
+        "passportScan": "VALID",
+        "weightVerification": "MISSING",
+        "medicalExamination": "FAILED"
+      },
+      "refereeNotes": "Vaccination and medical records require renewal.",
+      "rejectionReason": "Horse is missing valid medical clearance."
+    },
+    {
+      "id": "REG-2026-005",
+      "horse": {
+        "id": "HRS-1120",
+        "name": "Sapphire Wind",
+        "image": "/src/assets/dashboard_monitor.png",
+        "age": 3,
+        "stable": "Cedar Grove",
+        "breed": "Thoroughbred",
+        "sire": "Blue Horizon",
+        "dam": "Gentle Wind"
+      },
+      "owner": { "id": "OWN-061", "name": "Ethan Cole" },
+      "tournament": { "id": "tour_004", "name": "International Sprint Series" },
+      "race": { "id": "race_004", "name": "International Sprint" },
+      "status": "PENDING",
+      "submittedAt": "2026-06-08T11:15:00Z",
+      "eligibility": {
+        "vaccinationRecords": "VALID",
+        "fitnessCertification": "VALID",
+        "passportScan": "MISSING",
+        "weightVerification": "VALID",
+        "medicalExamination": "VALID"
+      },
+      "refereeNotes": ""
+    }
+  ]
+}
