@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../../services/api';
 import styles from './ForgotPasswordPage.module.css';
+import PopupModal from '../../components/ui/PopupModal';
 
 export default function ForgotPasswordPage() {
   const navigate = useNavigate();
@@ -9,6 +10,7 @@ export default function ForgotPasswordPage() {
   const [email, setEmail] = useState('');
   const [sent, setSent] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [popup, setPopup] = useState(null);
 
   const handleSend = async (e) => {
     e.preventDefault(); // Chống reload trang khi submit form
@@ -23,7 +25,15 @@ export default function ForgotPasswordPage() {
       setSent(true);
     } catch (err) {
       console.error(err);
-      alert(err.response?.data?.message || err.message || "Failed to send reset code.");
+      setPopup({
+        type: 'error',
+        title: 'ERROR!',
+        message1: 'Thank you for your request.',
+        message2: 'We are unable to continue the process.',
+        message3: err.response?.data?.message || err.message || 'Failed to send reset code.',
+        buttonText: 'Try Again',
+        onButtonClick: () => setPopup(null)
+      });
     } finally {
       setLoading(false);
     }
@@ -31,12 +41,13 @@ export default function ForgotPasswordPage() {
 
   return (
     <div className={styles.page}>
+      {popup && <PopupModal {...popup} />}
       {/* NAVBAR */}
       <header className={styles.navbar}>
         <button className={styles.navBrand} type="button" onClick={() => navigate('/')}>
           Equine Elite
         </button>
-        
+
       </header>
 
       {/* MAIN CONTENT */}
@@ -111,9 +122,9 @@ export default function ForgotPasswordPage() {
 
                 {/* BACK TO LOGIN LINK */}
                 <div className={styles.signinPrompt}>
-                  <button 
-                    type="button" 
-                    className={styles.backBtn} 
+                  <button
+                    type="button"
+                    className={styles.backBtn}
                     onClick={() => navigate('/login')}
                   >
                     ← Back to Login

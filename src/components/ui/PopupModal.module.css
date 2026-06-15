@@ -1,0 +1,125 @@
+.overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  padding: 1rem;
+}
+
+.modal {
+  background-color: #ffffff;
+  border-radius: 1.25rem;
+  padding: 2.5rem 2rem;
+  width: 100%;
+  max-width: 440px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+  font-family: inherit;
+}
+
+.iconContainer {
+  margin-bottom: 1.5rem;
+}
+
+.iconSuccess {
+  width: 72px;
+  height: 72px;
+  color: #22c55e;
+  stroke-width: 2.5;
+}
+
+.iconError {
+  width: 72px;
+  height: 72px;
+  color: #ef4444;
+  stroke-width: 2.5;
+}
+
+.titleSuccess {
+  color: #22c55e;
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin: 0 0 1rem 0;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.titleError {
+  color: #ef4444;
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin: 0 0 1rem 0;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.messageContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 2rem;
+}
+
+.message1 {
+  color: #374151;
+  font-weight: 600;
+  font-size: 1rem;
+  margin: 0;
+}
+
+.message2 {
+  color: #4b5563;
+  font-weight: 500;
+  font-size: 0.95rem;
+  margin: 0;
+}
+
+.message3 {
+  color: #6b7280;
+  font-weight: 400;
+  font-size: 0.9rem;
+  margin: 0;
+}
+
+.btnSuccess {
+  background-color: #22c55e;
+  color: white;
+  border: none;
+  border-radius: 0.375rem;
+  padding: 0.75rem 2.5rem;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  min-width: 200px;
+}
+
+.btnSuccess:hover {
+  background-color: #16a34a;
+}
+
+.btnError {
+  background-color: #ef4444;
+  color: white;
+  border: none;
+  border-radius: 0.375rem;
+  padding: 0.75rem 2.5rem;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  min-width: 200px;
+}
+
+.btnError:hover {
+  background-color: #dc2626;
+}

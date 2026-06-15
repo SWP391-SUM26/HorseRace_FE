@@ -2,6 +2,7 @@ import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../../services/api';
 import styles from './ResetPasswordPage.module.css';
+import PopupModal from '../../components/ui/PopupModal';
 
 export default function ResetPasswordPage() {
   const navigate = useNavigate();
@@ -10,10 +11,12 @@ export default function ResetPasswordPage() {
   const [newPass, setNewPass] = useState('');
   const [confirm, setConfirm] = useState('');
   const [loading, setLoading] = useState(false);
-  
+
   // 1. Tạo State quản lý ẩn/hiện cho từng ô mật khẩu
   const [showNewPass, setShowNewPass] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
+
+  const [popup, setPopup] = useState(null);
 
   const refs = useRef([]);
 
@@ -41,18 +44,36 @@ export default function ResetPasswordPage() {
     e.preventDefault();
     const email = sessionStorage.getItem('reset_password_email');
     if (!email) {
-      alert("Session expired or invalid email. Please start over from Forgot Password page.");
-      navigate('/forgot-password');
+      setPopup({
+        type: 'error',
+        title: 'ERROR!',
+        message1: 'Thank you for your request.',
+        message2: 'Session expired or invalid email.',
+        message3: 'Please start over from Forgot Password page.',
+        buttonText: 'Try Again',
+        onButtonClick: () => {
+          setPopup(null);
+          navigate('/forgot-password');
+        }
+      });
       return;
     }
 
     if (!newPass || newPass !== confirm) {
-      alert("Passwords do not match or are empty.");
+      setPopup({
+        type: 'error',
+        title: 'ERROR!',
+        message1: 'Thank you for your request.',
+        message2: 'We are unable to continue the process.',
+        message3: 'Passwords do not match or are empty.',
+        buttonText: 'Try Again',
+        onButtonClick: () => setPopup(null)
+      });
       return;
     }
 
     setLoading(true);
-    
+
     try {
       await api.post('/api/v1/auth/reset-password', {
         email: email,
@@ -61,12 +82,30 @@ export default function ResetPasswordPage() {
         confirmPassword: confirm
       });
 
-      alert("Password has been reset successfully! You can now log in.");
-      sessionStorage.removeItem('reset_password_email');
-      navigate('/login');
+      setPopup({
+        type: 'success',
+        title: 'SUCCESS',
+        message1: 'Thank you for your request.',
+        message2: 'Your password has been changed successfully.',
+        message3: 'You can now log in with your new password.',
+        buttonText: 'Continue',
+        onButtonClick: () => {
+          setPopup(null);
+          sessionStorage.removeItem('reset_password_email');
+          navigate('/login');
+        }
+      });
     } catch (err) {
       console.error(err);
-      alert(err.response?.data?.message || err.message || "Failed to reset password. Invalid or expired code.");
+      setPopup({
+        type: 'error',
+        title: 'ERROR!',
+        message1: 'Thank you for your request.',
+        message2: 'We are unable to continue the process.',
+        message3: err.response?.data?.message || err.message || 'Please try again to complete the request.',
+        buttonText: 'Try Again',
+        onButtonClick: () => setPopup(null)
+      });
     } finally {
       setLoading(false);
     }
@@ -74,6 +113,7 @@ export default function ResetPasswordPage() {
 
   return (
     <div className={styles.page}>
+      {popup && <PopupModal {...popup} />}
       {/* NAVBAR */}
       <header className={styles.navbar}>
         <button className={styles.navBrand} type="button" onClick={() => navigate('/')}>
@@ -116,7 +156,7 @@ export default function ResetPasswordPage() {
                       onChange={e => handleOtp(e.target.value, i)}
                       onKeyDown={e => handleKeyDown(e, i)}
                       maxLength={1}
-                      type="text" 
+                      type="text"
                       placeholder="·"
                     />
                   ))}
@@ -125,7 +165,7 @@ export default function ResetPasswordPage() {
 
               {/* FORM FIELDS */}
               <div className={styles.fields}>
-                
+
                 {/* TRƯỜNG NEW PASSWORD */}
                 <div className={styles.fieldGroup}>
                   <label className={styles.fieldLabel}>NEW PASSWORD</label>
@@ -150,7 +190,7 @@ export default function ResetPasswordPage() {
                       {showNewPass ? <EyeIcon /> : <EyeOffIcon />}
                     </button>
                   </div>
-                  
+
                   {/* Password Strength */}
                   {newPass && (
                     <>
