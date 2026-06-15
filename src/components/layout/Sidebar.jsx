@@ -1,32 +1,65 @@
+import { useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import styles from './Sidebar.module.css';
-import { ShieldIcon, UsersIcon, TrophyIcon, CheckSquareIcon, ClipboardIcon, SettingsIcon, FileTextIcon, BarChartIcon } from '../ui/Icons';
+import {
+  BarChartIcon,
+  CheckSquareIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon,
+  ClipboardIcon,
+  FileTextIcon,
+  SettingsIcon,
+  ShieldIcon,
+  TrophyIcon,
+  UsersIcon,
+} from '../ui/Icons';
 
-export default function Sidebar() {
+const defaultMenuItems = [
+  { path: '/admin/users', icon: UsersIcon, label: 'User Management' },
+  { path: '/admin/tournaments', icon: TrophyIcon, label: 'Tournaments' },
+  { path: '/admin/races', icon: CheckSquareIcon, label: 'Race Management' },
+  { path: '/admin/race-approval', icon: FileTextIcon, label: 'Race Approval' },
+  { path: '/admin/staffing', icon: ClipboardIcon, label: 'Staffing' },
+  { path: '/admin/settings', icon: SettingsIcon, label: 'Settings', bottom: true },
+  { path: '/admin/logs', icon: FileTextIcon, label: 'Audit Logs', bottom: true },
+];
+
+export default function Sidebar({
+  menuItems = defaultMenuItems,
+  title = 'Equine Elite',
+  subtitle = 'ADMIN MANAGEMENT',
+  footerAction,
+}) {
   const location = useLocation();
+  const [collapsed, setCollapsed] = useState(
+    () => localStorage.getItem('equine_elite_sidebar_collapsed') === 'true',
+  );
+  const primaryItems = menuItems.filter((item) => !item.bottom);
+  const bottomItems = menuItems.filter((item) => item.bottom);
 
-  const menuItems = [
-    { path: '/admin/users', icon: UsersIcon, label: 'User Management' },
-    { path: '/admin/tournaments', icon: TrophyIcon, label: 'Tournaments' },
-    { path: '/admin/races', icon: CheckSquareIcon, label: 'Race Management' },
-    { path: '/admin/race-approval', icon: FileTextIcon, label: 'Race Approval' },
-    { path: '/admin/staffing', icon: ClipboardIcon, label: 'Staffing' },
-    { path: '/admin/settings', icon: SettingsIcon, label: 'Settings' },
-    { path: '/admin/logs', icon: FileTextIcon, label: 'Audit Logs' },
-  ];
+  function toggleSidebar() {
+    setCollapsed((current) => {
+      const nextValue = !current;
+      localStorage.setItem(
+        'equine_elite_sidebar_collapsed',
+        String(nextValue),
+      );
+      return nextValue;
+    });
+  }
 
   return (
-    <aside className={styles.sidebar}>
+    <aside className={`${styles.sidebar} ${collapsed ? styles.collapsed : ''}`}>
       <div className={styles.sidebarLogo}>
         <ShieldIcon className={styles.logoIcon} />
         <div className={styles.logoText}>
-          <div className={styles.logoTitle}>Equine Elite</div>
-          <div className={styles.logoSubtitle}>ADMIN MANAGEMENT</div>
+          <div className={styles.logoTitle}>{title}</div>
+          <div className={styles.logoSubtitle}>{subtitle}</div>
         </div>
       </div>
       
       <nav className={styles.sidebarNav}>
-        {menuItems.slice(0, 5).map(item => {
+        {primaryItems.map(item => {
           const isActive = location.pathname === item.path || 
                            (item.path === '/admin/users' && (location.pathname === '/admin' || location.pathname === '/admin/'));
           
@@ -35,31 +68,44 @@ export default function Sidebar() {
               key={item.path}
               to={item.path}
               className={`${styles.sidebarItem} ${isActive ? styles.sidebarItemActive : ''}`}
+              title={collapsed ? item.label : undefined}
             >
               <item.icon className={styles.sidebarItemIcon} />
-              <span>{item.label}</span>
+              <span className={styles.itemLabel}>{item.label}</span>
             </NavLink>
           );
         })}
       </nav>
       
       <div className={styles.sidebarBottom}>
-        {menuItems.slice(5).map(item => {
+        {bottomItems.map(item => {
           const isActive = location.pathname === item.path;
           return (
             <NavLink
               key={item.path}
               to={item.path}
               className={`${styles.sidebarItem} ${isActive ? styles.sidebarItemActive : ''}`}
+              title={collapsed ? item.label : undefined}
             >
               <item.icon className={styles.sidebarItemIcon} />
-              <span>{item.label}</span>
+              <span className={styles.itemLabel}>{item.label}</span>
             </NavLink>
           );
         })}
-        <button className={styles.systemReportBtn}>
-          <BarChartIcon className={styles.reportIcon} />
-          System Report
+        {footerAction === undefined ? (
+          <button className={styles.systemReportBtn}>
+            <BarChartIcon className={styles.reportIcon} />
+            <span className={styles.itemLabel}>System Report</span>
+          </button>
+        ) : footerAction}
+        <button
+          type="button"
+          className={styles.toggleButton}
+          onClick={toggleSidebar}
+          aria-label={collapsed ? 'Open sidebar' : 'Collapse sidebar'}
+          title={collapsed ? 'Open sidebar' : 'Collapse sidebar'}
+        >
+          {collapsed ? <ChevronRightIcon /> : <ChevronLeftIcon />}
         </button>
       </div>
     </aside>

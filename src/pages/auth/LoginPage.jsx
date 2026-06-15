@@ -10,6 +10,7 @@ const dashboardByRole = {
   Admin: "/admin/users",
   Owner: "/owner-dashboard",
   Jockey: "/jockey-dashboard",
+  Referee: "/referee/registrations",
   Spectator: "/spectator-dashboard",
 };
 

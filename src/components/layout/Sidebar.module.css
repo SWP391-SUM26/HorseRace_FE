@@ -1,5 +1,9 @@
 .sidebar {
+  position: sticky;
+  top: 0;
   width: 260px;
+  height: 100vh;
+  box-sizing: border-box;
   background-color: #022c22;
   color: #94a3b8;
   padding: 24px 16px;
@@ -7,6 +11,14 @@
   flex-direction: column;
   justify-content: space-between;
   flex-shrink: 0;
+  overflow: hidden;
+  transition: width 0.25s ease, padding 0.25s ease;
+}
+
+.collapsed {
+  width: 76px;
+  padding-right: 10px;
+  padding-left: 10px;
 }
 
 .sidebarLogo {
@@ -26,6 +38,9 @@
 .logoText {
   display: flex;
   flex-direction: column;
+  min-width: 0;
+  white-space: nowrap;
+  transition: opacity 0.15s ease;
 }
 
 .logoTitle {
@@ -76,6 +91,82 @@
 .sidebarItemIcon {
   width: 18px;
   height: 18px;
+  flex: 0 0 18px;
+}
+
+.itemLabel {
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.toggleButton {
+  width: 42px;
+  height: 42px;
+  min-height: 42px;
+  margin-top: 12px;
+  margin-right: auto;
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 10px;
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.1),
+    rgba(255, 255, 255, 0.04)
+  );
+  color: #cbd5e1;
+  cursor: pointer;
+  transition:
+    background-color 0.2s ease,
+    border-color 0.2s ease,
+    color 0.2s ease,
+    transform 0.2s ease;
+}
+
+.toggleButton:hover {
+  border-color: rgba(52, 211, 153, 0.55);
+  background: rgba(52, 211, 153, 0.12);
+  color: #ffffff;
+  transform: translateY(-1px);
+}
+
+.toggleButton svg {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 18px;
+}
+
+.collapsed .sidebarLogo {
+  justify-content: center;
+  padding-left: 0;
+}
+
+.collapsed .logoText {
+  display: none;
+}
+
+.collapsed .sidebarItem {
+  justify-content: center;
+  gap: 0;
+  padding-right: 14px;
+  padding-left: 14px;
+}
+
+.collapsed .itemLabel {
+  display: none;
+}
+
+.collapsed .systemReportBtn {
+  padding-right: 10px;
+  padding-left: 10px;
+}
+
+.collapsed .toggleButton {
+  border-radius: 50%;
+  color: #ffffff;
 }
 
 .sidebarBottom {
@@ -104,4 +195,23 @@
 .reportIcon {
   width: 16px;
   height: 16px;
+}
+
+@media (max-width: 900px) {
+  .sidebar,
+  .collapsed {
+    position: relative;
+    width: 100%;
+    height: auto;
+    min-height: auto;
+  }
+
+  .collapsed {
+    height: 72px;
+  }
+
+  .collapsed .sidebarNav,
+  .collapsed .sidebarBottom {
+    display: none;
+  }
 }
