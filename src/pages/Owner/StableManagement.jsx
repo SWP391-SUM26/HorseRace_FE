@@ -9,6 +9,7 @@ import {
   assignHorseToRace,
   toggleMedicalStatus,
 } from "../../services/horse";
+import PopupModal from "../../components/ui/PopupModal";
 
 // Pre-define upcoming races for assignment
 const UPCOMING_EVENTS = [
@@ -57,15 +58,24 @@ export default function StableManagement() {
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
 
-  // Selected horse state for detail/edit
+  // Selected horse state for detail/edit/delete
   const [selectedHorse, setSelectedHorse] = useState(null);
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+  const [popup, setPopup] = useState({ isOpen: false, type: 'success', title: '', message1: '' });
 
   // Form states
   const [formName, setFormName] = useState("");
-  const [formAge, setFormAge] = useState("3yo");
-  const [formBreed, setFormBreed] = useState("Colt");
-  const [formStatus, setFormStatus] = useState("FIT TO RACE");
-  //const [formImage, setFormImage] = useState(null);
+  const [formMicrochipNo, setFormMicrochipNo] = useState("");
+  const [formGender, setFormGender] = useState("MALE");
+  const [formBreed, setFormBreed] = useState("");
+  const [formColor, setFormColor] = useState("");
+  const [formDateOfBirth, setFormDateOfBirth] = useState("");
+  const [formWeight, setFormWeight] = useState("");
+  const [formOriginCountry, setFormOriginCountry] = useState("");
+  const [formHealthStatus, setFormHealthStatus] = useState("HEALTHY");
+  const [formRegistrationStatus, setFormRegistrationStatus] = useState("pending");
+  const [formStatus, setFormStatus] = useState("ACTIVE");
   const [formImagePreview, setFormImagePreview] = useState("");
 
   // Race assignment state
@@ -107,10 +117,16 @@ export default function StableManagement() {
   // CREATE HORSE ACTION
   const handleOpenCreate = () => {
     setFormName("");
-    setFormAge("3yo");
-    setFormBreed("Colt");
-    setFormStatus("FIT TO RACE");
-    //setFormImage(null);
+    setFormMicrochipNo("");
+    setFormGender("MALE");
+    setFormBreed("");
+    setFormColor("");
+    setFormDateOfBirth("");
+    setFormWeight("");
+    setFormOriginCountry("");
+    setFormHealthStatus("HEALTHY");
+    setFormRegistrationStatus("pending");
+    setFormStatus("ACTIVE");
     setFormImagePreview("");
     setIsCreateOpen(true);
   };
@@ -119,28 +135,48 @@ export default function StableManagement() {
     e.preventDefault();
     if (!formName.trim()) return;
 
-    const data = await createHorse({
-      name: formName.trim(),
-      age: formAge,
-      breed: formBreed,
-      status: formStatus,
-      image: formImagePreview || "/assets/dashboard_monitor.png",
-    });
+    const parsedWeight = parseFloat(formWeight);
 
-    setHorses((prev) => [data, ...prev]);
-    setIsCreateOpen(false);
-    triggerToast(`Successfully registered ${data.name}!`);
+    const payload = {
+      name: formName.trim(),
+      microchipNo: formMicrochipNo.trim() || null,
+      gender: formGender,
+      breed: formBreed.trim() || null,
+      color: formColor.trim() || null,
+      dateOfBirth: formDateOfBirth ? formDateOfBirth : null,
+      weight: !isNaN(parsedWeight) && parsedWeight > 0 ? parsedWeight : null,
+      originCountry: formOriginCountry.trim() || null,
+      healthStatus: formHealthStatus,
+      registrationStatus: formRegistrationStatus,
+      status: formStatus
+    };
+
+    try {
+      const data = await createHorse(payload);
+      setHorses((prev) => [data, ...prev]);
+      setIsCreateOpen(false);
+      triggerToast(`Successfully registered ${data.name}!`);
+    } catch (err) {
+      setPopup({ isOpen: true, type: 'error', title: 'Error', message1: err.response?.data?.message || err.message, message2: "Payload sent: " + JSON.stringify(payload) });
+    }
   };
 
   // EDIT HORSE ACTION
   const handleOpenEdit = (horse, e) => {
     e.stopPropagation();
     setSelectedHorse(horse);
-    setFormName(horse.name);
-    setFormAge(horse.age);
-    setFormBreed(horse.breed);
-    setFormStatus(horse.status);
-    setFormImagePreview(horse.image);
+    setFormName(horse.name || "");
+    setFormMicrochipNo(horse.microchipNo || "");
+    setFormGender(horse.gender || "MALE");
+    setFormBreed(horse.breed || "");
+    setFormColor(horse.color || "");
+    setFormDateOfBirth(horse.dateOfBirth || "");
+    setFormWeight(horse.weight || "");
+    setFormOriginCountry(horse.originCountry || "");
+    setFormHealthStatus(horse.healthStatus || "HEALTHY");
+    setFormRegistrationStatus(horse.registrationStatus || "pending");
+    setFormStatus(horse.status || "ACTIVE");
+    setFormImagePreview(horse.image || "");
     setIsEditOpen(true);
   };
 
@@ -148,36 +184,55 @@ export default function StableManagement() {
     e.preventDefault();
     if (!selectedHorse || !formName.trim()) return;
 
-    const data = await updateHorse(selectedHorse.id, {
-      name: formName.trim(),
-      age: formAge,
-      breed: formBreed,
-      status: formStatus,
-      image: formImagePreview,
-    });
+    const parsedWeight = parseFloat(formWeight);
 
-    setHorses((prev) => prev.map((h) => (h.id === data.id ? data : h)));
-    setIsEditOpen(false);
-    if (selectedHorse && selectedHorse.id === data.id) {
-      setSelectedHorse(data);
+    const payload = {
+      name: formName.trim(),
+      microchipNo: formMicrochipNo.trim() || null,
+      gender: formGender,
+      breed: formBreed.trim() || null,
+      color: formColor.trim() || null,
+      dateOfBirth: formDateOfBirth ? formDateOfBirth : null,
+      weight: !isNaN(parsedWeight) && parsedWeight > 0 ? parsedWeight : null,
+      originCountry: formOriginCountry.trim() || null,
+      healthStatus: formHealthStatus,
+      registrationStatus: formRegistrationStatus,
+      status: formStatus
+    };
+
+    try {
+      const data = await updateHorse(selectedHorse.id, payload);
+      setHorses((prev) => prev.map((h) => (h.id === data.id ? data : h)));
+      setIsEditOpen(false);
+      if (selectedHorse && selectedHorse.id === data.id) {
+        setSelectedHorse(data);
+      }
+      triggerToast(`Updated profile for ${data.name}!`);
+    } catch (err) {
+      setPopup({ isOpen: true, type: 'error', title: 'Error', message1: err.response?.data?.message || err.message, message2: "Payload sent: " + JSON.stringify(payload) });
     }
-    triggerToast(`Updated profile for ${data.name}!`);
   };
 
   // DELETE HORSE ACTION
-  const handleDeleteHorse = async (id, name, e) => {
+  const handleOpenDelete = (id, name, e) => {
     e.stopPropagation();
-    if (
-      window.confirm(
-        `Are you sure you want to retire/delete ${name} from your stable?`,
-      )
-    ) {
-      await deleteHorse(id);
-      setHorses((prev) => prev.filter((h) => h.id !== id));
-      if (selectedHorse && selectedHorse.id === id) {
+    setDeleteTarget({ id, name });
+    setIsDeleteOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!deleteTarget) return;
+    try {
+      await deleteHorse(deleteTarget.id);
+      setHorses((prev) => prev.filter((h) => h.id !== deleteTarget.id));
+      if (selectedHorse && selectedHorse.id === deleteTarget.id) {
         setIsDetailOpen(false);
       }
-      triggerToast(`${name} has been removed from stable roster.`);
+      setIsDeleteOpen(false);
+      triggerToast(`${deleteTarget.name} has been removed from stable roster.`);
+    } catch (err) {
+      setIsDeleteOpen(false);
+      setPopup({ isOpen: true, type: 'error', title: 'Delete Failed', message1: err.response?.data?.message || err.message });
     }
   };
 
@@ -243,6 +298,102 @@ export default function StableManagement() {
       setCurrentPage(page);
     }
   };
+
+  const renderFormFields = () => (
+    <>
+      <div className={styles.formGrid}>
+        <div className={styles.formGroup}>
+          <label className={styles.formLabel}>HORSE NAME</label>
+          <input type="text" value={formName} onChange={(e) => setFormName(e.target.value)} placeholder="e.g. Thunder Dash" className={styles.formInput} required />
+        </div>
+        <div className={styles.formGroup}>
+          <label className={styles.formLabel}>MICROCHIP NO.</label>
+          <input type="text" value={formMicrochipNo} onChange={(e) => setFormMicrochipNo(e.target.value)} className={styles.formInput} />
+        </div>
+      </div>
+
+      <div className={styles.formGrid}>
+        <div className={styles.formGroup}>
+          <label className={styles.formLabel}>GENDER</label>
+          <select value={formGender} onChange={(e) => setFormGender(e.target.value)} className={styles.formSelect}>
+            <option value="MALE">MALE</option>
+            <option value="FEMALE">FEMALE</option>
+            <option value="GELDING">GELDING</option>
+          </select>
+        </div>
+        <div className={styles.formGroup}>
+          <label className={styles.formLabel}>BREED</label>
+          <input type="text" value={formBreed} onChange={(e) => setFormBreed(e.target.value)} className={styles.formInput} />
+        </div>
+      </div>
+
+      <div className={styles.formGrid}>
+        <div className={styles.formGroup}>
+          <label className={styles.formLabel}>COLOR</label>
+          <input type="text" value={formColor} onChange={(e) => setFormColor(e.target.value)} className={styles.formInput} />
+        </div>
+        <div className={styles.formGroup}>
+          <label className={styles.formLabel}>DATE OF BIRTH</label>
+          <input type="date" value={formDateOfBirth} onChange={(e) => setFormDateOfBirth(e.target.value)} className={styles.formInput} />
+        </div>
+      </div>
+
+      <div className={styles.formGrid}>
+        <div className={styles.formGroup}>
+          <label className={styles.formLabel}>WEIGHT (kg)</label>
+          <input type="number" step="0.1" value={formWeight} onChange={(e) => setFormWeight(e.target.value)} className={styles.formInput} />
+        </div>
+        <div className={styles.formGroup}>
+          <label className={styles.formLabel}>ORIGIN COUNTRY</label>
+          <input type="text" value={formOriginCountry} onChange={(e) => setFormOriginCountry(e.target.value)} className={styles.formInput} />
+        </div>
+      </div>
+
+      <div className={styles.formGrid}>
+        <div className={styles.formGroup}>
+          <label className={styles.formLabel}>HEALTH STATUS</label>
+          <select value={formHealthStatus} onChange={(e) => setFormHealthStatus(e.target.value)} className={styles.formSelect}>
+            <option value="HEALTHY">HEALTHY</option>
+            <option value="INJURED">INJURED</option>
+            <option value="QUARANTINE">QUARANTINE</option>
+            <option value="UNFIT">UNFIT</option>
+          </select>
+        </div>
+        <div className={styles.formGroup}>
+          <label className={styles.formLabel}>REGISTRATION STATUS</label>
+          <select value={formRegistrationStatus} onChange={(e) => setFormRegistrationStatus(e.target.value)} className={styles.formSelect}>
+            <option value="pending">PENDING</option>
+            <option value="verified">VERIFIED</option>
+            <option value="rejected">REJECTED</option>
+          </select>
+        </div>
+      </div>
+
+      <div className={styles.formGroup}>
+        <label className={styles.formLabel}>SYSTEM STATUS</label>
+        <select value={formStatus} onChange={(e) => setFormStatus(e.target.value)} className={styles.formSelect}>
+          <option value="ACTIVE">ACTIVE</option>
+          <option value="RETIRED">RETIRED</option>
+          <option value="INACTIVE">INACTIVE</option>
+        </select>
+      </div>
+
+      <div className={styles.formGroup}>
+        <label className={styles.formLabel}>HORSE IMAGE</label>
+        <div className={styles.imageUploadWrapper}>
+          {formImagePreview ? (
+            <img src={formImagePreview} alt="Preview" className={styles.uploadPreview} />
+          ) : (
+            <div className={styles.imagePlaceholder}>🐎 No Image Chosen</div>
+          )}
+          <label className={styles.imageUploadBtn}>
+            Choose File
+            <input type="file" accept="image/*" onChange={handleImageChange} style={{ display: "none" }} />
+          </label>
+        </div>
+      </div>
+    </>
+  );
 
   return (
     <div className={styles.stableContainer}>
@@ -469,7 +620,7 @@ export default function StableManagement() {
                           <button
                             className={styles.actionBtnIcon}
                             onClick={(e) =>
-                              handleDeleteHorse(horse.id, horse.name, e)
+                              handleOpenDelete(horse.id, horse.name, e)
                             }
                             style={{ color: "#ef4444" }}
                             title="Retire Horse"
@@ -624,87 +775,7 @@ export default function StableManagement() {
               </button>
             </div>
             <form onSubmit={handleCreateHorse} className={styles.modalForm}>
-              <div className={styles.formGroup}>
-                <label className={styles.formLabel}>HORSE NAME</label>
-                <input
-                  type="text"
-                  value={formName}
-                  onChange={(e) => setFormName(e.target.value)}
-                  placeholder="e.g. Thunder Dash"
-                  className={styles.formInput}
-                  required
-                />
-              </div>
-
-              <div className={styles.formGrid}>
-                <div className={styles.formGroup}>
-                  <label className={styles.formLabel}>AGE</label>
-                  <select
-                    value={formAge}
-                    onChange={(e) => setFormAge(e.target.value)}
-                    className={styles.formSelect}
-                  >
-                    <option value="2yo">2yo (Two years old)</option>
-                    <option value="3yo">3yo (Three years old)</option>
-                    <option value="4yo">4yo (Four years old)</option>
-                    <option value="5yo">5yo (Five years old)</option>
-                  </select>
-                </div>
-
-                <div className={styles.formGroup}>
-                  <label className={styles.formLabel}>BREED/GENDER</label>
-                  <select
-                    value={formBreed}
-                    onChange={(e) => setFormBreed(e.target.value)}
-                    className={styles.formSelect}
-                  >
-                    <option value="Colt">Colt (Young Male)</option>
-                    <option value="Filly">Filly (Young Female)</option>
-                    <option value="Stallion">Stallion (Adult Male)</option>
-                    <option value="Gelding">Gelding (Castrated Male)</option>
-                  </select>
-                </div>
-              </div>
-
-              <div className={styles.formGroup}>
-                <label className={styles.formLabel}>
-                  INITIAL READINESS STATUS
-                </label>
-                <select
-                  value={formStatus}
-                  onChange={(e) => setFormStatus(e.target.value)}
-                  className={styles.formSelect}
-                >
-                  <option value="FIT TO RACE">Fit for Racing</option>
-                  <option value="RESTING">Resting / Inactive</option>
-                </select>
-              </div>
-
-              <div className={styles.formGroup}>
-                <label className={styles.formLabel}>UPLOAD HORSE IMAGE</label>
-                <div className={styles.imageUploadWrapper}>
-                  {formImagePreview ? (
-                    <img
-                      src={formImagePreview}
-                      alt="Preview"
-                      className={styles.uploadPreview}
-                    />
-                  ) : (
-                    <div className={styles.imagePlaceholder}>
-                      🐎 No Image Chosen
-                    </div>
-                  )}
-                  <label className={styles.imageUploadBtn}>
-                    Choose File
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={handleImageChange}
-                      style={{ display: "none" }}
-                    />
-                  </label>
-                </div>
-              </div>
+              {renderFormFields()}
 
               <div className={styles.modalActions}>
                 <button
@@ -739,78 +810,7 @@ export default function StableManagement() {
               </button>
             </div>
             <form onSubmit={handleUpdateHorse} className={styles.modalForm}>
-              <div className={styles.formGroup}>
-                <label className={styles.formLabel}>HORSE NAME</label>
-                <input
-                  type="text"
-                  value={formName}
-                  onChange={(e) => setFormName(e.target.value)}
-                  className={styles.formInput}
-                  required
-                />
-              </div>
-
-              <div className={styles.formGrid}>
-                <div className={styles.formGroup}>
-                  <label className={styles.formLabel}>AGE</label>
-                  <select
-                    value={formAge}
-                    onChange={(e) => setFormAge(e.target.value)}
-                    className={styles.formSelect}
-                  >
-                    <option value="2yo">2yo</option>
-                    <option value="3yo">3yo</option>
-                    <option value="4yo">4yo</option>
-                    <option value="5yo">5yo</option>
-                  </select>
-                </div>
-
-                <div className={styles.formGroup}>
-                  <label className={styles.formLabel}>BREED/GENDER</label>
-                  <select
-                    value={formBreed}
-                    onChange={(e) => setFormBreed(e.target.value)}
-                    className={styles.formSelect}
-                  >
-                    <option value="Colt">Colt</option>
-                    <option value="Filly">Filly</option>
-                    <option value="Stallion">Stallion</option>
-                    <option value="Gelding">Gelding</option>
-                  </select>
-                </div>
-              </div>
-
-              <div className={styles.formGroup}>
-                <label className={styles.formLabel}>READINESS STATUS</label>
-                <select
-                  value={formStatus}
-                  onChange={(e) => setFormStatus(e.target.value)}
-                  className={styles.formSelect}
-                >
-                  <option value="FIT TO RACE">Fit for Racing</option>
-                  <option value="RESTING">Resting / Inactive</option>
-                </select>
-              </div>
-
-              <div className={styles.formGroup}>
-                <label className={styles.formLabel}>HORSE IMAGE</label>
-                <div className={styles.imageUploadWrapper}>
-                  <img
-                    src={formImagePreview}
-                    alt="Preview"
-                    className={styles.uploadPreview}
-                  />
-                  <label className={styles.imageUploadBtn}>
-                    Replace Image
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={handleImageChange}
-                      style={{ display: "none" }}
-                    />
-                  </label>
-                </div>
-              </div>
+              {renderFormFields()}
 
               <div className={styles.modalActions}>
                 <button
@@ -888,7 +888,7 @@ export default function StableManagement() {
                 <button
                   className={styles.btnGhost}
                   onClick={(e) =>
-                    handleDeleteHorse(selectedHorse.id, selectedHorse.name, e)
+                    handleOpenDelete(selectedHorse.id, selectedHorse.name, e)
                   }
                   style={{ flex: 1, borderColor: "#fee2e2", color: "#ef4444" }}
                 >
@@ -1012,6 +1012,46 @@ export default function StableManagement() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* ==========================================
+         INTERACTIVE MODAL: DELETE HORSE CONFIRMATION
+         ========================================== */}
+      {isDeleteOpen && deleteTarget && (
+        <div className={styles.modalOverlay}>
+          <div className={styles.modalContent} style={{ maxWidth: '400px', textAlign: 'center' }}>
+            <div style={{ fontSize: '48px', marginBottom: '16px' }}>⚠️</div>
+            <h3 className={styles.modalTitle} style={{ color: '#ef4444' }}>Retire/Delete Horse</h3>
+            <p style={{ color: '#475569', marginBottom: '24px' }}>
+              Are you sure you want to remove <strong>{deleteTarget.name}</strong> from your stable? This action cannot be undone.
+            </p>
+            <div style={{ display: 'flex', gap: '12px', justifyContent: 'center' }}>
+              <button
+                className={styles.btnGhost}
+                onClick={() => setIsDeleteOpen(false)}
+              >
+                Cancel
+              </button>
+              <button 
+                className={styles.btnPrimary} 
+                style={{ backgroundColor: '#ef4444', borderColor: '#ef4444' }}
+                onClick={handleConfirmDelete}
+              >
+                Yes, Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {popup.isOpen && (
+        <PopupModal
+          type={popup.type}
+          title={popup.title}
+          message1={popup.message1}
+          buttonText="OK"
+          onButtonClick={() => setPopup({ ...popup, isOpen: false })}
+        />
       )}
     </div>
   );
