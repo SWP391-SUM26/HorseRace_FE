@@ -23,6 +23,10 @@ import TournamentOrchestration from './TournamentOrchestration';
 import StaffingManagement from './StaffingManagement';
 import RaceManagement from './RaceManagement';
 import RaceApproval from './RaceApproval';
+import RegistrationApproval from './RegistrationApproval';
+import AuditLogs from './AuditLogs';
+import Settings from './Settings';
+import NotificationsCenter from '../shared/NotificationsCenter';
 
 // ==========================================
 // SUB-PAGES VIEW MANAGEMENT
@@ -544,12 +548,14 @@ function AdminDashboardLayout() {
           <Routes>
             <Route path="/" element={<UserManagementView />} />
             <Route path="/users" element={<UserManagementView />} />
+            <Route path="/approvals" element={<RegistrationApproval />} />
             <Route path="/tournaments" element={<TournamentOrchestration />} />
             <Route path="/races" element={<RaceManagement />} />
             <Route path="/race-approval" element={<RaceApproval />} />
             <Route path="/staffing" element={<StaffingManagement />} />
-            <Route path="/settings" element={<PlaceholderView title="⚙️ Settings" />} />
-            <Route path="/logs" element={<PlaceholderView title="📄 Audit Logs" />} />
+            <Route path="/settings" element={<Settings />} />
+            <Route path="/logs" element={<AuditLogs />} />
+            <Route path="/notifications" element={<NotificationsCenter />} />
           </Routes>
         </div>
       </div>

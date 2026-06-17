@@ -1,0 +1,497 @@
+.container {
+  padding: 24px 32px;
+  background-color: #f8fafc;
+  min-height: 100vh;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.breadcrumbs {
+  font-size: 14px;
+  color: #64748b;
+}
+
+.breadcrumbs strong {
+  color: #0f172a;
+  font-weight: 600;
+}
+
+.headerRight {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.iconBtn {
+  background: transparent;
+  border: none;
+  font-size: 18px;
+  cursor: pointer;
+  color: #334155;
+}
+
+.confirmBtn {
+  background-color: #0f4a36;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 10px 20px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.titleArea {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin-bottom: 24px;
+}
+
+.titleTop {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.badgeBlue {
+  background-color: #e0f2fe;
+  color: #0284c7;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.badgeYellow {
+  border: 1px solid #eab308;
+  color: #eab308;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.title {
+  font-size: 32px;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0 0 8px 0;
+}
+
+.subtitle {
+  font-size: 14px;
+  color: #64748b;
+  margin: 0;
+}
+
+.times {
+  text-align: right;
+  font-size: 12px;
+  color: #64748b;
+  line-height: 1.6;
+}
+
+.gridTop {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 24px;
+  margin-bottom: 24px;
+}
+
+/* Photofinish Card */
+.card {
+  background: white;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.cardHeader {
+  padding: 16px 20px;
+  border-bottom: 1px solid #e2e8f0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.cardTitle {
+  font-size: 16px;
+  font-weight: 700;
+  color: #0f172a;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+}
+
+.expandBtn {
+  font-size: 12px;
+  font-weight: 600;
+  color: #0f4a36;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+}
+
+.photoArea {
+  position: relative;
+  background-color: #e2e8f0;
+  height: 300px;
+  width: 100%;
+}
+
+.photoImg {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.finishLine {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 70%;
+  border-left: 2px dashed #ef4444;
+}
+
+.finishLineDot {
+  position: absolute;
+  top: -4px;
+  left: -4px;
+  width: 8px;
+  height: 8px;
+  background-color: #ef4444;
+  border-radius: 50%;
+}
+
+.photoLabels {
+  position: absolute;
+  bottom: 16px;
+  right: 16px;
+  display: flex;
+  gap: 8px;
+}
+
+.photoLabel {
+  background: rgba(255, 255, 255, 0.9);
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.photoFooter {
+  padding: 12px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+  color: #64748b;
+  border-top: 1px solid #e2e8f0;
+}
+
+.photoControls {
+  display: flex;
+  gap: 4px;
+}
+
+.photoBtn {
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  padding: 4px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+/* Top Right Section */
+.topRightCol {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* Inquiry Box */
+.inquiryBox {
+  background-color: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 12px;
+  padding: 20px;
+}
+
+.inquiryTop {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 16px;
+}
+
+.inquiryTitle {
+  color: #991b1b;
+  font-size: 18px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+}
+
+.reviewReqBadge {
+  background-color: #991b1b;
+  color: white;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 4px 8px;
+  border-radius: 4px;
+}
+
+.inquiryDesc {
+  font-size: 13px;
+  color: #7f1d1d;
+  line-height: 1.5;
+  margin-bottom: 16px;
+}
+
+.inquiryActions {
+  display: flex;
+  gap: 12px;
+}
+
+.btnView {
+  flex: 1;
+  background-color: white;
+  color: #991b1b;
+  border: 1px solid #fca5a5;
+  border-radius: 6px;
+  padding: 10px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 6px;
+}
+
+.btnResolve {
+  flex: 1;
+  background-color: #991b1b;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 10px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+/* Telemetry Card */
+.telemetryList {
+  display: flex;
+  flex-direction: column;
+}
+
+.telemetryRow {
+  display: flex;
+  justify-content: space-between;
+  padding: 12px 20px;
+  border-bottom: 1px solid #f1f5f9;
+  font-size: 13px;
+}
+
+.telemetryRow:last-child {
+  border-bottom: none;
+}
+
+.telemetryLabel {
+  color: #64748b;
+}
+
+.telemetryVal {
+  color: #0f172a;
+  font-weight: 600;
+}
+
+.telemetryValBold {
+  color: #0f172a;
+  font-weight: 700;
+  font-size: 15px;
+}
+
+/* Table Card */
+.tableHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.integrityPassed {
+  font-size: 12px;
+  font-weight: 600;
+  color: #16a34a;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.table th {
+  text-align: left;
+  padding: 12px 20px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #64748b;
+  text-transform: uppercase;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.table td {
+  padding: 16px 20px;
+  font-size: 13px;
+  color: #334155;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.horseNameTd {
+  font-weight: 700;
+  color: #0f172a;
+}
+
+/* Bottom Grid */
+.gridBottom {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 24px;
+  margin-top: 24px;
+}
+
+/* Stewards Report */
+.reportArea {
+  padding: 20px;
+}
+
+.reportDesc {
+  font-size: 13px;
+  color: #64748b;
+  margin-bottom: 16px;
+}
+
+.textarea {
+  width: 100%;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  padding: 16px;
+  font-size: 13px;
+  line-height: 1.6;
+  color: #334155;
+  resize: vertical;
+  min-height: 150px;
+  box-sizing: border-box;
+}
+
+.reportFooter {
+  display: flex;
+  justify-content: flex-end;
+  padding: 16px 20px;
+  border-top: 1px solid #e2e8f0;
+}
+
+.btnDraft {
+  background: transparent;
+  color: #64748b;
+  border: none;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* Certification Panel */
+.certDesc {
+  font-size: 12px;
+  color: #64748b;
+  line-height: 1.5;
+  margin-bottom: 24px;
+}
+
+.pinGroup {
+  margin-bottom: 24px;
+}
+
+.pinLabel {
+  font-size: 12px;
+  font-weight: 600;
+  color: #0f172a;
+  margin-bottom: 8px;
+  display: block;
+}
+
+.pinInputBox {
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  padding: 12px;
+  text-align: center;
+  letter-spacing: 8px;
+  font-size: 16px;
+  font-family: monospace;
+  background-color: #f8fafc;
+}
+
+.checkboxGroup {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  margin-bottom: 24px;
+}
+
+.checkbox {
+  margin-top: 2px;
+  width: 16px;
+  height: 16px;
+  accent-color: #0f4a36;
+}
+
+.checkboxLabel {
+  font-size: 12px;
+  color: #0f172a;
+  line-height: 1.5;
+}
+
+.btnCertify {
+  width: 100%;
+  background-color: #0f4a36;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 16px;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  transition: background-color 0.2s;
+}
+
+.btnCertify:disabled {
+  background-color: #94a3b8;
+  cursor: not-allowed;
+}
+
+.btnCertify:hover:not(:disabled) {
+  background-color: #0a3526;
+}

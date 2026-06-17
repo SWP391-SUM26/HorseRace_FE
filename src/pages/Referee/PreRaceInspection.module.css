@@ -1,0 +1,273 @@
+.inspectionLayout {
+  display: grid;
+  grid-template-columns: 1.5fr 1fr;
+  gap: 24px;
+}
+
+.rosterCard {
+  background: white;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  display: flex;
+  flex-direction: column;
+}
+
+.rosterHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 24px;
+  border-bottom: 1px solid #e2e8f0;
+  background: #f8fafc;
+  border-radius: 8px 8px 0 0;
+}
+
+.rosterTitle {
+  font-size: 16px;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0;
+}
+
+.tableWrapper {
+  overflow-x: auto;
+}
+
+.rosterTable {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.rosterTable th {
+  text-align: left;
+  padding: 12px 24px;
+  font-size: 11px;
+  text-transform: uppercase;
+  color: #64748b;
+  font-weight: 600;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.rosterTable td {
+  padding: 16px 24px;
+  border-bottom: 1px solid #e2e8f0;
+  vertical-align: middle;
+}
+
+.rosterTable tr {
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.rosterTable tr:hover {
+  background-color: #f1f5f9;
+}
+
+.selectedRow {
+  background-color: #f8fafc;
+  border-left: 3px solid #0f4a36;
+}
+
+.gateCircle {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #e0f2fe;
+  color: #0369a1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-weight: 700;
+  font-size: 13px;
+}
+
+.horseName {
+  font-size: 14px;
+  font-weight: 700;
+  color: #0f4a36;
+  margin-bottom: 2px;
+}
+
+.jockeyName {
+  font-size: 12px;
+  color: #64748b;
+}
+
+.iconSuccess {
+  color: #16a34a;
+}
+
+.iconDanger {
+  color: #dc2626;
+}
+
+.iconPending {
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  width: 20px;
+  height: 20px;
+  border: 1px solid #94a3b8;
+  border-radius: 50%;
+  color: #94a3b8;
+  font-size: 10px;
+  letter-spacing: -1px;
+}
+
+.clearCheckbox {
+  width: 18px;
+  height: 18px;
+  accent-color: #0f4a36;
+  cursor: pointer;
+}
+
+/* Details Panel */
+.detailsCard {
+  background: white;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  display: flex;
+  flex-direction: column;
+}
+
+.detailsHeader {
+  padding: 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.detailsHorseName {
+  font-size: 20px;
+  font-weight: 700;
+  color: #0f4a36;
+  margin: 0;
+}
+
+.btnMenu {
+  background: none;
+  border: none;
+  font-size: 20px;
+  color: #64748b;
+  cursor: pointer;
+}
+
+.detailsBody {
+  padding: 24px;
+  flex-grow: 1;
+}
+
+.sectionTitle {
+  font-size: 11px;
+  font-weight: 700;
+  color: #64748b;
+  text-transform: uppercase;
+  margin: 0 0 16px 0;
+  letter-spacing: 0.5px;
+}
+
+.passportGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.infoLabel {
+  font-size: 12px;
+  color: #64748b;
+  margin-bottom: 4px;
+}
+
+.infoVal {
+  font-size: 13px;
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.vetList {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.vetItem {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.vetIcon {
+  color: #0f4a36;
+}
+
+.vetIconBox {
+  width: 20px;
+  height: 20px;
+  background: #0f4a36;
+  color: white;
+  border-radius: 4px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.vetTitle {
+  font-size: 13px;
+  font-weight: 700;
+  color: #0f172a;
+  margin-bottom: 2px;
+}
+
+.vetSub {
+  font-size: 12px;
+  color: #64748b;
+}
+
+.notesArea {
+  width: 100%;
+  height: 100px;
+  padding: 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  font-size: 13px;
+  color: #334155;
+  resize: vertical;
+  font-family: inherit;
+}
+
+.notesArea:focus {
+  outline: none;
+  border-color: #0f4a36;
+  box-shadow: 0 0 0 2px rgba(15, 74, 54, 0.1);
+}
+
+.detailsFooter {
+  padding: 24px;
+  background: #f8fafc;
+  border-top: 1px solid #e2e8f0;
+  border-radius: 0 0 8px 8px;
+}
+
+.btnFlagReview {
+  width: 100%;
+  padding: 12px;
+  background: white;
+  color: #dc2626;
+  border: 1px solid #dc2626;
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btnFlagReview:hover {
+  background: #fef2f2;
+}
