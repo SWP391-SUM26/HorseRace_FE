@@ -38,7 +38,7 @@ const eligibilityLabels = {
 
 function statusVariant(status) {
   if (['APPROVED', 'VALID'].includes(status)) return 'success';
-  if (['PENDING', 'MISSING'].includes(status)) return 'warning';
+  if (['PENDING', 'SUBMITTED', 'MISSING'].includes(status)) return 'warning';
   if (['REJECTED', 'FAILED'].includes(status)) return 'suspended';
   return 'ghost';
 }
@@ -57,6 +57,7 @@ function getErrorMessage(error, fallback) {
 }
 
 export default function RegistrationManagement() {
+  const [activeTab, setActiveTab] = useState('users');
   const [registrations, setRegistrations] = useState([]);
   const [selectedRegistration, setSelectedRegistration] = useState(null);
   const [search, setSearch] = useState('');
@@ -157,7 +158,7 @@ export default function RegistrationManagement() {
         setAllRegistrations(response.items);
         setStats({
           total: response.totalItems,
-          pending: response.items.filter((item) => item.status === 'PENDING').length,
+          pending: response.items.filter((item) => ['PENDING', 'SUBMITTED'].includes(item.status)).length,
           approved: response.items.filter((item) => item.status === 'APPROVED').length,
           rejected: response.items.filter((item) => item.status === 'REJECTED').length,
         });
@@ -263,27 +264,215 @@ export default function RegistrationManagement() {
     URL.revokeObjectURL(url);
   }
 
-  const isPending = selectedRegistration?.status === 'PENDING';
+  const isPending = ['PENDING', 'SUBMITTED'].includes(selectedRegistration?.status);
 
   return (
     <>
       <PageHeader
-        title="Registration Management"
-        subtitle="Review horse eligibility and approve registrations."
+        title="Registration Approval"
+        subtitle="Review and approve platform members and race registrations."
         actions={
-          <>
-            <Button variant="ghost" icon={DownloadIcon} onClick={exportRegistrations}>
-              Export Registrations
-            </Button>
-            <Button onClick={refreshData} disabled={loading}>
-              {loading ? 'Refreshing...' : 'Refresh Data'}
-            </Button>
-          </>
+          activeTab === 'horses' ? (
+            <>
+              <Button variant="ghost" icon={DownloadIcon} onClick={exportRegistrations}>
+                Export Registrations
+              </Button>
+              <Button onClick={refreshData} disabled={loading}>
+                {loading ? 'Refreshing...' : 'Refresh Data'}
+              </Button>
+            </>
+          ) : (
+            <Button>Confirm Results</Button>
+          )
         }
       />
 
-      {error && <div className={styles.alertError}>{error}</div>}
-      {notice && <div className={styles.alertSuccess}>{notice}</div>}
+      <div className={styles.tabsContainer}>
+        <button 
+          className={`${styles.tabBtn} ${activeTab === 'users' ? styles.tabBtnActive : ''}`}
+          onClick={() => setActiveTab('users')}
+        >
+          User Approvals
+        </button>
+        <button 
+          className={`${styles.tabBtn} ${activeTab === 'horses' ? styles.tabBtnActive : ''}`}
+          onClick={() => setActiveTab('horses')}
+        >
+          Race Registrations
+        </button>
+      </div>
+
+      {activeTab === 'users' ? (
+        <>
+          <div className={styles.statsGrid}>
+            <StatCard title="PENDING APPROVALS" icon={ClipboardIcon} value="24" />
+            <StatCard title="APPROVED TODAY" icon={CheckSquareIcon} value="158" />
+            <StatCard title="REJECTED TODAY" icon={RefereeIcon} value="09" />
+          </div>
+
+          <div className={styles.queueLayout}>
+            {/* Left Queue List */}
+            <div>
+              <div className={styles.queueHeader}>
+                <span>Queue (24)</span>
+                <div>
+                  <button className={styles.btnGhost}>=</button>
+                </div>
+              </div>
+              <div className={styles.queueList}>
+                <div className={`${styles.queueCard} ${styles.queueCardActive}`}>
+                  <div className={styles.queueCardTop}>
+                    <h3 className={styles.queueName}>Jonathan Sterling</h3>
+                    <span className={styles.badgeUrgent}>Urgent</span>
+                  </div>
+                  <div className={styles.queueRole}>Owner • Register ID: #8832</div>
+                  <div className={styles.queueTime}>
+                    <button className={styles.btnQReject}>Reject</button>
+                    <button className={styles.btnQApprove}>Approve</button>
+                  </div>
+                </div>
+
+                <div className={styles.queueCard}>
+                  <div className={styles.queueCardTop}>
+                    <h3 className={styles.queueName}>Elena Rodriguez</h3>
+                    <span className={styles.badgeNew}>New</span>
+                  </div>
+                  <div className={styles.queueRole}>Trainer • Register ID: #8835</div>
+                  <div className={styles.queueTime}>Submitted 4 hours ago</div>
+                </div>
+
+                <div className={styles.queueCard}>
+                  <div className={styles.queueCardTop}>
+                    <h3 className={styles.queueName}>Marcus Vane</h3>
+                    <span className={styles.badgeNew}>New</span>
+                  </div>
+                  <div className={styles.queueRole}>Vet • Register ID: #8836</div>
+                  <div className={styles.queueTime}>Submitted 6 hours ago</div>
+                </div>
+
+                <div className={styles.queueCard}>
+                  <div className={styles.queueCardTop}>
+                    <h3 className={styles.queueName}>Sarah Whitmore</h3>
+                    <span className={styles.badgeNew}>New</span>
+                  </div>
+                  <div className={styles.queueRole}>Owner • Register ID: #8839</div>
+                  <div className={styles.queueTime}>Submitted 12 hours ago</div>
+                </div>
+              </div>
+              <Button className={styles.actionBtn} style={{marginTop: '16px', width: '100%'}}>
+                Start New Session
+              </Button>
+            </div>
+
+            {/* Right Details Panel */}
+            <Card style={{padding: 0, overflow: 'hidden', display: 'flex', flexDirection: 'column'}}>
+              <div className={styles.userProfile}>
+                <div className={styles.profileInfo}>
+                  <img src="https://i.pravatar.cc/150?img=11" alt="Jonathan Sterling" className={styles.profileAvatar} />
+                  <div>
+                    <h2 className={styles.profileName}>Jonathan Sterling</h2>
+                    <p className={styles.profileMeta}>📍 Lexington, Kentucky • Member since 2024</p>
+                    <div className={styles.profileTags}>
+                      <span className={styles.tagBlue}>Owner</span>
+                      <span className={styles.tagBlue}>Class A License</span>
+                    </div>
+                  </div>
+                </div>
+                <div className={styles.profileActions}>
+                  <button className={styles.btnGhost}>↓ Download Full Dossier</button>
+                  <button className={styles.btnGhost}>⏱ View Previous Applications</button>
+                </div>
+              </div>
+
+              <div className={styles.detailsGrid}>
+                {/* Left Col */}
+                <div>
+                  <h3 className={styles.sectionTitle}>👤 Identity Details</h3>
+                  <div className={styles.infoBox} style={{marginBottom: '24px'}}>
+                    <div className={styles.infoRow}>
+                      <span className={styles.infoLabel}>Full Name</span>
+                      <span className={styles.infoVal}>Jonathan Pierce Sterling</span>
+                    </div>
+                    <div className={styles.infoRow}>
+                      <span className={styles.infoLabel}>Date of Birth</span>
+                      <span className={styles.infoVal}>12 May 1978</span>
+                    </div>
+                    <div className={styles.infoRow}>
+                      <span className={styles.infoLabel}>Tax ID</span>
+                      <span className={styles.infoVal}>XXX-XX-4421</span>
+                    </div>
+                    <div className={styles.infoRow}>
+                      <span className={styles.infoLabel}>Contact</span>
+                      <span className={styles.infoVal}>+1 (555) 012-9932</span>
+                    </div>
+                  </div>
+
+                  <h3 className={styles.sectionTitle}>🏢 Business Affiliations</h3>
+                  <div className={styles.businessBox}>
+                    <div className={styles.bizIcon}>S</div>
+                    <div>
+                      <h4 className={styles.bizName}>Sterling Equine Holdings</h4>
+                      <p className={styles.bizMeta}>12 Horses Registered</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Right Col */}
+                <div>
+                  <div className={styles.checklistPanel}>
+                    <h3 className={styles.sectionTitle}>Eligibility Checklist</h3>
+                    <p style={{fontSize: '13px', color: '#64748b', marginBottom: '16px'}}>All automated checks must be manually verified before approval.</p>
+                    
+                    <div className={styles.checklistItem}>
+                      <div className={styles.checkInfo}>
+                        <div className={styles.checkIcon}>✓</div>
+                        <div>
+                          <h4 className={styles.checkName}>ID Verification</h4>
+                          <p className={styles.checkMeta}>Passport #A2399201 Valid</p>
+                        </div>
+                      </div>
+                      <button className={styles.btnGhost}>👁</button>
+                    </div>
+
+                    <div className={styles.checklistItem}>
+                      <div className={styles.checkInfo}>
+                        <div className={styles.checkIcon}>✓</div>
+                        <div>
+                          <h4 className={styles.checkName}>License Check</h4>
+                          <p className={styles.checkMeta}>Class A - Active 2024</p>
+                        </div>
+                      </div>
+                      <button className={styles.btnGhost}>👁</button>
+                    </div>
+
+                    <div className={styles.checklistItem}>
+                      <div className={styles.checkInfo}>
+                        <div className={styles.checkIcon}>✓</div>
+                        <div>
+                          <h4 className={styles.checkName}>Background</h4>
+                          <p className={styles.checkMeta}>Clear</p>
+                        </div>
+                      </div>
+                      <button className={styles.btnGhost}>👁</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div style={{flexGrow: 1}}></div>
+
+              <div className={styles.bottomBar}>
+                <button className={`${styles.actionBtn} ${styles.btnInfo}`}>✎ Request More Info</button>
+                <button className={`${styles.actionBtn} ${styles.btnRejectLg}`}>REJECT APPLICANT</button>
+                <button className={`${styles.actionBtn} ${styles.btnApproveLg}`}>APPROVE & ONBOARD</button>
+              </div>
+            </Card>
+          </div>
+        </>
+      ) : (
+        <>
+          {error && <div className={styles.alertError}>{error}</div>}
+          {notice && <div className={styles.alertSuccess}>{notice}</div>}
 
       <div className={styles.statsGrid}>
         <StatCard title="TOTAL REGISTRATIONS" icon={UsersIcon} value={stats.total} />
@@ -340,7 +529,7 @@ export default function RegistrationManagement() {
               }
             >
               <option value="">All Statuses</option>
-              <option value="PENDING">Pending</option>
+              <option value="SUBMITTED">Submitted</option>
               <option value="APPROVED">Approved</option>
               <option value="REJECTED">Rejected</option>
             </select>
@@ -482,8 +671,10 @@ export default function RegistrationManagement() {
               </div>
             </>
           )}
-        </Card>
-      </div>
+          </Card>
+        </div>
+        </>
+      )}
 
       {modal && (
         <div className={styles.modalOverlay} role="presentation">
