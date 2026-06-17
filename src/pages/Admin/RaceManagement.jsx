@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import raceMock from "../../data/raceMock.json";
+import { getRegistrationList } from "../../services/registration";
 import {
   assignParticipants,
   cancelRace,
@@ -10,19 +10,30 @@ import {
   scheduleRace,
   updateRace,
 } from "../../services/race";
+import { getTournaments } from "../../services/tournament";
 import styles from "./RaceManagement.module.css";
 
 const PAGE_SIZE = 5;
+const RACE_STATUS_OPTIONS = [
+  "SCHEDULED",
+  "OPEN",
+  "CLOSED",
+  "RUNNING",
+  "FINISHED",
+  "OFFICIAL",
+  "CANCELLED",
+];
 const EMPTY_FORM = {
   tournamentId: "",
   name: "",
-  raceCode: "",
+  raceType: "",
+  distanceMeter: "",
   date: "",
   time: "",
-  track: "",
-  location: "",
+  predictionCutoffAt: "",
+  trackCondition: "",
+  weatherCondition: "",
   maxParticipants: 12,
-  description: "",
 };
 
 function getErrorMessage(error, fallback) {
@@ -43,6 +54,32 @@ function formatDateTime(race) {
 
 function statusClass(status) {
   return styles[`status${status}`] || styles.statusDRAFT;
+}
+
+function unwrapApiPayload(response) {
+  return response?.data?.data ?? response?.data ?? response;
+}
+
+function normalizeTournaments(response) {
+  const data = unwrapApiPayload(response);
+  const items = Array.isArray(data)
+    ? data
+    : data?.items ?? data?.content ?? data?.tournaments ?? [];
+
+  return items
+    .map((item) => ({
+      id: item.tournamentId || item.id,
+      name: item.name || item.tournamentName || "Unnamed Tournament",
+    }))
+    .filter((item) => item.id);
+}
+
+function mapRegistrationOption(registration) {
+  return {
+    id: registration.id || registration.registrationId,
+    name: registration.horse?.name || registration.horseName || "Unknown Horse",
+    owner: registration.owner?.name || registration.ownerName || "Unknown Owner",
+  };
 }
 
 export default function RaceManagement() {
@@ -68,11 +105,12 @@ export default function RaceManagement() {
     raceId: "",
     date: "",
     time: "",
-    track: "",
-    notes: "",
+    predictionCutoffAt: "",
   });
   const [cancelReason, setCancelReason] = useState("");
   const [participantIds, setParticipantIds] = useState([]);
+  const [tournaments, setTournaments] = useState([]);
+  const [participantOptions, setParticipantOptions] = useState([]);
   const [submitting, setSubmitting] = useState(false);
   const [notice, setNotice] = useState(null);
   const [openActionId, setOpenActionId] = useState(null);
@@ -100,7 +138,9 @@ export default function RaceManagement() {
       setTotalPages(listResult.totalPages);
       setTotalItems(listResult.totalItems);
       setSummaryRaces(summaryResult.items);
-      if (listResult.page !== page) setPage(listResult.page);
+      setPage((currentPage) =>
+        currentPage === listResult.page ? currentPage : listResult.page,
+      );
     } catch (requestError) {
       setError(getErrorMessage(requestError, "Unable to load races."));
     } finally {
@@ -128,6 +168,34 @@ export default function RaceManagement() {
     const timer = window.setTimeout(loadRaces, 0);
     return () => window.clearTimeout(timer);
   }, [loadRaces]);
+
+  useEffect(() => {
+    let ignore = false;
+
+    async function loadReferenceData() {
+      try {
+        const [tournamentResponse, registrationResponse] = await Promise.all([
+          getTournaments({ page: 0, size: 1000 }),
+          getRegistrationList({ status: "APPROVED", page: 1, pageSize: 1000 }),
+        ]);
+
+        if (ignore) return;
+        setTournaments(normalizeTournaments(tournamentResponse));
+        setParticipantOptions(
+          (registrationResponse.items || [])
+            .map(mapRegistrationOption)
+            .filter((item) => item.id),
+        );
+      } catch (requestError) {
+        console.warn("Unable to load race reference data.", requestError);
+      }
+    }
+
+    loadReferenceData();
+    return () => {
+      ignore = true;
+    };
+  }, []);
 
   useEffect(() => {
     if (!openActionId) return undefined;
@@ -161,7 +229,7 @@ export default function RaceManagement() {
       total: summaryRaces.length,
       scheduled: summaryRaces.filter((race) => race.status === "SCHEDULED").length,
       active: summaryRaces.filter((race) =>
-        ["ACTIVE", "OPEN", "RUNNING"].includes(race.status),
+        ["OPEN", "RUNNING"].includes(race.status),
       ).length,
       cancelled: summaryRaces.filter((race) => race.status === "CANCELLED").length,
     }),
@@ -198,13 +266,14 @@ export default function RaceManagement() {
     setForm({
       tournamentId: race.tournamentId || "",
       name: race.name || "",
-      raceCode: race.raceCode || "",
+      raceType: race.raceType || "",
+      distanceMeter: race.distanceMeter || "",
       date: race.date || "",
       time: race.time || "",
-      track: race.track || "",
-      location: race.location || "",
+      predictionCutoffAt: race.predictionCutoffAt ? race.predictionCutoffAt.slice(0, 16) : "",
+      trackCondition: race.trackCondition || "",
+      weatherCondition: race.weatherCondition || "",
       maxParticipants: race.maxParticipants || 12,
-      description: race.description || "",
     });
     setModal("form");
   }
@@ -227,8 +296,7 @@ export default function RaceManagement() {
       raceId: race?.id || "",
       date: race?.date || "",
       time: race?.time || "",
-      track: race?.track || "",
-      notes: race?.scheduleNotes || "",
+      predictionCutoffAt: race?.predictionCutoffAt ? race.predictionCutoffAt.slice(0, 16) : "",
     });
     setModal("schedule");
   }
@@ -282,8 +350,7 @@ export default function RaceManagement() {
       await scheduleRace(raceId, {
         date: scheduleForm.date,
         time: scheduleForm.time,
-        track: scheduleForm.track,
-        scheduleNotes: scheduleForm.notes,
+        predictionCutoffAt: scheduleForm.predictionCutoffAt,
       });
       await refreshAfter("Race scheduled successfully.");
     } catch (requestError) {
@@ -297,7 +364,7 @@ export default function RaceManagement() {
     event.preventDefault();
     setSubmitting(true);
     try {
-      await cancelRace(selectedRace.id, { reason: cancelReason.trim() });
+      await cancelRace(selectedRace.id);
       await refreshAfter("Race cancelled successfully.");
     } catch (requestError) {
       showNotice(getErrorMessage(requestError, "Unable to cancel race."), "error");
@@ -392,7 +459,7 @@ export default function RaceManagement() {
             onChange={(event) => setFilter(setTournamentId, event.target.value)}
           >
             <option value="">All Tournaments</option>
-            {raceMock.tournaments.map((tournament) => (
+            {tournaments.map((tournament) => (
               <option key={tournament.id} value={tournament.id}>
                 {tournament.name}
               </option>
@@ -406,10 +473,11 @@ export default function RaceManagement() {
             onChange={(event) => setFilter(setStatus, event.target.value)}
           >
             <option value="">All Statuses</option>
-            <option value="DRAFT">Draft</option>
-            <option value="SCHEDULED">Scheduled</option>
-            <option value="ACTIVE">Active</option>
-            <option value="CANCELLED">Cancelled</option>
+            {RACE_STATUS_OPTIONS.map((option) => (
+              <option key={option} value={option}>
+                {option}
+              </option>
+            ))}
           </select>
         </label>
         <label>
@@ -427,7 +495,7 @@ export default function RaceManagement() {
             <option value="date-desc">Date: Latest</option>
             <option value="name-asc">Name: A-Z</option>
             <option value="name-desc">Name: Z-A</option>
-            <option value="status-asc">Status</option>
+            <option value="createdAt-desc">Newest Created</option>
           </select>
         </label>
         <button
@@ -449,7 +517,7 @@ export default function RaceManagement() {
                 <th>Race Details</th>
                 <th>Tournament</th>
                 <th>Date/Time</th>
-                <th>Track</th>
+                <th>Race Info</th>
                 <th>Participants</th>
                 <th>Status</th>
                 <th>Actions</th>
@@ -474,8 +542,11 @@ export default function RaceManagement() {
                     <td>{race.tournamentName}</td>
                     <td>{formatDateTime(race)}</td>
                     <td>
-                      <strong>{race.track}</strong>
-                      <small>{race.location}</small>
+                      <strong>{race.raceType || "N/A"}</strong>
+                      <small>
+                        {race.distanceMeter ? `${race.distanceMeter}m` : "Distance N/A"}
+                      </small>
+                      <small>{race.trackCondition || "Track condition N/A"}</small>
                     </td>
                     <td>
                       <div className={styles.participantCount}>
@@ -570,7 +641,7 @@ export default function RaceManagement() {
             {Math.min(page * PAGE_SIZE, totalItems)} of {totalItems} results
           </span>
           <div>
-            <button disabled={page === 1} onClick={() => setPage((value) => value - 1)}>
+            <button disabled={page === 1} onClick={() => setPage((value) => Math.max(1, value - 1))}>
               Previous
             </button>
             <strong>
@@ -578,7 +649,7 @@ export default function RaceManagement() {
             </strong>
             <button
               disabled={page === totalPages}
-              onClick={() => setPage((value) => value + 1)}
+              onClick={() => setPage((value) => Math.min(totalPages, value + 1))}
             >
               Next
             </button>
@@ -587,7 +658,12 @@ export default function RaceManagement() {
       </section>
 
       {modal === "detail" && selectedRace && (
-        <DetailDrawer race={selectedRace} onClose={closeModal} onEdit={() => openEdit(selectedRace)} />
+        <DetailDrawer
+          race={selectedRace}
+          participants={participantOptions}
+          onClose={closeModal}
+          onEdit={() => openEdit(selectedRace)}
+        />
       )}
 
       {modal === "form" && (
@@ -601,7 +677,7 @@ export default function RaceManagement() {
                   onChange={(e) => setForm({ ...form, tournamentId: e.target.value })}
                 >
                   <option value="">Select tournament</option>
-                  {raceMock.tournaments.map((tournament) => (
+                  {tournaments.map((tournament) => (
                     <option key={tournament.id} value={tournament.id}>
                       {tournament.name}
                     </option>
@@ -611,8 +687,11 @@ export default function RaceManagement() {
               <Field label="Race Name">
                 <input required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
               </Field>
-              <Field label="Race Code">
-                <input required value={form.raceCode} onChange={(e) => setForm({ ...form, raceCode: e.target.value })} />
+              <Field label="Race Type">
+                <input required value={form.raceType} onChange={(e) => setForm({ ...form, raceType: e.target.value })} />
+              </Field>
+              <Field label="Distance Meter">
+                <input type="number" min="1" required value={form.distanceMeter} onChange={(e) => setForm({ ...form, distanceMeter: e.target.value })} />
               </Field>
               <Field label="Max Participants">
                 <input type="number" min="1" required value={form.maxParticipants} onChange={(e) => setForm({ ...form, maxParticipants: e.target.value })} />
@@ -623,16 +702,16 @@ export default function RaceManagement() {
               <Field label="Time">
                 <input type="time" required value={form.time} onChange={(e) => setForm({ ...form, time: e.target.value })} />
               </Field>
-              <Field label="Track">
-                <input required value={form.track} onChange={(e) => setForm({ ...form, track: e.target.value })} />
+              <Field label="Prediction Cutoff">
+                <input type="datetime-local" value={form.predictionCutoffAt} onChange={(e) => setForm({ ...form, predictionCutoffAt: e.target.value })} />
               </Field>
-              <Field label="Location">
-                <input required value={form.location} onChange={(e) => setForm({ ...form, location: e.target.value })} />
+              <Field label="Track Condition">
+                <input value={form.trackCondition} onChange={(e) => setForm({ ...form, trackCondition: e.target.value })} />
+              </Field>
+              <Field label="Weather Condition">
+                <input value={form.weatherCondition} onChange={(e) => setForm({ ...form, weatherCondition: e.target.value })} />
               </Field>
             </div>
-            <Field label="Description">
-              <textarea rows="4" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
-            </Field>
             <ModalActions submitting={submitting} onCancel={closeModal} submitLabel={selectedRace ? "Update Race" : "Create Race"} />
           </form>
         </Modal>
@@ -659,11 +738,17 @@ export default function RaceManagement() {
                 <input type="time" required value={scheduleForm.time} onChange={(e) => setScheduleForm({ ...scheduleForm, time: e.target.value })} />
               </Field>
             </div>
-            <Field label="Track">
-              <input required value={scheduleForm.track} onChange={(e) => setScheduleForm({ ...scheduleForm, track: e.target.value })} />
-            </Field>
-            <Field label="Notes">
-              <textarea rows="3" value={scheduleForm.notes} onChange={(e) => setScheduleForm({ ...scheduleForm, notes: e.target.value })} />
+            <Field label="Prediction Cutoff">
+              <input
+                type="datetime-local"
+                value={scheduleForm.predictionCutoffAt}
+                onChange={(e) =>
+                  setScheduleForm({
+                    ...scheduleForm,
+                    predictionCutoffAt: e.target.value,
+                  })
+                }
+              />
             </Field>
             <ModalActions submitting={submitting} onCancel={closeModal} submitLabel="Schedule Race" />
           </form>
@@ -689,7 +774,12 @@ export default function RaceManagement() {
               Selected {participantIds.length} of {selectedRace.maxParticipants} available slots
             </p>
             <div className={styles.participantList}>
-              {raceMock.participants.map((participant) => (
+              {participantOptions.length === 0 && (
+                <p className={styles.selectionInfo}>
+                  No approved registrations are available to assign.
+                </p>
+              )}
+              {participantOptions.map((participant) => (
                 <label key={participant.id}>
                   <input
                     type="checkbox"
@@ -771,8 +861,8 @@ function ModalActions({ submitting, onCancel, submitLabel, danger = false }) {
   );
 }
 
-function DetailDrawer({ race, onClose, onEdit }) {
-  const participantNames = raceMock.participants.filter((participant) =>
+function DetailDrawer({ race, participants = [], onClose, onEdit }) {
+  const participantNames = participants.filter((participant) =>
     (race.participantIds || []).includes(participant.id),
   );
   return (
@@ -790,15 +880,13 @@ function DetailDrawer({ race, onClose, onEdit }) {
           <dl className={styles.detailGrid}>
             <div><dt>Tournament</dt><dd>{race.tournamentName}</dd></div>
             <div><dt>Date & Time</dt><dd>{formatDateTime(race)}</dd></div>
-            <div><dt>Track</dt><dd>{race.track}</dd></div>
-            <div><dt>Location</dt><dd>{race.location}</dd></div>
+            <div><dt>Race Type</dt><dd>{race.raceType || "N/A"}</dd></div>
+            <div><dt>Distance</dt><dd>{race.distanceMeter ? `${race.distanceMeter}m` : "N/A"}</dd></div>
+            <div><dt>Track Condition</dt><dd>{race.trackCondition || "N/A"}</dd></div>
+            <div><dt>Weather Condition</dt><dd>{race.weatherCondition || "N/A"}</dd></div>
             <div><dt>Capacity</dt><dd>{(race.participantIds || []).length}/{race.maxParticipants}</dd></div>
-            <div><dt>Schedule Notes</dt><dd>{race.scheduleNotes || "None"}</dd></div>
+            <div><dt>Prediction Cutoff</dt><dd>{race.predictionCutoffAt ? new Date(race.predictionCutoffAt).toLocaleString() : "N/A"}</dd></div>
           </dl>
-          <section className={styles.detailSection}>
-            <h3>Description</h3>
-            <p>{race.description || "No description provided."}</p>
-          </section>
           <section className={styles.detailSection}>
             <h3>Assigned Participants</h3>
             {participantNames.length ? (
