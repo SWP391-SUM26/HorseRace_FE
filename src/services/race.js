@@ -1,240 +1,180 @@
 import api from "./api";
-import raceMock from "../data/raceMock.json";
 
 const ENDPOINT = "/api/v1/races";
-const STORAGE_KEY = "equine_elite_races";
-
-function readRaces() {
-  const stored = localStorage.getItem(STORAGE_KEY);
-  if (!stored) {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(raceMock.races));
-    return [...raceMock.races];
-  }
-
-  try {
-    return JSON.parse(stored);
-  } catch {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(raceMock.races));
-    return [...raceMock.races];
-  }
-}
-
-function writeRaces(races) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(races));
-}
 
 function unwrap(response) {
   return response?.data?.data ?? response?.data;
 }
 
-function canFallback(error) {
-  if (!error.response || [404, 405, 501].includes(error.response.status)) {
-    return true;
-  }
-
-  const message = String(
-    error.response.data?.message || error.response.data?.error || "",
-  ).toLowerCase();
-
-  return (
-    error.response.status === 500 &&
-    (message.includes("noresourcefoundexception") ||
-      message.includes("no static resource api/v1/races"))
+function cleanParams(params) {
+  return Object.fromEntries(
+    Object.entries(params).filter(([, value]) => value !== "" && value !== null && value !== undefined),
   );
 }
 
-function tournamentName(tournamentId) {
-  return (
-    raceMock.tournaments.find((item) => item.id === tournamentId)?.name ||
-    "Unknown Tournament"
-  );
+function toApiParams(params = {}) {
+  const sortMap = {
+    date: "scheduledStartAt",
+    scheduledStartAt: "scheduledStartAt",
+    name: "name",
+    createdAt: "createdAt",
+  };
+
+  return cleanParams({
+    q: params.search,
+    tournamentId: params.tournamentId,
+    status: params.status,
+    sortBy: sortMap[params.sortBy] || params.sortBy || "scheduledStartAt",
+    sortDir: params.sortOrder || params.sortDir || "asc",
+    page: Math.max(0, Number(params.page || 1) - 1),
+    size: params.pageSize || params.size || 5,
+  });
 }
 
-function filterMockRaces(params = {}) {
-  const {
-    search = "",
-    tournamentId = "",
-    status = "",
-    dateFrom = "",
-    dateTo = "",
-    sortBy = "date",
-    sortOrder = "asc",
-    page = 1,
-    pageSize = 5,
-  } = params;
-  const query = search.trim().toLowerCase();
+function toDate(value) {
+  if (!value) return "";
+  return String(value).slice(0, 10);
+}
 
-  const filtered = readRaces()
-    .filter((race) => {
-      const matchesSearch =
-        !query ||
-        race.name.toLowerCase().includes(query) ||
-        race.raceCode.toLowerCase().includes(query) ||
-        race.track.toLowerCase().includes(query);
-      return (
-        matchesSearch &&
-        (!tournamentId || race.tournamentId === tournamentId) &&
-        (!status || race.status === status) &&
-        (!dateFrom || race.date >= dateFrom) &&
-        (!dateTo || race.date <= dateTo)
-      );
-    })
-    .sort((left, right) => {
-      const direction = sortOrder === "desc" ? -1 : 1;
-      const leftValue = left[sortBy] ?? "";
-      const rightValue = right[sortBy] ?? "";
-      return String(leftValue).localeCompare(String(rightValue)) * direction;
-    });
+function toTime(value) {
+  if (!value) return "";
+  return String(value).slice(11, 16);
+}
 
-  const size = Number(pageSize) || 5;
-  const totalItems = filtered.length;
-  const totalPages = Math.max(1, Math.ceil(totalItems / size));
-  const currentPage = Math.min(Math.max(Number(page) || 1, 1), totalPages);
-  const start = (currentPage - 1) * size;
+function toOffsetDateTime(date, time) {
+  if (!date) return null;
+  const safeTime = time || "00:00";
+  return new Date(`${date}T${safeTime}:00`).toISOString();
+}
+
+function normalizeOffsetDateTime(value) {
+  if (!value) return undefined;
+  return new Date(value).toISOString();
+}
+
+function mapRaceToUI(race) {
+  if (!race) return null;
+
+  const scheduledStartAt = race.scheduledStartAt || race.dateTime || null;
+  const maxParticipants = Number(race.maxParticipants) || 0;
+  const participantIds = race.participantIds || race.entries?.map((entry) => entry.registrationId) || [];
 
   return {
-    items: filtered.slice(start, start + size),
-    page: currentPage,
-    pageSize: size,
-    totalItems,
-    totalPages,
+    ...race,
+    id: race.raceId || race.id,
+    raceId: race.raceId || race.id,
+    raceCode: race.raceCode || race.code || "N/A",
+    tournamentId: race.tournamentId || "",
+    tournamentName: race.tournamentName || "Unknown Tournament",
+    date: toDate(scheduledStartAt),
+    time: toTime(scheduledStartAt),
+    scheduledStartAt,
+    predictionCutoffAt: race.predictionCutoffAt || null,
+    participantIds,
+    maxParticipants,
   };
 }
 
-function normalizeList(data, params) {
-  if (Array.isArray(data)) {
-    return {
-      items: data,
-      page: Number(params.page) || 1,
-      pageSize: Number(params.pageSize) || data.length || 5,
-      totalItems: data.length,
-      totalPages: 1,
-    };
-  }
-
-  const items = data?.items ?? data?.content ?? data?.races ?? [];
-  const page =
-    Number(data?.page ?? (data?.number !== undefined ? data.number + 1 : params.page)) ||
-    1;
+function normalizeList(data, params = {}) {
+  const rawItems = Array.isArray(data)
+    ? data
+    : data?.items ?? data?.content ?? data?.races ?? [];
+  const items = rawItems.map(mapRaceToUI).filter(Boolean);
   const pageSize = Number(data?.pageSize ?? data?.size ?? params.pageSize) || 5;
   const totalItems =
     Number(data?.totalItems ?? data?.totalElements ?? data?.total) || items.length;
+  const totalPages = Number(data?.totalPages) || Math.max(1, Math.ceil(totalItems / pageSize));
+  const rawPage =
+    Number(data?.page ?? (data?.number !== undefined ? data.number + 1 : params.page)) ||
+    1;
+  const page = Math.min(Math.max(rawPage, 1), totalPages);
+
   return {
     items,
     page,
     pageSize,
     totalItems,
-    totalPages: Number(data?.totalPages) || Math.max(1, Math.ceil(totalItems / pageSize)),
+    totalPages,
   };
 }
 
-async function apiOrFallback(request, fallback) {
-  try {
-    return await request();
-  } catch (error) {
-    if (!canFallback(error)) throw error;
-    console.warn("Race API unavailable. Using local fallback data.");
-    return fallback();
-  }
+function toRacePayload(payload = {}) {
+  return cleanParams({
+    tournamentId: payload.tournamentId,
+    name: payload.name?.trim(),
+    raceType: payload.raceType?.trim(),
+    distanceMeter: payload.distanceMeter ? Number(payload.distanceMeter) : undefined,
+    trackCondition: payload.trackCondition?.trim(),
+    weatherCondition: payload.weatherCondition?.trim(),
+    scheduledStartAt: payload.scheduledStartAt || toOffsetDateTime(payload.date, payload.time),
+    predictionCutoffAt: normalizeOffsetDateTime(payload.predictionCutoffAt),
+    maxParticipants: payload.maxParticipants ? Number(payload.maxParticipants) : undefined,
+  });
+}
+
+function toSchedulePayload(payload = {}) {
+  const scheduledStartAt =
+    payload.scheduledStartAt || toOffsetDateTime(payload.date, payload.time);
+
+  return cleanParams({
+    scheduledStartAt,
+    predictionCutoffAt: normalizeOffsetDateTime(payload.predictionCutoffAt),
+  });
 }
 
 export function getRaceList(params = {}) {
-  return apiOrFallback(
-    async () => normalizeList(unwrap(await api.get(ENDPOINT, { params })), params),
-    () => filterMockRaces(params),
-  );
+  return api
+    .get(ENDPOINT, { params: toApiParams(params) })
+    .then((response) => normalizeList(unwrap(response), params));
 }
 
 export function getRaceDetail(id) {
-  return apiOrFallback(
-    async () => unwrap(await api.get(`${ENDPOINT}/${id}`)),
-    () => readRaces().find((race) => race.id === id) || null,
-  );
+  return api
+    .get(`${ENDPOINT}/${id}`)
+    .then((response) => mapRaceToUI(unwrap(response)));
 }
 
 export function createRace(payload) {
-  return apiOrFallback(
-    async () => unwrap(await api.post(ENDPOINT, payload)),
-    () => {
-      const race = {
-        id: `race_${Date.now()}`,
-        participantIds: [],
-        status: "DRAFT",
-        ...payload,
-        tournamentName: tournamentName(payload.tournamentId),
-      };
-      writeRaces([race, ...readRaces()]);
-      return race;
-    },
-  );
+  return api
+    .post(ENDPOINT, toRacePayload(payload))
+    .then((response) => mapRaceToUI(unwrap(response)));
 }
 
 export function updateRace(id, payload) {
-  return apiOrFallback(
-    async () => unwrap(await api.put(`${ENDPOINT}/${id}`, payload)),
-    () => {
-      let updated = null;
-      writeRaces(
-        readRaces().map((race) => {
-          if (race.id !== id) return race;
-          updated = {
-            ...race,
-            ...payload,
-            tournamentName: payload.tournamentId
-              ? tournamentName(payload.tournamentId)
-              : race.tournamentName,
-          };
-          return updated;
-        }),
-      );
-      return updated;
-    },
-  );
+  return api
+    .put(`${ENDPOINT}/${id}`, toRacePayload(payload))
+    .then((response) => mapRaceToUI(unwrap(response)));
 }
 
 export function deleteRace(id) {
-  return apiOrFallback(
-    async () => unwrap(await api.delete(`${ENDPOINT}/${id}`)),
-    () => {
-      writeRaces(readRaces().filter((race) => race.id !== id));
-      return true;
-    },
-  );
+  return api.delete(`${ENDPOINT}/${id}`).then((response) => unwrap(response));
 }
 
 export function scheduleRace(id, payload) {
-  return apiOrFallback(
-    async () => unwrap(await api.patch(`${ENDPOINT}/${id}/schedule`, payload)),
-    () => updateLocalRace(id, { ...payload, status: "SCHEDULED" }),
-  );
+  return api
+    .patch(`${ENDPOINT}/${id}/schedule`, toSchedulePayload(payload))
+    .then((response) => mapRaceToUI(unwrap(response)));
 }
 
-export function cancelRace(id, payload) {
-  return apiOrFallback(
-    async () => unwrap(await api.patch(`${ENDPOINT}/${id}/cancel`, payload)),
-    () =>
-      updateLocalRace(id, {
-        status: "CANCELLED",
-        cancelReason: payload.reason,
-      }),
-  );
+export function cancelRace(id) {
+  return api
+    .patch(`${ENDPOINT}/${id}/cancel`)
+    .then((response) => mapRaceToUI(unwrap(response)));
 }
 
-export function assignParticipants(id, payload) {
-  return apiOrFallback(
-    async () => unwrap(await api.put(`${ENDPOINT}/${id}/participants`, payload)),
-    () => updateLocalRace(id, { participantIds: payload.participantIds || [] }),
-  );
+export function getRaceEntries(id) {
+  return api.get(`${ENDPOINT}/${id}/entries`).then((response) => unwrap(response));
 }
 
-function updateLocalRace(id, changes) {
-  let updated = null;
-  writeRaces(
-    readRaces().map((race) => {
-      if (race.id !== id) return race;
-      updated = { ...race, ...changes };
-      return updated;
+export function assignParticipants(id, payload = {}) {
+  const registrationIds = payload.registrationIds || payload.participantIds || [];
+  const requests = registrationIds.map((registrationId, index) =>
+    api.post(`${ENDPOINT}/${id}/entries`, {
+      registrationId,
+      entryNo: index + 1,
+      laneNo: index + 1,
     }),
   );
-  return updated;
+
+  return Promise.all(requests).then((responses) => responses.map(unwrap));
 }

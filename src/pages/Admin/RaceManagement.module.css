@@ -39,6 +39,7 @@
 .participantCount i { display: block; height: 100%; background: #047857; }
 .statusBadge { display: inline-flex; padding: 4px 8px; border-radius: 999px; font-size: 9px; font-weight: 900; }
 .statusSCHEDULED { background: #dbeafe; color: #1d4ed8; }.statusACTIVE, .statusOPEN, .statusRUNNING { background: #dcfce7; color: #166534; }
+.statusCLOSED, .statusFINISHED, .statusOFFICIAL { background: #fef3c7; color: #92400e; }
 .statusCANCELLED { background: #fee2e2; color: #b91c1c; }.statusDRAFT { background: #f1f5f9; color: #475569; }
 .actionMenuWrap { position: relative; display: flex; justify-content: center; }
 .actionMenuTrigger {
