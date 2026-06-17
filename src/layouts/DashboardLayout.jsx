@@ -26,7 +26,7 @@ const roleNavItems = {
 export default function DashboardLayout() {
   const navigate = useNavigate();
   const { session } = useOutletContext();
-  const permissions = getUserPermissions(session.user);
+  const permissions = session.permissions || getUserPermissions(session.user);
   const navItems = roleNavItems[session.user.role] || [];
 
   function handleLogout() {
