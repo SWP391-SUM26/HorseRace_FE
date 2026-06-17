@@ -8,8 +8,10 @@ const roleOptions = ["Owner", "Jockey", "Spectator"];
 
 const dashboardByRole = {
   Admin: "/admin/users",
+  SystemAdmin: "/admin/users",
+  TournamentAdmin: "/admin/tournaments",
   Owner: "/owner-dashboard",
-  Jockey: "/jockey-dashboard",
+  Jockey: "/jockey/invitations",
   Referee: "/referee/registrations",
   Spectator: "/spectator-dashboard",
 };

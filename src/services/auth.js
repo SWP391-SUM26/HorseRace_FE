@@ -111,8 +111,7 @@ export function getStoredSession() {
 }
 
 export function getUserPermissions(userOrRole) {
-  const role =
-    typeof userOrRole === "string" ? userOrRole : userOrRole?.role;
+  const role = typeof userOrRole === "string" ? userOrRole : userOrRole?.role;
   return ROLE_PERMISSIONS[role] || [];
 }
 
@@ -171,7 +170,7 @@ export async function loginWithCredentials(
   rememberMe = false,
 ) {
   try {
-    const response = await api.post("/v1/auth/login", {
+    const response = await api.post("/api/v1/auth/login", {
       email: identifier.trim().toLowerCase(),
       password,
     });
@@ -197,7 +196,7 @@ export async function loginWithGoogle(idToken) {
   }
 
   try {
-    const response = await api.post("/v1/auth/google", { idToken });
+    const response = await api.post("/api/v1/auth/google", { idToken });
     const authData = response.data?.data;
 
     if (!response.data?.success || !authData?.accessToken) {

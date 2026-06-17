@@ -24,6 +24,7 @@ import JockeyDetail from './pages/Owner/JockeyDetail';
 import InvitationList from './pages/Jockey/InvitationList';
 import RefereeLayout from './layouts/RefereeLayout';
 import RegistrationManagement from './pages/Referee/RegistrationManagement';
+import PreRace from './pages/Referee/PreRace';
 
 const OwnerPlaceholder = ({ title }) => (
   <div style={{ padding: '40px', textAlign: 'center', backgroundColor: '#ffffff', borderRadius: '12px', border: '1px solid #e2e8f0', boxShadow: '0 1px 3px rgba(0,0,0,0.02)' }}>
@@ -49,6 +50,7 @@ export default function App() {
         {/* DASHBOARDS */}
         <Route element={<ProtectedRoute roles={['Owner']} />}>
           <Route element={<DashboardLayout />}>
+            <Route path="/owner/overview" element={<Overview />} />
             <Route path="/owner-dashboard" element={<Overview />} />
             <Route path="/owner-dashboard/stable" element={<StableManagement />} />
             <Route path="/owner/jockey-market" element={<JockeyMarket />} />
@@ -76,6 +78,11 @@ export default function App() {
           <Route element={<RefereeLayout />}>
             <Route path="/referee/dashboard" element={<OwnerPlaceholder title="Referee Dashboard" />} />
             <Route path="/referee/registrations" element={<RegistrationManagement />} />
+            <Route path="/referee/inspection" element={<PreRace />} />
+            <Route path="/referee/live-monitor" element={<OwnerPlaceholder title="Live Monitor" />} />
+            <Route path="/referee/notifications" element={<OwnerPlaceholder title="Notifications" />} />
+            <Route path="/referee/violations" element={<OwnerPlaceholder title="Violations" />} />
+            <Route path="/referee/reports" element={<OwnerPlaceholder title="Reports" />} />
           </Route>
         </Route>
 

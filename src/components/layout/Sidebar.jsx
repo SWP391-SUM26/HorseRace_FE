@@ -48,6 +48,54 @@ export default function Sidebar({
     });
   }
 
+  function isItemActive(item) {
+    if (item.isActive) {
+      return item.isActive(location.pathname);
+    }
+
+    if (item.end) {
+      return location.pathname === item.path;
+    }
+
+    return location.pathname === item.path ||
+      location.pathname.startsWith(`${item.path}/`) ||
+      (item.path === '/admin/users' && (location.pathname === '/admin' || location.pathname === '/admin/'));
+  }
+
+  function renderMenuItem(item) {
+    const Icon = item.icon;
+    const isActive = isItemActive(item);
+    const className = `${styles.sidebarItem} ${isActive ? styles.sidebarItemActive : ''}`;
+    const title = collapsed ? item.label : undefined;
+
+    if (item.onClick) {
+      return (
+        <button
+          key={item.label}
+          type="button"
+          className={className}
+          title={title}
+          onClick={item.onClick}
+        >
+          <Icon className={styles.sidebarItemIcon} />
+          <span className={styles.itemLabel}>{item.label}</span>
+        </button>
+      );
+    }
+
+    return (
+      <NavLink
+        key={item.path}
+        to={item.path}
+        className={className}
+        title={title}
+      >
+        <Icon className={styles.sidebarItemIcon} />
+        <span className={styles.itemLabel}>{item.label}</span>
+      </NavLink>
+    );
+  }
+
   return (
     <aside className={`${styles.sidebar} ${collapsed ? styles.collapsed : ''}`}>
       <div className={styles.sidebarLogo}>
@@ -59,39 +107,11 @@ export default function Sidebar({
       </div>
       
       <nav className={styles.sidebarNav}>
-        {primaryItems.map(item => {
-          const isActive = location.pathname === item.path || 
-                           (item.path === '/admin/users' && (location.pathname === '/admin' || location.pathname === '/admin/'));
-          
-          return (
-            <NavLink
-              key={item.path}
-              to={item.path}
-              className={`${styles.sidebarItem} ${isActive ? styles.sidebarItemActive : ''}`}
-              title={collapsed ? item.label : undefined}
-            >
-              <item.icon className={styles.sidebarItemIcon} />
-              <span className={styles.itemLabel}>{item.label}</span>
-            </NavLink>
-          );
-        })}
+        {primaryItems.map(renderMenuItem)}
       </nav>
       
       <div className={styles.sidebarBottom}>
-        {bottomItems.map(item => {
-          const isActive = location.pathname === item.path;
-          return (
-            <NavLink
-              key={item.path}
-              to={item.path}
-              className={`${styles.sidebarItem} ${isActive ? styles.sidebarItemActive : ''}`}
-              title={collapsed ? item.label : undefined}
-            >
-              <item.icon className={styles.sidebarItemIcon} />
-              <span className={styles.itemLabel}>{item.label}</span>
-            </NavLink>
-          );
-        })}
+        {bottomItems.map(renderMenuItem)}
         {footerAction === undefined ? (
           <button className={styles.systemReportBtn}>
             <BarChartIcon className={styles.reportIcon} />
