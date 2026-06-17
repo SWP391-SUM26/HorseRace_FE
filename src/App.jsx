@@ -24,6 +24,11 @@ import JockeyDetail from './pages/Owner/JockeyDetail';
 import InvitationList from './pages/Jockey/InvitationList';
 import RefereeLayout from './layouts/RefereeLayout';
 import RegistrationManagement from './pages/Referee/RegistrationManagement';
+import RefereeDashboard from './pages/Referee/RefereeDashboard';
+import LiveMonitor from './pages/Referee/LiveMonitor';
+import NotificationsCenter from './pages/Referee/NotificationsCenter';
+import Violations from './pages/Referee/Violations';
+import Reports from './pages/Referee/Reports';
 
 const OwnerPlaceholder = ({ title }) => (
   <div style={{ padding: '40px', textAlign: 'center', backgroundColor: '#ffffff', borderRadius: '12px', border: '1px solid #e2e8f0', boxShadow: '0 1px 3px rgba(0,0,0,0.02)' }}>
@@ -74,8 +79,13 @@ export default function App() {
 
         <Route element={<ProtectedRoute roles={['Referee']} />}>
           <Route element={<RefereeLayout />}>
-            <Route path="/referee/dashboard" element={<OwnerPlaceholder title="Referee Dashboard" />} />
-            <Route path="/referee/registrations" element={<RegistrationManagement />} />
+            <Route path="/referee/dashboard" element={<RefereeDashboard />} />
+            <Route path="/referee/inspection" element={<RegistrationManagement />} />
+            <Route path="/referee/live-monitor" element={<LiveMonitor />} />
+            <Route path="/referee/notifications" element={<NotificationsCenter />} />
+            <Route path="/referee/violations" element={<Violations />} />
+            {/* FORCE HMR RELOAD */}
+            <Route path="/referee/reports" element={<Reports />} />
           </Route>
         </Route>
 

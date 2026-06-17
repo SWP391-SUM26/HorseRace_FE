@@ -1,9 +1,8 @@
 import api from './api';
 import registrationMock from '../data/registrationMock.json';
 
-const ENDPOINT = '/registrations';
+const ENDPOINT = '/api/v1/registrations';
 const STORAGE_KEY = 'equine_elite_registrations';
-const HAS_API_BASE_URL = Boolean(import.meta.env.VITE_API_URL?.trim());
 
 function unwrap(response) {
   return response?.data?.data ?? response?.data;
@@ -17,7 +16,8 @@ function ensureApiData(data) {
 }
 
 function canFallback(error) {
-  return !error.response || [404, 405, 501].includes(error.response.status);
+  // TẠM THỜI TẮT FALLBACK ĐỂ TÌM LỖI
+  return false;
 }
 
 function readRegistrations() {
@@ -40,17 +40,58 @@ function writeRegistrations(registrations) {
 }
 
 async function apiOrFallback(request, fallback) {
-  if (!HAS_API_BASE_URL) {
-    return fallback();
-  }
 
   try {
     return await request();
   } catch (error) {
+    console.error('Registration API Error:', error);
     if (!canFallback(error)) throw error;
     console.warn('Registration API unavailable. Using local fallback data.');
     return fallback();
   }
+}
+
+function mapRegistrationToUI(item) {
+  if (!item) return null;
+  return {
+    ...item,
+    id: item.registrationId || item.id,
+    status: item.status,
+    submittedAt: item.submittedAt,
+    reviewedAt: item.reviewedAt,
+    rejectionReason: item.rejectionReason,
+    refereeNotes: item.refereeNotes || '',
+    horse: item.horse || {
+      id: item.horseId || "N/A",
+      name: item.horseName || "Unknown",
+      code: item.horseCode || "N/A",
+      image: item.horseImage || "/src/assets/silver_streak.png",
+      age: item.horseAge || 0,
+      stable: "N/A",
+      breed: "Thoroughbred",
+      sire: "N/A",
+      dam: "N/A"
+    },
+    owner: item.owner || {
+      id: item.ownerUserId || "N/A",
+      name: item.ownerName || "Unknown"
+    },
+    tournament: item.tournament || {
+      id: item.tournamentId || "N/A",
+      name: item.tournamentName || "Unknown"
+    },
+    race: item.race || {
+      id: item.raceId || "N/A",
+      name: item.raceName || "N/A"
+    },
+    eligibility: item.eligibility || {
+      vaccinationRecords: "VALID",
+      fitnessCertification: "VALID",
+      passportScan: "VALID",
+      weightVerification: "VALID",
+      medicalExamination: "VALID"
+    }
+  };
 }
 
 function normalizeList(data, params) {
@@ -65,7 +106,7 @@ function normalizeList(data, params) {
     1;
 
   return {
-    items,
+    items: items.map(mapRegistrationToUI),
     page,
     pageSize,
     totalItems,
@@ -145,18 +186,37 @@ export function submitRegistration(payload) {
 
 export function getRegistrationList(params = {}) {
   return apiOrFallback(
-    async () =>
-      normalizeList(
-        ensureApiData(unwrap(await api.get(ENDPOINT, { params }))),
+    async () => {
+      const apiParams = { ...params };
+      if (apiParams.page) {
+        apiParams.page = Math.max(0, apiParams.page - 1);
+      }
+      if (apiParams.pageSize) {
+        apiParams.size = apiParams.pageSize;
+        delete apiParams.pageSize;
+      }
+      if (apiParams.search !== undefined) {
+        apiParams.q = apiParams.search;
+        delete apiParams.search;
+      }
+      Object.keys(apiParams).forEach((key) => {
+        if (apiParams[key] === '' || apiParams[key] === null) {
+          delete apiParams[key];
+        }
+      });
+
+      return normalizeList(
+        ensureApiData(unwrap(await api.get(ENDPOINT, { params: apiParams }))),
         params,
-      ),
+      );
+    },
     () => getMockList(params),
   );
 }
 
 export function getRegistrationDetail(id) {
   return apiOrFallback(
-    async () => ensureApiData(unwrap(await api.get(`${ENDPOINT}/${id}`))),
+    async () => mapRegistrationToUI(ensureApiData(unwrap(await api.get(`${ENDPOINT}/${id}`)))),
     () => readRegistrations().find((item) => item.id === id) || null,
   );
 }
