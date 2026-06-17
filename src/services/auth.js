@@ -49,7 +49,50 @@ function persistSession(session, rememberMe = false) {
   return storedSession;
 }
 
-async function fetchMyProfile(accessToken) {
+function getInitials(displayName) {
+  return displayName
+    ?.split(" ")
+    .filter(Boolean)
+    .map((part) => part[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
+}
+
+function buildUserFromProfile(profile, fallbackUser = {}) {
+  const apiRole =
+    profile?.roleCode ||
+    profile?.role?.roleCode ||
+    profile?.roleName ||
+    fallbackUser.apiRole ||
+    fallbackUser.role;
+  const role = normalizeApiRole(apiRole);
+  const displayName =
+    profile?.fullName ||
+    fallbackUser.name ||
+    profile?.email ||
+    fallbackUser.email ||
+    "User";
+
+  return {
+    ...fallbackUser,
+    id: profile?.userId || fallbackUser.id || fallbackUser.userId,
+    userId: profile?.userId || fallbackUser.userId || fallbackUser.id,
+    userCode: profile?.userCode || fallbackUser.userCode,
+    name: displayName,
+    email: profile?.email || fallbackUser.email,
+    phone: profile?.phone || fallbackUser.phone,
+    avatarUrl: profile?.avatarUrl || fallbackUser.avatarUrl,
+    avatar: fallbackUser.avatar || getInitials(displayName) || "US",
+    status: profile?.status || fallbackUser.status,
+    kycStatus: profile?.kycStatus || fallbackUser.kycStatus,
+    role,
+    apiRole,
+    roleName: profile?.roleName || fallbackUser.roleName,
+  };
+}
+
+export async function fetchCurrentUserProfile(accessToken) {
   try {
     const response = await api.get("/api/v1/users/me", {
       headers: { Authorization: `Bearer ${accessToken}` },
@@ -61,32 +104,17 @@ async function fetchMyProfile(accessToken) {
 }
 
 async function buildSessionFromAuthData(authData) {
-  const profile = await fetchMyProfile(authData.accessToken);
-  const apiRole =
-    authData.role ||
-    profile?.roleCode ||
-    profile?.role?.roleCode ||
-    profile?.roleName;
-  const role = normalizeApiRole(apiRole);
-  const displayName = profile?.fullName || authData.email;
-  const initials = displayName
-    ?.split(" ")
-    .filter(Boolean)
-    .map((part) => part[0])
-    .join("")
-    .slice(0, 2)
-    .toUpperCase();
+  const profile = await fetchCurrentUserProfile(authData.accessToken);
+  const user = buildUserFromProfile(profile, {
+    id: authData.userId,
+    userId: authData.userId,
+    email: authData.email,
+    apiRole: authData.role,
+  });
 
   return {
-    user: {
-      id: authData.userId,
-      userId: authData.userId,
-      name: displayName,
-      email: authData.email,
-      role,
-      apiRole,
-      avatar: initials || "US",
-    },
+    user,
+    permissions: getUserPermissions(user),
     accessToken: authData.accessToken,
     refreshToken: authData.refreshToken,
     tokenType: authData.tokenType || "Bearer",
@@ -163,6 +191,86 @@ export function validateSession(requiredRoles = []) {
     session,
     reason: isAuthorized ? "OK" : "ROLE_NOT_ALLOWED",
   };
+}
+
+export async function validateSessionWithApi(requiredRoles = []) {
+  let session = getStoredSession();
+  const now = Date.now();
+
+  if (
+    !session?.user ||
+    !session.accessToken ||
+    !session.refreshToken ||
+    session.refreshTokenExpiresAt <= now
+  ) {
+    localStorage.removeItem(SESSION_KEY);
+    return {
+      isAuthenticated: false,
+      isAuthorized: false,
+      session: null,
+      reason: "SESSION_EXPIRED",
+    };
+  }
+
+  if (session.accessTokenExpiresAt <= now) {
+    try {
+      session = await refreshAccessToken();
+    } catch {
+      return {
+        isAuthenticated: false,
+        isAuthorized: false,
+        session: null,
+        reason: "TOKEN_REFRESH_FAILED",
+      };
+    }
+  }
+
+  try {
+    const profile = await fetchCurrentUserProfile(session.accessToken);
+    const isInactive = ["INACTIVE", "BANNED", "SUSPENDED"].includes(
+      profile?.status,
+    );
+
+    if (!profile || isInactive) {
+      localStorage.removeItem(SESSION_KEY);
+      return {
+        isAuthenticated: false,
+        isAuthorized: false,
+        session: null,
+        reason: "USER_NOT_ACTIVE",
+      };
+    }
+
+    const user = buildUserFromProfile(profile, session.user);
+    const syncedSession = persistSession(
+      {
+        ...session,
+        user,
+        permissions: getUserPermissions(user),
+      },
+      session.rememberMe,
+    );
+    const allowedRoles = Array.isArray(requiredRoles)
+      ? requiredRoles
+      : [requiredRoles];
+    const isAuthorized =
+      allowedRoles.length === 0 || allowedRoles.includes(user.role);
+
+    return {
+      isAuthenticated: true,
+      isAuthorized,
+      session: syncedSession,
+      reason: isAuthorized ? "OK" : "ROLE_NOT_ALLOWED",
+    };
+  } catch {
+    localStorage.removeItem(SESSION_KEY);
+    return {
+      isAuthenticated: false,
+      isAuthorized: false,
+      session: null,
+      reason: "API_SESSION_INVALID",
+    };
+  }
 }
 
 export async function loginWithCredentials(
