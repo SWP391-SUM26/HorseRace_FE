@@ -24,7 +24,12 @@ import JockeyDetail from './pages/Owner/JockeyDetail';
 import InvitationList from './pages/Jockey/InvitationList';
 import RefereeLayout from './layouts/RefereeLayout';
 import RegistrationManagement from './pages/Referee/RegistrationManagement';
-import PreRace from './pages/Referee/PreRace';
+import PreRaceInspection from './pages/Referee/PreRaceInspection';
+import RefereeDashboard from './pages/Referee/RefereeDashboard';
+import LiveMonitor from './pages/Referee/LiveMonitor';
+import NotificationsCenter from './pages/shared/NotificationsCenter';
+import Violations from './pages/Referee/Violations';
+import Reports from './pages/Referee/Reports';
 
 const OwnerPlaceholder = ({ title }) => (
   <div style={{ padding: '40px', textAlign: 'center', backgroundColor: '#ffffff', borderRadius: '12px', border: '1px solid #e2e8f0', boxShadow: '0 1px 3px rgba(0,0,0,0.02)' }}>
@@ -53,6 +58,7 @@ export default function App() {
             <Route path="/owner/overview" element={<Overview />} />
             <Route path="/owner-dashboard" element={<Overview />} />
             <Route path="/owner-dashboard/stable" element={<StableManagement />} />
+            <Route path="/owner-dashboard/notifications" element={<NotificationsCenter />} />
             <Route path="/owner/jockey-market" element={<JockeyMarket />} />
             <Route path="/owner/jockey-market/:jockeyId" element={<JockeyDetail />} />
             <Route path="/owner-dashboard/jockeys" element={<JockeyMarket />} />
@@ -65,24 +71,26 @@ export default function App() {
           <Route element={<DashboardLayout />}>
             <Route path="/jockey-dashboard" element={<DashboardHome />} />
             <Route path="/jockey/invitations" element={<InvitationList />} />
+            <Route path="/jockey/notifications" element={<NotificationsCenter />} />
           </Route>
         </Route>
 
         <Route element={<ProtectedRoute roles={['Spectator']} />}>
           <Route element={<DashboardLayout />}>
             <Route path="/spectator-dashboard" element={<DashboardHome />} />
+            <Route path="/spectator/notifications" element={<NotificationsCenter />} />
           </Route>
         </Route>
 
         <Route element={<ProtectedRoute roles={['Referee']} />}>
           <Route element={<RefereeLayout />}>
-            <Route path="/referee/dashboard" element={<OwnerPlaceholder title="Referee Dashboard" />} />
-            <Route path="/referee/registrations" element={<RegistrationManagement />} />
-            <Route path="/referee/inspection" element={<PreRace />} />
-            <Route path="/referee/live-monitor" element={<OwnerPlaceholder title="Live Monitor" />} />
-            <Route path="/referee/notifications" element={<OwnerPlaceholder title="Notifications" />} />
-            <Route path="/referee/violations" element={<OwnerPlaceholder title="Violations" />} />
-            <Route path="/referee/reports" element={<OwnerPlaceholder title="Reports" />} />
+            <Route path="/referee/dashboard" element={<RefereeDashboard />} />
+            <Route path="/referee/registration" element={<RegistrationManagement />} />
+            <Route path="/referee/inspection" element={<PreRaceInspection />} />
+            <Route path="/referee/live-monitor" element={<LiveMonitor />} />
+            <Route path="/referee/notifications" element={<NotificationsCenter />} />
+            <Route path="/referee/violations" element={<Violations />} />
+            <Route path="/referee/reports" element={<Reports />} />
           </Route>
         </Route>
 

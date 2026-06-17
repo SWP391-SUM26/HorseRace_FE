@@ -7,6 +7,7 @@ import {
   ClipboardIcon,
   JockeyIcon,
   TrophyIcon,
+  BellIcon,
 } from "../components/ui/Icons";
 import { getUserPermissions, logout } from "../services/auth";
 import styles from "./DashboardLayout.module.css";
@@ -18,17 +19,20 @@ const roleNavItems = {
     { label: "Jockey Market", path: "/owner/jockey-market", icon: JockeyIcon },
     { label: "Race Calendar", path: "/owner-dashboard/calendar", icon: CalendarIcon },
     { label: "Financials", path: "/owner-dashboard/financials", icon: TrophyIcon, permission: "finance:view" },
+    { label: "Notifications", path: "/owner-dashboard/notifications", icon: BellIcon },
   ],
   Jockey: [
     { label: "Overview", path: "/jockey-dashboard", icon: BarChartIcon, end: true },
     { label: "Invitations", path: "/jockey/invitations", icon: ClipboardIcon },
     { label: "Ride Schedule", path: "/jockey-dashboard", icon: CalendarIcon, permission: "schedule:manage", end: true },
     { label: "Performance", path: "/jockey-dashboard", icon: TrophyIcon, permission: "performance:view", end: true },
+    { label: "Notifications", path: "/jockey/notifications", icon: BellIcon },
   ],
   Spectator: [
     { label: "Overview", path: "/spectator-dashboard", icon: BarChartIcon, end: true },
     { label: "Live Races", path: "/spectator-dashboard", icon: CalendarIcon, permission: "races:view", end: true },
     { label: "Predictions", path: "/spectator-dashboard", icon: CheckSquareIcon, permission: "predictions:view", end: true },
+    { label: "Notifications", path: "/spectator/notifications", icon: BellIcon },
   ],
 };
 

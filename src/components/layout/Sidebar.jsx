@@ -12,14 +12,17 @@ import {
   ShieldIcon,
   TrophyIcon,
   UsersIcon,
+  BellIcon,
 } from '../ui/Icons';
 
 const defaultMenuItems = [
   { path: '/admin/users', icon: UsersIcon, label: 'User Management' },
+  { path: '/admin/approvals', icon: ClipboardIcon, label: 'Registration Approval' },
   { path: '/admin/tournaments', icon: TrophyIcon, label: 'Tournaments' },
   { path: '/admin/races', icon: CheckSquareIcon, label: 'Race Management' },
   { path: '/admin/race-approval', icon: FileTextIcon, label: 'Race Approval' },
   { path: '/admin/staffing', icon: ClipboardIcon, label: 'Staffing' },
+  { path: '/admin/notifications', icon: BellIcon, label: 'Notifications' },
   { path: '/admin/settings', icon: SettingsIcon, label: 'Settings', bottom: true },
   { path: '/admin/logs', icon: FileTextIcon, label: 'Audit Logs', bottom: true },
 ];

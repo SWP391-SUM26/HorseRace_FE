@@ -6,13 +6,11 @@ import styles from "./LoginPage.module.css";
 
 const roleOptions = ["Owner", "Jockey", "Spectator"];
 
-const dashboardByRole = {
+const roleRedirects = {
   Admin: "/admin/users",
-  SystemAdmin: "/admin/users",
-  TournamentAdmin: "/admin/tournaments",
   Owner: "/owner-dashboard",
   Jockey: "/jockey/invitations",
-  Referee: "/referee/registrations",
+  Referee: "/referee/dashboard",
   Spectator: "/spectator-dashboard",
 };
 
@@ -88,7 +86,7 @@ export default function LoginPage() {
 
             try {
               const session = await loginWithGoogle(response.credential);
-              navigate(dashboardByRole[session.user.role] || "/");
+              navigate(roleRedirects[session.user.role] || "/");
             } catch (loginError) {
               setError(loginError.message);
             } finally {
@@ -128,7 +126,7 @@ export default function LoginPage() {
         password,
         rememberMe,
       );
-      navigate(dashboardByRole[session.user.role] || "/");
+      navigate(roleRedirects[session.user.role] || "/");
     } catch (loginError) {
       setError(loginError.message);
     } finally {

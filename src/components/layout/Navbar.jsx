@@ -15,6 +15,16 @@ export default function Navbar({ title, systemStatus }) {
     navigate('/login');
   };
 
+  const handleNotificationsClick = () => {
+    const role = session?.user?.role;
+    if (role === 'Admin') navigate('/admin/notifications');
+    else if (role === 'Owner') navigate('/owner-dashboard/notifications');
+    else if (role === 'Jockey') navigate('/jockey/notifications');
+    else if (role === 'Referee') navigate('/referee/notifications');
+    else if (role === 'Spectator') navigate('/spectator/notifications');
+    else navigate('/login');
+  };
+
   return (
     <header className={styles.topbar}>
       <div className={styles.topbarLeft}>
@@ -24,7 +34,7 @@ export default function Navbar({ title, systemStatus }) {
         )}
       </div>
       <div className={styles.topbarActions}>
-        <button className={styles.topbarIconBtn} title="Notifications">
+        <button className={styles.topbarIconBtn} title="Notifications" onClick={handleNotificationsClick}>
           <BellIcon className={styles.bellIcon} />
           <span className={styles.topbarBadge} />
         </button>
