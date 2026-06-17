@@ -35,3 +35,12 @@
 .btn_ghost:hover {
   background-color: #f8fafc;
 }
+
+.btn_danger {
+  background-color: #dc2626;
+  color: #ffffff;
+}
+
+.btn_danger:hover {
+  background-color: #b91c1c;
+}

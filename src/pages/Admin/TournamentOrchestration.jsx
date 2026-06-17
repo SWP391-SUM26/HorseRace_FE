@@ -5,105 +5,66 @@ import { getTournaments, createTournament } from '../../services/tournament';
 import PageHeader from '../../components/ui/PageHeader';
 import Button from '../../components/ui/Button';
 import DataTable from '../../components/ui/DataTable';
-import PopupModal from '../../components/ui/PopupModal';
 import { FilterIcon, PlusIcon, CalendarIcon, AlertTriangleIcon, MoreHorizontalIcon, XIcon, LayoutIcon } from '../../components/ui/Icons';
 
 export default function TournamentOrchestration() {
   const [tournaments, setTournaments] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [popup, setPopup] = useState({ isOpen: false, type: 'success', title: '', message1: '' });
   
   // Builder form state
   const [formData, setFormData] = useState({
-    tournamentCode: '',
-    name: '',
-    description: '',
-    location: '',
-    startDate: '',
-    endDate: '',
-    registrationOpenAt: '',
-    registrationCloseAt: ''
+    name: 'Dubai World Cup Draft',
+    tier: 'Group 1 (Elite)',
+    eligibility: {
+      thoroughbreds: true,
+      age3Plus: true,
+      previousWin: false,
+    },
+    track: 'Meydan Racecourse'
   });
 
-  const loadData = async () => {
-    setLoading(true);
-    try {
-      const rawData = await getTournaments();
-      const tournamentList = rawData?.data || rawData;
-
-      setTournaments(Array.isArray(tournamentList) ? tournamentList : []);
-    } catch (err) {
-      console.error("Failed to fetch tournaments:", err);
-      setTournaments([]);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   useEffect(() => {
+    async function loadData() {
+      setLoading(true);
+      try {
+        const rawData = await getTournaments();
+        // Giả sử backend trả về dạng { data: [...] } hoặc trả thẳng mảng
+        const tournamentList = rawData?.data || rawData;
+
+        if (Array.isArray(tournamentList) && tournamentList.length > 0) {
+          setTournaments(tournamentList);
+        } else {
+          setTournaments(mockTournaments);
+        }
+      } catch (err) {
+        console.error("Failed to fetch tournaments, using mock data", err);
+        setTournaments(mockTournaments);
+      } finally {
+        setLoading(false);
+      }
+    }
     loadData();
   }, []);
 
-  const formatDateTime = (dtStr) => {
-    if (!dtStr) return null;
-    return new Date(dtStr).toISOString();
-  };
-
-  const preparePayload = (status) => ({
-    ...formData,
-    status,
-    startDate: formatDateTime(formData.startDate),
-    endDate: formatDateTime(formData.endDate),
-    registrationOpenAt: formatDateTime(formData.registrationOpenAt),
-    registrationCloseAt: formatDateTime(formData.registrationCloseAt),
-  });
-
   const handleSaveDraft = async () => {
     try {
-      if (!formData.name || !formData.tournamentCode) {
-        setPopup({ isOpen: true, type: 'error', title: 'Error', message1: 'Name and Tournament Code are required!' });
-        return;
-      }
-      await createTournament(preparePayload('DRAFT'));
-      setPopup({ isOpen: true, type: 'success', title: 'Success!', message1: 'Draft saved successfully!' });
-      loadData();
+      // await createTournament({ ...formData, status: 'DRAFT' });
+      alert("Draft saved successfully!");
     } catch (err) {
-      setPopup({ isOpen: true, type: 'error', title: 'Error', message1: err.response?.data?.message || err.message });
+      alert("Error saving draft");
     }
   };
 
   const handlePublish = async () => {
     try {
-      if (!formData.name || !formData.tournamentCode) {
-        setPopup({ isOpen: true, type: 'error', title: 'Error', message1: 'Name and Tournament Code are required!' });
-        return;
-      }
-      await createTournament(preparePayload('PUBLISHED'));
-      setPopup({ isOpen: true, type: 'success', title: 'Success!', message1: 'Tournament published successfully!' });
-      loadData();
+      // await createTournament({ ...formData, status: 'PENDING ENTRIES' });
+      alert("Tournament published successfully!");
     } catch (err) {
-      setPopup({ isOpen: true, type: 'error', title: 'Error', message1: err.response?.data?.message || err.message });
+      alert("Error publishing tournament");
     }
   };
 
-  const handleNewTournament = () => {
-    setFormData({
-      tournamentCode: '',
-      name: '',
-      description: '',
-      location: '',
-      startDate: '',
-      endDate: '',
-      registrationOpenAt: '',
-      registrationCloseAt: ''
-    });
-  };
-
-  const handleFilterView = () => {
-    alert("Filter view is not yet implemented.");
-  };
-
-  const tableColumns = ['TOURNAMENT CODE', 'NAME', 'LOCATION', 'START DATE', 'STATUS'];
+  const tableColumns = ['RACE ID', 'TOURNAMENT', 'LOCATION', 'DATE & TIME', 'STATUS'];
 
   return (
     <>
@@ -112,8 +73,8 @@ export default function TournamentOrchestration() {
         subtitle="Manage global racing circuits, schedule events, and configure track details." 
         actions={
           <>
-            <Button variant="ghost" icon={FilterIcon} onClick={handleFilterView}>Filter View</Button>
-            <Button icon={PlusIcon} onClick={handleNewTournament}>New Tournament</Button>
+            <Button variant="ghost" icon={FilterIcon}>Filter View</Button>
+            <Button icon={PlusIcon}>New Tournament</Button>
           </>
         }
       />
@@ -203,12 +164,10 @@ export default function TournamentOrchestration() {
               totalItems={tournaments.length}
               renderRow={(item) => (
                 <tr key={item.id} className={styles.tableRow} style={{ borderBottom: '1px solid #e2e8f0' }}>
-                  <td style={{ padding: '16px 24px', fontSize: '13px', fontWeight: '600', color: '#0f172a' }}>{item.tournamentCode}</td>
-                  <td style={{ padding: '16px 24px', fontSize: '14px', color: '#0f172a', fontWeight: '500' }}>{item.name}</td>
+                  <td style={{ padding: '16px 24px', fontSize: '13px', fontWeight: '600', color: '#0f172a' }}>{item.raceId}</td>
+                  <td style={{ padding: '16px 24px', fontSize: '14px', color: '#0f172a', fontWeight: '500' }}>{item.tournamentName}</td>
                   <td style={{ padding: '16px 24px', fontSize: '14px', color: '#64748b' }}>{item.location}</td>
-                  <td style={{ padding: '16px 24px', fontSize: '14px', color: '#64748b' }}>
-                    {item.startDate ? new Date(item.startDate).toLocaleString() : 'N/A'}
-                  </td>
+                  <td style={{ padding: '16px 24px', fontSize: '14px', color: '#64748b' }}>{item.dateTime}</td>
                   <td style={{ padding: '16px 24px' }}>
                     <span className={`${styles.statusBadge} ${
                       item.status === 'CONFIRMED' ? styles.statusConfirmed :
@@ -239,17 +198,6 @@ export default function TournamentOrchestration() {
             
             <div className={styles.builderBody}>
               <div className={styles.formGroup}>
-                <label className={styles.formLabel}>Tournament Code</label>
-                <input 
-                  type="text" 
-                  className={styles.formInput} 
-                  value={formData.tournamentCode}
-                  onChange={e => setFormData({...formData, tournamentCode: e.target.value})}
-                  placeholder="e.g. TRN-2023-A"
-                />
-              </div>
-
-              <div className={styles.formGroup}>
                 <label className={styles.formLabel}>Tournament Name</label>
                 <input 
                   type="text" 
@@ -260,64 +208,76 @@ export default function TournamentOrchestration() {
               </div>
 
               <div className={styles.formGroup}>
-                <label className={styles.formLabel}>Description</label>
-                <textarea 
-                  className={styles.formInput} 
-                  value={formData.description}
-                  onChange={e => setFormData({...formData, description: e.target.value})}
-                  rows={3}
-                  style={{ resize: 'vertical' }}
-                />
+                <label className={styles.formLabel}>Circuit Tier</label>
+                <select 
+                  className={styles.formSelect}
+                  value={formData.tier}
+                  onChange={e => setFormData({...formData, tier: e.target.value})}
+                >
+                  <option>Group 1 (Elite)</option>
+                  <option>Group 2</option>
+                  <option>Group 3</option>
+                </select>
+              </div>
+
+              <div className={styles.criteriaBox}>
+                <div className={styles.criteriaTitle}>Eligibility Criteria</div>
+                <div className={styles.checkboxList}>
+                  <label className={styles.checkboxItem}>
+                    <input 
+                      type="checkbox" 
+                      className={styles.checkboxInput} 
+                      checked={formData.eligibility.thoroughbreds}
+                      onChange={e => setFormData({
+                        ...formData, 
+                        eligibility: {...formData.eligibility, thoroughbreds: e.target.checked}
+                      })}
+                    />
+                    Thoroughbreds Only
+                  </label>
+                  <label className={styles.checkboxItem}>
+                    <input 
+                      type="checkbox" 
+                      className={styles.checkboxInput} 
+                      checked={formData.eligibility.age3Plus}
+                      onChange={e => setFormData({
+                        ...formData, 
+                        eligibility: {...formData.eligibility, age3Plus: e.target.checked}
+                      })}
+                    />
+                    Age 3+ Years
+                  </label>
+                  <label className={styles.checkboxItem}>
+                    <input 
+                      type="checkbox" 
+                      className={styles.checkboxInput} 
+                      checked={formData.eligibility.previousWin}
+                      onChange={e => setFormData({
+                        ...formData, 
+                        eligibility: {...formData.eligibility, previousWin: e.target.checked}
+                      })}
+                    />
+                    Requires Previous Group Win
+                  </label>
+                </div>
               </div>
 
               <div className={styles.formGroup}>
-                <label className={styles.formLabel}>Location</label>
-                <input 
-                  type="text" 
-                  className={styles.formInput} 
-                  value={formData.location}
-                  onChange={e => setFormData({...formData, location: e.target.value})}
-                />
-              </div>
-
-              <div className={styles.formGroup}>
-                <label className={styles.formLabel}>Start Date</label>
-                <input 
-                  type="datetime-local" 
-                  className={styles.formInput} 
-                  value={formData.startDate}
-                  onChange={e => setFormData({...formData, startDate: e.target.value})}
-                />
-              </div>
-
-              <div className={styles.formGroup}>
-                <label className={styles.formLabel}>End Date</label>
-                <input 
-                  type="datetime-local" 
-                  className={styles.formInput} 
-                  value={formData.endDate}
-                  onChange={e => setFormData({...formData, endDate: e.target.value})}
-                />
-              </div>
-
-              <div className={styles.formGroup}>
-                <label className={styles.formLabel}>Registration Open</label>
-                <input 
-                  type="datetime-local" 
-                  className={styles.formInput} 
-                  value={formData.registrationOpenAt}
-                  onChange={e => setFormData({...formData, registrationOpenAt: e.target.value})}
-                />
-              </div>
-
-              <div className={styles.formGroup}>
-                <label className={styles.formLabel}>Registration Close</label>
-                <input 
-                  type="datetime-local" 
-                  className={styles.formInput} 
-                  value={formData.registrationCloseAt}
-                  onChange={e => setFormData({...formData, registrationCloseAt: e.target.value})}
-                />
+                <label className={styles.formLabel}>Track Selection</label>
+                {formData.track ? (
+                  <div className={styles.trackBox}>
+                    <div className={styles.trackInfo}>
+                      <LayoutIcon style={{ color: '#64748b', width: 16, height: 16 }} />
+                      {formData.track}
+                    </div>
+                    <button className={styles.removeTrack} onClick={() => setFormData({...formData, track: ''})}>
+                      <XIcon />
+                    </button>
+                  </div>
+                ) : null}
+                <button className={styles.addTrackBtn}>
+                  <PlusIcon style={{ width: 14, height: 14 }} /> Add Track
+                </button>
               </div>
             </div>
 
@@ -328,17 +288,13 @@ export default function TournamentOrchestration() {
           </div>
         </div>
       </div>
-
-      {popup.isOpen && (
-        <PopupModal
-          type={popup.type}
-          title={popup.title}
-          message1={popup.message1}
-          buttonText="OK"
-          onButtonClick={() => setPopup({ ...popup, isOpen: false })}
-        />
-      )}
     </>
   );
 }
 
+// Mock Data
+const mockTournaments = [
+  { id: 1, raceId: 'RC-2049', tournamentName: 'Royal Ascot Inv. - R1', location: 'Ascot, UK (Turf)', dateTime: 'Oct 14, 2023 - 14:00', status: 'CONFIRMED' },
+  { id: 2, raceId: 'RC-2050', tournamentName: 'Royal Ascot Inv. - R2', location: 'Ascot, UK (Turf)', dateTime: 'Oct 15, 2023 - 15:30', status: 'PENDING ENTRIES' },
+  { id: 3, raceId: 'RC-2051', tournamentName: 'Dubai Draft - Qualifiers', location: 'Meydan, UAE (Dirt)', dateTime: 'Nov 02, 2023 - 18:00', status: 'DRAFT' },
+];

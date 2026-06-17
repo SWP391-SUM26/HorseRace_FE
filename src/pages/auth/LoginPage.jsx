@@ -7,12 +7,13 @@ import styles from "./LoginPage.module.css";
 const roleOptions = ["Owner", "Jockey", "Spectator"];
 
 const dashboardByRole = {
+  Admin: "/admin/users",
   SystemAdmin: "/admin/users",
   TournamentAdmin: "/admin/tournaments",
-  Referee: "/referee/dashboard",
-  Owner: "/owner/overview",
+  Owner: "/owner-dashboard",
   Jockey: "/jockey/invitations",
-  Spectator: "/spectator-dashboard"
+  Referee: "/referee/registrations",
+  Spectator: "/spectator-dashboard",
 };
 
 const registrationRouteByRole = {

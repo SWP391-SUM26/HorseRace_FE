@@ -1,34 +1,11 @@
 import api from "./api";
-import invitationMock from "../data/invitationMock.json";
-import jockeyMock from "../data/jockeyMock.json";
 
-const JOCKEY_ENDPOINT = "/jockeys";
+const JOCKEY_ENDPOINT = "/api/v1/jockeys";
 const INVITATION_ENDPOINT = "/api/v1/assignments/invitations";
-const INVITATION_STORAGE_KEY = "equine_elite_jockey_invitations";
-const INVITATION_FALLBACK_KEY = "equine_elite_invitation_fallback";
 const DEFAULT_PAGE_SIZE = 4;
 
 function unwrapResponse(response) {
   return response?.data?.data ?? response?.data;
-}
-
-function getApiMessage(error) {
-  return String(
-    error?.response?.data?.message || error?.response?.data?.error || "",
-  ).toLowerCase();
-}
-
-function shouldUseFallback(error, resourcePath = "") {
-  if (!error.response || [404, 405, 501].includes(error.response.status)) {
-    return true;
-  }
-
-  const message = getApiMessage(error);
-  return (
-    error.response.status === 500 &&
-    (message.includes("noresourcefoundexception") ||
-      message.includes(`no static resource ${resourcePath}`))
-  );
 }
 
 function normalizeListResponse(data, params, keys = []) {
@@ -64,53 +41,88 @@ function normalizeListResponse(data, params, keys = []) {
   };
 }
 
-function readInvitations() {
-  const stored = localStorage.getItem(INVITATION_STORAGE_KEY);
-  if (!stored) {
-    localStorage.setItem(INVITATION_STORAGE_KEY, JSON.stringify(invitationMock));
-    return [...invitationMock];
-  }
+function mapJockeyToUI(jockey = {}) {
+  const careerWins = Number(jockey.winCount ?? jockey.careerWins ?? 0);
+  const experience = Number(jockey.experienceYrs ?? jockey.experience ?? 0);
+  const totalRaces = Number(jockey.totalRaces ?? Math.max(careerWins * 4, careerWins));
+  const winRate =
+    jockey.winRate !== undefined
+      ? Number(jockey.winRate)
+      : totalRaces > 0
+        ? Number(((careerWins / totalRaces) * 100).toFixed(1))
+        : 0;
 
-  try {
-    return JSON.parse(stored);
-  } catch {
-    localStorage.setItem(INVITATION_STORAGE_KEY, JSON.stringify(invitationMock));
-    return [...invitationMock];
-  }
+  return {
+    id: jockey.userId || jockey.id,
+    userId: jockey.userId || jockey.id,
+    userCode: jockey.userCode,
+    name: jockey.fullName || jockey.name || "Unknown Jockey",
+    email: jockey.email || "",
+    phone: jockey.phone || "",
+    avatar: jockey.avatarUrl || jockey.avatar || "",
+    status: jockey.status === "ACTIVE" ? "AVAILABLE" : jockey.status || "AVAILABLE",
+    ridingStyle: jockey.ridingStyle || "Versatile",
+    experience,
+    totalRaces,
+    careerWins,
+    winRate,
+    rating: jockey.rating || Math.min(5, Math.max(3.5, 4 + winRate / 100)).toFixed(1),
+    compatibility: jockey.compatibility || Math.min(99, 80 + Math.round(experience / 2)),
+    minWeight: jockey.bodyWeight ? `${jockey.bodyWeight} kg` : "Not provided",
+    stableStatus: jockey.stableStatus || "Freelance",
+    baseFee: jockey.baseFee || 0,
+    prizePercentage: jockey.prizePercentage || 0,
+    trophies: jockey.trophies || [],
+    availability: jockey.availability || "Available",
+    bio: jockey.bio || "No professional biography has been provided.",
+    licenseNo: jockey.licenseNo,
+    heightCm: jockey.heightCm,
+    createdAt: jockey.createdAt,
+  };
 }
 
-function writeInvitations(invitations) {
-  localStorage.setItem(INVITATION_STORAGE_KEY, JSON.stringify(invitations));
+function mapJockeyList(result) {
+  return {
+    ...result,
+    items: result.items.map(mapJockeyToUI),
+  };
 }
 
-function setInvitationFallback(active) {
-  localStorage.setItem(INVITATION_FALLBACK_KEY, String(active));
+function getJockeyApiParams(params = {}) {
+  const sortMap = {
+    compatibility: "winCount",
+    winRate: "winCount",
+    experience: "experienceYrs",
+    baseFee: "winCount",
+  };
+
+  return {
+    fullName: params.search || undefined,
+    status:
+      params.status === "AVAILABLE"
+        ? "ACTIVE"
+        : params.status || undefined,
+    sortBy: sortMap[params.sortBy] || params.sortBy || "winCount",
+    sortDir: params.sortOrder || "desc",
+  };
 }
 
-function isInvitationFallbackActive() {
-  return localStorage.getItem(INVITATION_FALLBACK_KEY) === "true";
-}
+function applyClientJockeyFilters(items, params = {}) {
+  const query = (params.search || "").trim().toLowerCase();
+  const minimumWinRate = Number(params.minWinRate) || 0;
+  const ridingStyle = params.ridingStyle || "";
+  const status = params.status || "";
+  const sortBy = params.sortBy || "compatibility";
+  const sortOrder = params.sortOrder || "desc";
+  const direction = sortOrder === "asc" ? 1 : -1;
 
-function getMockJockeyList(params = {}) {
-  const {
-    search = "",
-    status = "",
-    ridingStyle = "",
-    minWinRate = "",
-    sortBy = "compatibility",
-    sortOrder = "desc",
-    page = 1,
-    pageSize = DEFAULT_PAGE_SIZE,
-  } = params;
-  const query = search.trim().toLowerCase();
-  const minimumWinRate = Number(minWinRate) || 0;
-
-  const filtered = jockeyMock.jockeys
+  return items
     .filter(
       (jockey) =>
         (!query ||
           jockey.name.toLowerCase().includes(query) ||
-          jockey.ridingStyle.toLowerCase().includes(query)) &&
+          jockey.email.toLowerCase().includes(query) ||
+          jockey.licenseNo?.toLowerCase().includes(query)) &&
         (!status || jockey.status === status) &&
         (!ridingStyle || jockey.ridingStyle === ridingStyle) &&
         jockey.winRate >= minimumWinRate,
@@ -118,61 +130,10 @@ function getMockJockeyList(params = {}) {
     .sort((left, right) => {
       const leftValue = left[sortBy] ?? 0;
       const rightValue = right[sortBy] ?? 0;
-      const direction = sortOrder === "asc" ? 1 : -1;
       return typeof leftValue === "string"
         ? leftValue.localeCompare(rightValue) * direction
-        : (leftValue - rightValue) * direction;
+        : (Number(leftValue) - Number(rightValue)) * direction;
     });
-
-  return paginate(filtered, page, pageSize);
-}
-
-function getMockInvitationList(params = {}) {
-  const {
-    search = "",
-    status = "",
-    jockeyId = "",
-    ownerId = "",
-    page = 1,
-    pageSize = 6,
-  } = params;
-  const query = search.trim().toLowerCase();
-  const invitations = readInvitations();
-  const effectiveJockeyId =
-    jockeyId &&
-    invitations.some(
-      (item) => item.jockeyId === jockeyId || item.jockeyUserId === jockeyId,
-    )
-      ? jockeyId
-      : "";
-  const effectiveOwnerId =
-    ownerId &&
-    invitations.some(
-      (item) => item.ownerId === ownerId || item.ownerUserId === ownerId,
-    )
-      ? ownerId
-      : "";
-  const filtered = invitations
-    .filter(
-      (invitation) =>
-        (!query ||
-          invitation.raceName.toLowerCase().includes(query) ||
-          invitation.horseName.toLowerCase().includes(query) ||
-          invitation.ownerName.toLowerCase().includes(query)) &&
-        (!status || invitation.status === status) &&
-        (!effectiveJockeyId ||
-          invitation.jockeyId === effectiveJockeyId ||
-          invitation.jockeyUserId === effectiveJockeyId) &&
-        (!effectiveOwnerId ||
-          invitation.ownerId === effectiveOwnerId ||
-          invitation.ownerUserId === effectiveOwnerId),
-    )
-    .sort(
-      (left, right) =>
-        new Date(right.invitedAt).getTime() - new Date(left.invitedAt).getTime(),
-    );
-
-  return paginate(filtered, page, pageSize);
 }
 
 function paginate(items, page, pageSize) {
@@ -190,80 +151,34 @@ function paginate(items, page, pageSize) {
   };
 }
 
-function updateMockInvitation(invitationId, changes) {
-  let updated = null;
-  writeInvitations(
-    readInvitations().map((invitation) => {
-      if (
-        invitation.id !== invitationId &&
-        invitation.assignmentId !== invitationId
-      ) {
-        return invitation;
-      }
-      updated = { ...invitation, ...changes };
-      return updated;
-    }),
-  );
-  return updated;
-}
-
 export async function getJockeyList(params = {}) {
-  try {
-    const data = unwrapResponse(await api.get(JOCKEY_ENDPOINT, { params }));
-    if (!data || typeof data === "string") throw new Error("Invalid jockey response");
-    return normalizeListResponse(data, params, ["jockeys"]);
-  } catch (error) {
-    if (!shouldUseFallback(error, "jockeys")) throw error;
-    return getMockJockeyList(params);
-  }
+  const apiParams = getJockeyApiParams(params);
+  const endpoint = apiParams.fullName || apiParams.status
+    ? `${JOCKEY_ENDPOINT}/filter`
+    : JOCKEY_ENDPOINT;
+  const data = unwrapResponse(await api.get(endpoint, { params: apiParams }));
+  if (!data || typeof data === "string") throw new Error("Invalid jockey response");
+  const normalized = mapJockeyList(normalizeListResponse(data, params, ["jockeys"]));
+  const filtered = applyClientJockeyFilters(normalized.items, params);
+  return paginate(filtered, params.page, params.pageSize);
 }
 
 export async function getJockeyDetail(jockeyId) {
-  try {
-    const data = unwrapResponse(await api.get(`${JOCKEY_ENDPOINT}/${jockeyId}`));
-    if (!data || typeof data !== "object") throw new Error("Invalid jockey response");
-    return data;
-  } catch (error) {
-    if (!shouldUseFallback(error, "jockeys")) throw error;
-    return jockeyMock.jockeys.find((jockey) => jockey.id === jockeyId) ?? null;
-  }
+  const data = unwrapResponse(await api.get(`${JOCKEY_ENDPOINT}/${jockeyId}`));
+  if (!data || typeof data !== "object") throw new Error("Invalid jockey response");
+  return mapJockeyToUI(data);
 }
 
 export async function sendInvitation(payload) {
-  try {
-    const requestPayload = payload.entryId
-      ? { entryId: payload.entryId, jockeyUserId: payload.jockeyId }
-      : payload;
-    return unwrapResponse(await api.post(INVITATION_ENDPOINT, requestPayload));
-  } catch (error) {
-    const canUseMock =
-      shouldUseFallback(error, "api/v1/assignments/invitations") ||
-      [400, 404].includes(error.response?.status);
-    if (!canUseMock) throw error;
-
-    const horse = jockeyMock.unassignedHorses.find(
-      (item) => item.id === payload.horseId,
-    );
-    const jockey = jockeyMock.jockeys.find((item) => item.id === payload.jockeyId);
-    const invitation = {
-      id: `inv_${Date.now()}`,
-      assignmentId: `inv_${Date.now()}`,
-      ...payload,
-      raceName: horse?.race?.name || "Race",
-      raceDate: horse?.race?.date || "",
-      horseName: horse?.name || "Horse",
-      jockeyUserId: payload.jockeyId,
-      jockeyName: jockey?.name || "Jockey",
-      ownerId: payload.ownerId || "owner_mock",
-      ownerUserId: payload.ownerId || "owner_mock",
-      ownerName: "Owen Owner",
-      status: "INVITED",
-      invitedAt: new Date().toISOString(),
-    };
-    setInvitationFallback(true);
-    writeInvitations([invitation, ...readInvitations()]);
-    return invitation;
+  if (!payload.entryId) {
+    throw new Error("A race entry is required before sending an invitation.");
   }
+
+  const requestPayload = {
+    entryId: payload.entryId,
+    jockeyUserId: payload.jockeyUserId || payload.jockeyId,
+  };
+  return unwrapResponse(await api.post(INVITATION_ENDPOINT, requestPayload));
 }
 
 export async function getInvitationList(params = {}) {
@@ -277,95 +192,40 @@ export async function getInvitationList(params = {}) {
     sortDir: params.sortOrder || "desc",
   };
 
-  try {
-    const data = unwrapResponse(
-      await api.get(INVITATION_ENDPOINT, { params: apiParams }),
-    );
-    const result = normalizeListResponse(data, params, ["invitations"]);
-    if (result.totalItems === 0 && isInvitationFallbackActive()) {
-      return getMockInvitationList(params);
-    }
-    if (result.totalItems > 0) setInvitationFallback(false);
-    if (!params.search) return result;
+  const data = unwrapResponse(
+    await api.get(INVITATION_ENDPOINT, { params: apiParams }),
+  );
+  const result = normalizeListResponse(data, params, ["invitations"]);
+  if (!params.search) return result;
 
-    const query = params.search.trim().toLowerCase();
-    const items = result.items.filter(
-      (invitation) =>
-        invitation.raceName?.toLowerCase().includes(query) ||
-        invitation.horseName?.toLowerCase().includes(query) ||
-        invitation.ownerName?.toLowerCase().includes(query),
-    );
-    return { ...result, items };
-  } catch (error) {
-    if (!shouldUseFallback(error, "api/v1/assignments/invitations")) throw error;
-    return getMockInvitationList(params);
-  }
+  const query = params.search.trim().toLowerCase();
+  const items = result.items.filter(
+    (invitation) =>
+      invitation.raceName?.toLowerCase().includes(query) ||
+      invitation.horseName?.toLowerCase().includes(query) ||
+      invitation.ownerName?.toLowerCase().includes(query),
+  );
+  return { ...result, items };
 }
 
 export async function acceptInvitation(invitationId) {
-  if (isInvitationFallbackActive()) {
-    return updateMockInvitation(invitationId, {
-      status: "ACCEPTED",
-      respondedAt: new Date().toISOString(),
-    });
-  }
-  try {
-    return unwrapResponse(
-      await api.patch(`${INVITATION_ENDPOINT}/${invitationId}/accept`),
-    );
-  } catch (error) {
-    if (!shouldUseFallback(error, "api/v1/assignments/invitations")) throw error;
-    return updateMockInvitation(invitationId, {
-      status: "ACCEPTED",
-      respondedAt: new Date().toISOString(),
-    });
-  }
+  return unwrapResponse(
+    await api.patch(`${INVITATION_ENDPOINT}/${invitationId}/accept`),
+  );
 }
 
 export async function rejectInvitation(invitationId, payload) {
-  if (isInvitationFallbackActive()) {
-    return updateMockInvitation(invitationId, {
-      status: "DECLINED",
-      reason: payload.reason,
-      respondedAt: new Date().toISOString(),
-    });
-  }
-  try {
-    return unwrapResponse(
-      await api.patch(
-        `${INVITATION_ENDPOINT}/${invitationId}/reject`,
-        payload,
-      ),
-    );
-  } catch (error) {
-    if (!shouldUseFallback(error, "api/v1/assignments/invitations")) throw error;
-    return updateMockInvitation(invitationId, {
-      status: "DECLINED",
-      reason: payload.reason,
-      respondedAt: new Date().toISOString(),
-    });
-  }
+  return unwrapResponse(
+    await api.patch(
+      `${INVITATION_ENDPOINT}/${invitationId}/reject`,
+      payload,
+    ),
+  );
 }
 
 export async function cancelInvitation(invitationId) {
-  if (isInvitationFallbackActive()) {
-    updateMockInvitation(invitationId, {
-      status: "CANCELLED",
-      respondedAt: new Date().toISOString(),
-    });
-    return true;
-  }
-  try {
-    await api.delete(`${INVITATION_ENDPOINT}/${invitationId}`);
-    return true;
-  } catch (error) {
-    if (!shouldUseFallback(error, "api/v1/assignments/invitations")) throw error;
-    updateMockInvitation(invitationId, {
-      status: "CANCELLED",
-      respondedAt: new Date().toISOString(),
-    });
-    return true;
-  }
+  await api.delete(`${INVITATION_ENDPOINT}/${invitationId}`);
+  return true;
 }
 
 export const sendJockeyInvitation = sendInvitation;

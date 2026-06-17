@@ -1,54 +1,56 @@
-import { useEffect, useMemo, useState } from 'react';
-import Badge from '../../components/ui/Badge';
-import Button from '../../components/ui/Button';
-import DataTable from '../../components/ui/DataTable';
-import PageHeader from '../../components/ui/PageHeader';
-import SearchFilterBar from '../../components/ui/SearchFilterBar';
-import StatCard, { Card } from '../../components/ui/StatCard';
+import { useEffect, useMemo, useState } from "react";
+import Badge from "../../components/ui/Badge";
+import Button from "../../components/ui/Button";
+import DataTable from "../../components/ui/DataTable";
+import PageHeader from "../../components/ui/PageHeader";
+import SearchFilterBar from "../../components/ui/SearchFilterBar";
+import StatCard, { Card } from "../../components/ui/StatCard";
 import {
   CheckSquareIcon,
   ClipboardIcon,
   DownloadIcon,
   RefereeIcon,
   UsersIcon,
-} from '../../components/ui/Icons';
+} from "../../components/ui/Icons";
 import {
   approveRegistration,
   getRegistrationDetail,
   getRegistrationList,
   rejectRegistration,
-} from '../../services/registration';
-import horsePlaceholder from '../../assets/silver_streak.png';
-import styles from './RegistrationManagement.module.css';
+} from "../../services/registration";
+import horsePlaceholder from "../../assets/silver_streak.png";
+import styles from "./RegistrationManagement.module.css";
 
 const PAGE_SIZE = 5;
 const EMPTY_FILTERS = {
-  tournamentId: '',
-  raceId: '',
-  status: '',
+  tournamentId: "",
+  status: "",
 };
 
 const eligibilityLabels = {
-  vaccinationRecords: 'Vaccination Records',
-  fitnessCertification: 'Fitness Certification',
-  passportScan: 'Passport Scan',
-  weightVerification: 'Weight Verification',
-  medicalExamination: 'Medical Examination',
+  vaccinationRecords: "Vaccination Records",
+  fitnessCertification: "Fitness Certification",
+  passportScan: "Passport Scan",
+  weightVerification: "Weight Verification",
+  medicalExamination: "Medical Examination",
 };
 
+const reviewableStatuses = ["SUBMITTED", "UNDER_REVIEW"];
+
 function statusVariant(status) {
-  if (['APPROVED', 'VALID'].includes(status)) return 'success';
-  if (['PENDING', 'SUBMITTED', 'MISSING'].includes(status)) return 'warning';
-  if (['REJECTED', 'FAILED'].includes(status)) return 'suspended';
-  return 'ghost';
+  if (["APPROVED", "VALID"].includes(status)) return "success";
+  if (["DRAFT", "SUBMITTED", "UNDER_REVIEW", "MISSING"].includes(status)) return "warning";
+  if (["REJECTED", "FAILED"].includes(status)) return "suspended";
+  if (status === "WITHDRAWN") return "ghost";
+  return "ghost";
 }
 
 function formatDate(value) {
-  if (!value) return 'Not available';
-  return new Intl.DateTimeFormat('en-US', {
-    month: 'short',
-    day: '2-digit',
-    year: 'numeric',
+  if (!value) return "Not available";
+  return new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    day: "2-digit",
+    year: "numeric",
   }).format(new Date(value));
 }
 
@@ -57,11 +59,10 @@ function getErrorMessage(error, fallback) {
 }
 
 export default function RegistrationManagement() {
-  const [activeTab, setActiveTab] = useState('users');
   const [registrations, setRegistrations] = useState([]);
   const [selectedRegistration, setSelectedRegistration] = useState(null);
-  const [search, setSearch] = useState('');
-  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [draftFilters, setDraftFilters] = useState(EMPTY_FILTERS);
   const [filters, setFilters] = useState(EMPTY_FILTERS);
   const [page, setPage] = useState(1);
@@ -75,18 +76,18 @@ export default function RegistrationManagement() {
   });
   const [allRegistrations, setAllRegistrations] = useState([]);
   const [refreshKey, setRefreshKey] = useState(0);
-  const [notes, setNotes] = useState('');
+  const [notes, setNotes] = useState("");
   const [loading, setLoading] = useState(true);
   const [detailLoading, setDetailLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState('');
-  const [notice, setNotice] = useState('');
+  const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
   const [modal, setModal] = useState(null);
-  const [rejectReason, setRejectReason] = useState('');
+  const [rejectReason, setRejectReason] = useState("");
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
-      setError('');
+      setError("");
       setDebouncedSearch(search.trim());
       setPage(1);
     }, 400);
@@ -96,7 +97,7 @@ export default function RegistrationManagement() {
   async function loadDetail(id) {
     if (!id) {
       setSelectedRegistration(null);
-      setNotes('');
+      setNotes("");
       return;
     }
 
@@ -104,9 +105,11 @@ export default function RegistrationManagement() {
     try {
       const detail = await getRegistrationDetail(id);
       setSelectedRegistration(detail);
-      setNotes(detail?.refereeNotes || '');
+      setNotes(detail?.refereeNotes || "");
     } catch (loadError) {
-      setError(getErrorMessage(loadError, 'Unable to load registration detail.'));
+      setError(
+        getErrorMessage(loadError, "Unable to load registration detail."),
+      );
     } finally {
       setDetailLoading(false);
     }
@@ -130,14 +133,14 @@ export default function RegistrationManagement() {
         const nextId = response.items[0]?.id;
         if (!nextId) {
           setSelectedRegistration(null);
-          setNotes('');
+          setNotes("");
           return;
         }
 
         const detail = await getRegistrationDetail(nextId);
         if (!ignore) {
           setSelectedRegistration(detail);
-          setNotes(detail?.refereeNotes || '');
+          setNotes(detail?.refereeNotes || "");
         }
       })
       .catch((loadError) => {
@@ -146,7 +149,7 @@ export default function RegistrationManagement() {
         setSelectedRegistration(null);
         setTotalItems(0);
         setTotalPages(1);
-        setError(getErrorMessage(loadError, 'Unable to load registrations.'));
+        setError(getErrorMessage(loadError, "Unable to load registrations."));
       })
       .finally(() => {
         if (!ignore) setLoading(false);
@@ -158,9 +161,11 @@ export default function RegistrationManagement() {
         setAllRegistrations(response.items);
         setStats({
           total: response.totalItems,
-          pending: response.items.filter((item) => ['PENDING', 'SUBMITTED'].includes(item.status)).length,
-          approved: response.items.filter((item) => item.status === 'APPROVED').length,
-          rejected: response.items.filter((item) => item.status === 'REJECTED').length,
+          pending: response.items.filter((item) => reviewableStatuses.includes(item.status)).length,
+          approved: response.items.filter((item) => item.status === "APPROVED")
+            .length,
+          rejected: response.items.filter((item) => item.status === "REJECTED")
+            .length,
         });
       })
       .catch(() => {
@@ -187,34 +192,36 @@ export default function RegistrationManagement() {
 
   function applyFilters() {
     setLoading(true);
-    setError('');
+    setError("");
     setFilters(draftFilters);
     setPage(1);
   }
 
   function refreshData() {
-    setNotice('');
+    setNotice("");
     setLoading(true);
-    setError('');
+    setError("");
     setRefreshKey((current) => current + 1);
   }
 
   async function selectRegistration(item) {
-    setError('');
+    setError("");
     await loadDetail(item.id);
   }
 
   async function confirmApprove() {
     if (!selectedRegistration) return;
     setSubmitting(true);
-    setError('');
+    setError("");
     try {
-      await approveRegistration(selectedRegistration.id, { notes: notes.trim() });
+      await approveRegistration(selectedRegistration.id, {
+        notes: notes.trim(),
+      });
       setModal(null);
-      setNotice('Registration approved successfully.');
+      setNotice("Registration approved successfully.");
       refreshData();
     } catch (submitError) {
-      setError(getErrorMessage(submitError, 'Unable to approve registration.'));
+      setError(getErrorMessage(submitError, "Unable to approve registration."));
     } finally {
       setSubmitting(false);
     }
@@ -223,18 +230,18 @@ export default function RegistrationManagement() {
   async function confirmReject() {
     if (!selectedRegistration || !rejectReason.trim()) return;
     setSubmitting(true);
-    setError('');
+    setError("");
     try {
       await rejectRegistration(selectedRegistration.id, {
         reason: rejectReason.trim(),
         notes: notes.trim(),
       });
       setModal(null);
-      setRejectReason('');
-      setNotice('Registration rejected.');
+      setRejectReason("");
+      setNotice("Registration rejected.");
       refreshData();
     } catch (submitError) {
-      setError(getErrorMessage(submitError, 'Unable to reject registration.'));
+      setError(getErrorMessage(submitError, "Unable to reject registration."));
     } finally {
       setSubmitting(false);
     }
@@ -242,7 +249,15 @@ export default function RegistrationManagement() {
 
   function exportRegistrations() {
     const rows = [
-      ['Registration ID', 'Horse', 'Owner', 'Tournament', 'Race', 'Status', 'Submitted Date'],
+      [
+        "Registration ID",
+        "Horse",
+        "Owner",
+        "Tournament",
+        "Race",
+        "Status",
+        "Submitted Date",
+      ],
       ...registrations.map((item) => [
         item.id,
         item.horse.name,
@@ -254,230 +269,64 @@ export default function RegistrationManagement() {
       ]),
     ];
     const csv = rows
-      .map((row) => row.map((value) => `"${String(value).replaceAll('"', '""')}"`).join(','))
-      .join('\n');
-    const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
-    const link = document.createElement('a');
+      .map((row) =>
+        row
+          .map((value) => `"${String(value).replaceAll('"', '""')}"`)
+          .join(","),
+      )
+      .join("\n");
+    const url = URL.createObjectURL(
+      new Blob([csv], { type: "text/csv;charset=utf-8" }),
+    );
+    const link = document.createElement("a");
     link.href = url;
-    link.download = 'registrations.csv';
+    link.download = "registrations.csv";
     link.click();
     URL.revokeObjectURL(url);
   }
 
-  const isPending = ['PENDING', 'SUBMITTED'].includes(selectedRegistration?.status);
+  const isReviewable = reviewableStatuses.includes(selectedRegistration?.status);
 
   return (
     <>
       <PageHeader
-        title="Registration Approval"
-        subtitle="Review and approve platform members and race registrations."
+        title="Registration Management"
+        subtitle="Review horse eligibility and approve registrations."
         actions={
-          activeTab === 'horses' ? (
-            <>
-              <Button variant="ghost" icon={DownloadIcon} onClick={exportRegistrations}>
-                Export Registrations
-              </Button>
-              <Button onClick={refreshData} disabled={loading}>
-                {loading ? 'Refreshing...' : 'Refresh Data'}
-              </Button>
-            </>
-          ) : (
-            <Button>Confirm Results</Button>
-          )
+          <>
+            <Button
+              variant="ghost"
+              icon={DownloadIcon}
+              onClick={exportRegistrations}
+            >
+              Export Registrations
+            </Button>
+            <Button onClick={refreshData} disabled={loading}>
+              {loading ? "Refreshing..." : "Refresh Data"}
+            </Button>
+          </>
         }
       />
 
-      <div className={styles.tabsContainer}>
-        <button 
-          className={`${styles.tabBtn} ${activeTab === 'users' ? styles.tabBtnActive : ''}`}
-          onClick={() => setActiveTab('users')}
-        >
-          User Approvals
-        </button>
-        <button 
-          className={`${styles.tabBtn} ${activeTab === 'horses' ? styles.tabBtnActive : ''}`}
-          onClick={() => setActiveTab('horses')}
-        >
-          Race Registrations
-        </button>
-      </div>
-
-      {activeTab === 'users' ? (
-        <>
-          <div className={styles.statsGrid}>
-            <StatCard title="PENDING APPROVALS" icon={ClipboardIcon} value="24" />
-            <StatCard title="APPROVED TODAY" icon={CheckSquareIcon} value="158" />
-            <StatCard title="REJECTED TODAY" icon={RefereeIcon} value="09" />
-          </div>
-
-          <div className={styles.queueLayout}>
-            {/* Left Queue List */}
-            <div>
-              <div className={styles.queueHeader}>
-                <span>Queue (24)</span>
-                <div>
-                  <button className={styles.btnGhost}>=</button>
-                </div>
-              </div>
-              <div className={styles.queueList}>
-                <div className={`${styles.queueCard} ${styles.queueCardActive}`}>
-                  <div className={styles.queueCardTop}>
-                    <h3 className={styles.queueName}>Jonathan Sterling</h3>
-                    <span className={styles.badgeUrgent}>Urgent</span>
-                  </div>
-                  <div className={styles.queueRole}>Owner • Register ID: #8832</div>
-                  <div className={styles.queueTime}>
-                    <button className={styles.btnQReject}>Reject</button>
-                    <button className={styles.btnQApprove}>Approve</button>
-                  </div>
-                </div>
-
-                <div className={styles.queueCard}>
-                  <div className={styles.queueCardTop}>
-                    <h3 className={styles.queueName}>Elena Rodriguez</h3>
-                    <span className={styles.badgeNew}>New</span>
-                  </div>
-                  <div className={styles.queueRole}>Trainer • Register ID: #8835</div>
-                  <div className={styles.queueTime}>Submitted 4 hours ago</div>
-                </div>
-
-                <div className={styles.queueCard}>
-                  <div className={styles.queueCardTop}>
-                    <h3 className={styles.queueName}>Marcus Vane</h3>
-                    <span className={styles.badgeNew}>New</span>
-                  </div>
-                  <div className={styles.queueRole}>Vet • Register ID: #8836</div>
-                  <div className={styles.queueTime}>Submitted 6 hours ago</div>
-                </div>
-
-                <div className={styles.queueCard}>
-                  <div className={styles.queueCardTop}>
-                    <h3 className={styles.queueName}>Sarah Whitmore</h3>
-                    <span className={styles.badgeNew}>New</span>
-                  </div>
-                  <div className={styles.queueRole}>Owner • Register ID: #8839</div>
-                  <div className={styles.queueTime}>Submitted 12 hours ago</div>
-                </div>
-              </div>
-              <Button className={styles.actionBtn} style={{marginTop: '16px', width: '100%'}}>
-                Start New Session
-              </Button>
-            </div>
-
-            {/* Right Details Panel */}
-            <Card style={{padding: 0, overflow: 'hidden', display: 'flex', flexDirection: 'column'}}>
-              <div className={styles.userProfile}>
-                <div className={styles.profileInfo}>
-                  <img src="https://i.pravatar.cc/150?img=11" alt="Jonathan Sterling" className={styles.profileAvatar} />
-                  <div>
-                    <h2 className={styles.profileName}>Jonathan Sterling</h2>
-                    <p className={styles.profileMeta}>📍 Lexington, Kentucky • Member since 2024</p>
-                    <div className={styles.profileTags}>
-                      <span className={styles.tagBlue}>Owner</span>
-                      <span className={styles.tagBlue}>Class A License</span>
-                    </div>
-                  </div>
-                </div>
-                <div className={styles.profileActions}>
-                  <button className={styles.btnGhost}>↓ Download Full Dossier</button>
-                  <button className={styles.btnGhost}>⏱ View Previous Applications</button>
-                </div>
-              </div>
-
-              <div className={styles.detailsGrid}>
-                {/* Left Col */}
-                <div>
-                  <h3 className={styles.sectionTitle}>👤 Identity Details</h3>
-                  <div className={styles.infoBox} style={{marginBottom: '24px'}}>
-                    <div className={styles.infoRow}>
-                      <span className={styles.infoLabel}>Full Name</span>
-                      <span className={styles.infoVal}>Jonathan Pierce Sterling</span>
-                    </div>
-                    <div className={styles.infoRow}>
-                      <span className={styles.infoLabel}>Date of Birth</span>
-                      <span className={styles.infoVal}>12 May 1978</span>
-                    </div>
-                    <div className={styles.infoRow}>
-                      <span className={styles.infoLabel}>Tax ID</span>
-                      <span className={styles.infoVal}>XXX-XX-4421</span>
-                    </div>
-                    <div className={styles.infoRow}>
-                      <span className={styles.infoLabel}>Contact</span>
-                      <span className={styles.infoVal}>+1 (555) 012-9932</span>
-                    </div>
-                  </div>
-
-                  <h3 className={styles.sectionTitle}>🏢 Business Affiliations</h3>
-                  <div className={styles.businessBox}>
-                    <div className={styles.bizIcon}>S</div>
-                    <div>
-                      <h4 className={styles.bizName}>Sterling Equine Holdings</h4>
-                      <p className={styles.bizMeta}>12 Horses Registered</p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Right Col */}
-                <div>
-                  <div className={styles.checklistPanel}>
-                    <h3 className={styles.sectionTitle}>Eligibility Checklist</h3>
-                    <p style={{fontSize: '13px', color: '#64748b', marginBottom: '16px'}}>All automated checks must be manually verified before approval.</p>
-                    
-                    <div className={styles.checklistItem}>
-                      <div className={styles.checkInfo}>
-                        <div className={styles.checkIcon}>✓</div>
-                        <div>
-                          <h4 className={styles.checkName}>ID Verification</h4>
-                          <p className={styles.checkMeta}>Passport #A2399201 Valid</p>
-                        </div>
-                      </div>
-                      <button className={styles.btnGhost}>👁</button>
-                    </div>
-
-                    <div className={styles.checklistItem}>
-                      <div className={styles.checkInfo}>
-                        <div className={styles.checkIcon}>✓</div>
-                        <div>
-                          <h4 className={styles.checkName}>License Check</h4>
-                          <p className={styles.checkMeta}>Class A - Active 2024</p>
-                        </div>
-                      </div>
-                      <button className={styles.btnGhost}>👁</button>
-                    </div>
-
-                    <div className={styles.checklistItem}>
-                      <div className={styles.checkInfo}>
-                        <div className={styles.checkIcon}>✓</div>
-                        <div>
-                          <h4 className={styles.checkName}>Background</h4>
-                          <p className={styles.checkMeta}>Clear</p>
-                        </div>
-                      </div>
-                      <button className={styles.btnGhost}>👁</button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div style={{flexGrow: 1}}></div>
-
-              <div className={styles.bottomBar}>
-                <button className={`${styles.actionBtn} ${styles.btnInfo}`}>✎ Request More Info</button>
-                <button className={`${styles.actionBtn} ${styles.btnRejectLg}`}>REJECT APPLICANT</button>
-                <button className={`${styles.actionBtn} ${styles.btnApproveLg}`}>APPROVE & ONBOARD</button>
-              </div>
-            </Card>
-          </div>
-        </>
-      ) : (
-        <>
-          {error && <div className={styles.alertError}>{error}</div>}
-          {notice && <div className={styles.alertSuccess}>{notice}</div>}
+      {error && <div className={styles.alertError}>{error}</div>}
+      {notice && <div className={styles.alertSuccess}>{notice}</div>}
 
       <div className={styles.statsGrid}>
-        <StatCard title="TOTAL REGISTRATIONS" icon={UsersIcon} value={stats.total} />
-        <StatCard title="PENDING APPROVAL" icon={ClipboardIcon} value={stats.pending} />
-        <StatCard title="APPROVED" icon={CheckSquareIcon} value={stats.approved} />
+        <StatCard
+          title="TOTAL REGISTRATIONS"
+          icon={UsersIcon}
+          value={stats.total}
+        />
+        <StatCard
+          title="AWAITING REVIEW"
+          icon={ClipboardIcon}
+          value={stats.pending}
+        />
+        <StatCard
+          title="APPROVED"
+          icon={CheckSquareIcon}
+          value={stats.approved}
+        />
         <StatCard title="REJECTED" icon={RefereeIcon} value={stats.rejected} />
       </div>
 
@@ -502,21 +351,9 @@ export default function RegistrationManagement() {
             >
               <option value="">All Tournaments</option>
               {filterOptions.tournaments.map(([id, name]) => (
-                <option key={id} value={id}>{name}</option>
-              ))}
-            </select>
-          </label>
-          <label>
-            Race
-            <select
-              value={draftFilters.raceId}
-              onChange={(event) =>
-                setDraftFilters((current) => ({ ...current, raceId: event.target.value }))
-              }
-            >
-              <option value="">All Races</option>
-              {filterOptions.races.map(([id, name]) => (
-                <option key={id} value={id}>{name}</option>
+                <option key={id} value={id}>
+                  {name}
+                </option>
               ))}
             </select>
           </label>
@@ -525,13 +362,19 @@ export default function RegistrationManagement() {
             <select
               value={draftFilters.status}
               onChange={(event) =>
-                setDraftFilters((current) => ({ ...current, status: event.target.value }))
+                setDraftFilters((current) => ({
+                  ...current,
+                  status: event.target.value,
+                }))
               }
             >
               <option value="">All Statuses</option>
+              <option value="DRAFT">Draft</option>
               <option value="SUBMITTED">Submitted</option>
+              <option value="UNDER_REVIEW">Under Review</option>
               <option value="APPROVED">Approved</option>
               <option value="REJECTED">Rejected</option>
+              <option value="WITHDRAWN">Withdrawn</option>
             </select>
           </label>
         </div>
@@ -541,13 +384,13 @@ export default function RegistrationManagement() {
         <Card className={styles.tableCard}>
           <DataTable
             columns={[
-              'REGISTRATION ID',
-              'HORSE',
-              'OWNER',
-              'TOURNAMENT',
-              'RACE',
-              'STATUS',
-              'SUBMITTED DATE',
+              "REGISTRATION ID",
+              "HORSE",
+              "OWNER",
+              "TOURNAMENT",
+              "RACE",
+              "STATUS",
+              "SUBMITTED DATE",
             ]}
             data={registrations}
             loading={loading}
@@ -556,7 +399,7 @@ export default function RegistrationManagement() {
             onPageChange={(nextPage) => {
               if (nextPage >= 1 && nextPage <= totalPages) {
                 setLoading(true);
-                setError('');
+                setError("");
                 setPage(nextPage);
               }
             }}
@@ -565,15 +408,22 @@ export default function RegistrationManagement() {
                 key={item.id}
                 onClick={() => selectRegistration(item)}
                 className={`${styles.tableRow} ${
-                  selectedRegistration?.id === item.id ? styles.selectedRow : ''
+                  selectedRegistration?.id === item.id ? styles.selectedRow : ""
                 }`}
               >
                 <td>{item.id}</td>
-                <td><strong>{item.horse.name}</strong><span>{item.horse.id}</span></td>
+                <td>
+                  <strong>{item.horse.name}</strong>
+                  <span>{item.horse.id}</span>
+                </td>
                 <td>{item.owner.name}</td>
                 <td>{item.tournament.name}</td>
                 <td>{item.race.name}</td>
-                <td><Badge variant={statusVariant(item.status)}>{item.status}</Badge></td>
+                <td>
+                  <Badge variant={statusVariant(item.status)}>
+                    {item.status}
+                  </Badge>
+                </td>
                 <td>{formatDate(item.submittedAt)}</td>
               </tr>
             )}
@@ -594,9 +444,13 @@ export default function RegistrationManagement() {
           </div>
 
           {detailLoading ? (
-            <div className={styles.panelEmpty}>Loading verification details...</div>
+            <div className={styles.panelEmpty}>
+              Loading verification details...
+            </div>
           ) : !selectedRegistration ? (
-            <div className={styles.panelEmpty}>Select a registration to review.</div>
+            <div className={styles.panelEmpty}>
+              Select a registration to review.
+            </div>
           ) : (
             <>
               <div className={styles.horseProfile}>
@@ -614,18 +468,34 @@ export default function RegistrationManagement() {
               </div>
 
               <dl className={styles.detailGrid}>
-                <div><dt>Age</dt><dd>{selectedRegistration.horse.age} years</dd></div>
-                <div><dt>Stable</dt><dd>{selectedRegistration.horse.stable}</dd></div>
-                <div><dt>Breed</dt><dd>{selectedRegistration.horse.breed}</dd></div>
-                <div><dt>Sire</dt><dd>{selectedRegistration.horse.sire}</dd></div>
-                <div><dt>Dam</dt><dd>{selectedRegistration.horse.dam}</dd></div>
+                <div>
+                  <dt>Age</dt>
+                  <dd>{selectedRegistration.horse.age} years</dd>
+                </div>
+                <div>
+                  <dt>Stable</dt>
+                  <dd>{selectedRegistration.horse.stable}</dd>
+                </div>
+                <div>
+                  <dt>Breed</dt>
+                  <dd>{selectedRegistration.horse.breed}</dd>
+                </div>
+                <div>
+                  <dt>Sire</dt>
+                  <dd>{selectedRegistration.horse.sire}</dd>
+                </div>
+                <div>
+                  <dt>Dam</dt>
+                  <dd>{selectedRegistration.horse.dam}</dd>
+                </div>
               </dl>
 
               <div className={styles.section}>
                 <h3>Eligibility Checklist</h3>
                 <div className={styles.checklist}>
                   {Object.entries(eligibilityLabels).map(([key, label]) => {
-                    const value = selectedRegistration.eligibility?.[key] || 'MISSING';
+                    const value =
+                      selectedRegistration.eligibility?.[key] || "MISSING";
                     return (
                       <div key={key}>
                         <span>{label}</span>
@@ -643,7 +513,7 @@ export default function RegistrationManagement() {
                   value={notes}
                   onChange={(event) => setNotes(event.target.value)}
                   placeholder="Add observations for this registration..."
-                  disabled={!isPending}
+                  disabled={!isReviewable}
                 />
               </label>
 
@@ -656,36 +526,38 @@ export default function RegistrationManagement() {
 
               <div className={styles.panelActions}>
                 <Button
-                  variant="ghost"
-                  disabled={!isPending || submitting}
-                  onClick={() => setModal('reject')}
+                  variant="danger"
+                  disabled={!isReviewable || submitting}
+                  onClick={() => setModal("reject")}
                 >
                   Reject
                 </Button>
                 <Button
-                  disabled={!isPending || submitting}
-                  onClick={() => setModal('approve')}
+                  disabled={!isReviewable || submitting}
+                  onClick={() => setModal("approve")}
                 >
                   Approve Registration
                 </Button>
               </div>
             </>
           )}
-          </Card>
-        </div>
-        </>
-      )}
+        </Card>
+      </div>
 
       {modal && (
         <div className={styles.modalOverlay} role="presentation">
           <div className={styles.modal} role="dialog" aria-modal="true">
-            <h2>{modal === 'approve' ? 'Approve Registration' : 'Reject Registration'}</h2>
+            <h2>
+              {modal === "approve"
+                ? "Approve Registration"
+                : "Reject Registration"}
+            </h2>
             <p>
-              {modal === 'approve'
+              {modal === "approve"
                 ? `Confirm that ${selectedRegistration.horse.name} meets all eligibility requirements.`
                 : `Provide a reason for rejecting ${selectedRegistration.horse.name}.`}
             </p>
-            {modal === 'reject' && (
+            {modal === "reject" && (
               <label className={styles.notes}>
                 Rejection Reason
                 <textarea
@@ -703,20 +575,23 @@ export default function RegistrationManagement() {
                 disabled={submitting}
                 onClick={() => {
                   setModal(null);
-                  setRejectReason('');
+                  setRejectReason("");
                 }}
               >
                 Cancel
               </Button>
               <Button
-                disabled={submitting || (modal === 'reject' && !rejectReason.trim())}
-                onClick={modal === 'approve' ? confirmApprove : confirmReject}
+                variant={modal === "approve" ? "primary" : "danger"}
+                disabled={
+                  submitting || (modal === "reject" && !rejectReason.trim())
+                }
+                onClick={modal === "approve" ? confirmApprove : confirmReject}
               >
                 {submitting
-                  ? 'Submitting...'
-                  : modal === 'approve'
-                    ? 'Confirm Approval'
-                    : 'Confirm Rejection'}
+                  ? "Submitting..."
+                  : modal === "approve"
+                    ? "Confirm Approval"
+                    : "Confirm Rejection"}
               </Button>
             </div>
           </div>

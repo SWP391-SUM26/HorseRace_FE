@@ -1,25 +1,34 @@
-import { NavLink, Outlet, useNavigate, useOutletContext } from "react-router-dom";
+import { Outlet, useNavigate, useOutletContext } from "react-router-dom";
+import Sidebar from "../components/layout/Sidebar";
+import {
+  BarChartIcon,
+  CalendarIcon,
+  CheckSquareIcon,
+  ClipboardIcon,
+  JockeyIcon,
+  TrophyIcon,
+} from "../components/ui/Icons";
 import { getUserPermissions, logout } from "../services/auth";
 import styles from "./DashboardLayout.module.css";
 
 const roleNavItems = {
   Owner: [
-    { label: "Overview", to: "/owner-dashboard" },
-    { label: "Stable Management", to: "/owner-dashboard/stable", permission: "horses:manage" },
-    { label: "Jockey Market", to: "/owner/jockey-market" },
-    { label: "Race Calendar", to: "/owner-dashboard/calendar" },
-    { label: "Financials", to: "/owner-dashboard/financials", permission: "finance:view" },
+    { label: "Overview", path: "/owner-dashboard", icon: BarChartIcon, end: true },
+    { label: "Stable Management", path: "/owner-dashboard/stable", icon: ClipboardIcon, permission: "horses:manage" },
+    { label: "Jockey Market", path: "/owner/jockey-market", icon: JockeyIcon },
+    { label: "Race Calendar", path: "/owner-dashboard/calendar", icon: CalendarIcon },
+    { label: "Financials", path: "/owner-dashboard/financials", icon: TrophyIcon, permission: "finance:view" },
   ],
   Jockey: [
-    { label: "Overview", to: "/jockey-dashboard" },
-    { label: "Invitations", to: "/jockey/invitations" },
-    { label: "Ride Schedule", to: "/jockey-dashboard", permission: "schedule:manage" },
-    { label: "Performance", to: "/jockey-dashboard", permission: "performance:view" },
+    { label: "Overview", path: "/jockey-dashboard", icon: BarChartIcon, end: true },
+    { label: "Invitations", path: "/jockey/invitations", icon: ClipboardIcon },
+    { label: "Ride Schedule", path: "/jockey-dashboard", icon: CalendarIcon, permission: "schedule:manage", end: true },
+    { label: "Performance", path: "/jockey-dashboard", icon: TrophyIcon, permission: "performance:view", end: true },
   ],
   Spectator: [
-    { label: "Overview", to: "/spectator-dashboard" },
-    { label: "Live Races", to: "/spectator-dashboard", permission: "races:view" },
-    { label: "Predictions", to: "/spectator-dashboard", permission: "predictions:view" },
+    { label: "Overview", path: "/spectator-dashboard", icon: BarChartIcon, end: true },
+    { label: "Live Races", path: "/spectator-dashboard", icon: CalendarIcon, permission: "races:view", end: true },
+    { label: "Predictions", path: "/spectator-dashboard", icon: CheckSquareIcon, permission: "predictions:view", end: true },
   ],
 };
 
@@ -27,43 +36,26 @@ export default function DashboardLayout() {
   const navigate = useNavigate();
   const { session } = useOutletContext();
   const permissions = session.permissions || getUserPermissions(session.user);
-  const navItems = roleNavItems[session.user.role] || [];
 
   function handleLogout() {
     logout();
     navigate("/login", { replace: true });
   }
 
+  const navItems = [
+    ...(roleNavItems[session.user.role] || [])
+      .filter((item) => !item.permission || permissions.includes(item.permission)),
+    { label: "Logout", icon: CheckSquareIcon, onClick: handleLogout, bottom: true },
+  ];
+
   return (
     <div className={styles.dashboardShell}>
-      <aside className={styles.sidebar}>
-        <button className={styles.brandButton} type="button" onClick={() => navigate("/")}>
-          <span className={styles.brandMark}></span>
-          Equine Elite
-        </button>
-
-        <div className={styles.userCard}>
-          <div className={styles.avatar}>{session.user.avatar || session.user.name?.slice(0, 2)}</div>
-          <div>
-            <strong>{session.user.name}</strong>
-            <span>{session.user.role}</span>
-          </div>
-        </div>
-
-        <nav className={styles.navList} aria-label={`${session.user.role} dashboard navigation`}>
-          {navItems
-            .filter((item) => !item.permission || permissions.includes(item.permission))
-            .map((item) => (
-              <NavLink className={styles.navLink} key={item.label} to={item.to} end>
-                {item.label}
-              </NavLink>
-            ))}
-        </nav>
-
-        <button className={styles.logoutButton} type="button" onClick={handleLogout}>
-          Logout
-        </button>
-      </aside>
+      <Sidebar
+        menuItems={navItems}
+        title="Equine Elite"
+        subtitle={`${session.user.role} Dashboard`}
+        footerAction={null}
+      />
 
       <div className={styles.contentShell}>
         <header className={styles.topbar}>
