@@ -56,7 +56,10 @@ function mapRaceToUI(race) {
   if (!race) return null;
 
   const scheduledStartAt = race.scheduledStartAt || race.dateTime || null;
-  const maxParticipants = Number(race.maxParticipants) || 0;
+  const maxParticipants =
+    race.maxParticipants === null || race.maxParticipants === undefined
+      ? null
+      : Number(race.maxParticipants);
   const participantIds = race.participantIds || race.entries?.map((entry) => entry.registrationId) || [];
 
   return {

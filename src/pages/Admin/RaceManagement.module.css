@@ -49,11 +49,10 @@
 .actionMenuTrigger:hover, .actionMenuTrigger[aria-expanded="true"] { border-color: #047857; background: #ecfdf5; }
 .actionMenuTrigger span { width: 3px; height: 3px; border-radius: 50%; background: #475569; }
 .actionMenu {
-  position: absolute; z-index: 30; top: calc(100% + 6px); right: 0; display: flex; flex-direction: column;
+  position: fixed; z-index: 1000; display: flex; flex-direction: column;
   width: 180px; padding: 6px; border: 1px solid #e2e8f0; border-radius: 8px; background: white;
   box-shadow: 0 12px 28px rgba(15,23,42,.16);
 }
-.actionMenuUp { top: auto; bottom: calc(100% + 6px); }
 .actionMenu button {
   width: 100%; border: 0; border-radius: 5px; padding: 9px 10px; background: transparent;
   color: #334155; cursor: pointer; font-size: 11px; font-weight: 600; text-align: left;
