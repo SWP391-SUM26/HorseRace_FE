@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import styles from './TournamentOrchestration.module.css';
-import { getTournaments, createTournament } from '../../services/tournament';
+import { getTournaments, createTournament, updateTournament } from '../../services/tournament';
+import { getRaceList } from '../../services/race';
 
 import PageHeader from '../../components/ui/PageHeader';
 import Button from '../../components/ui/Button';
@@ -10,61 +11,119 @@ import { FilterIcon, PlusIcon, CalendarIcon, AlertTriangleIcon, MoreHorizontalIc
 export default function TournamentOrchestration() {
   const [tournaments, setTournaments] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [selectedId, setSelectedId] = useState(null);
+  const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
+
+  const showToast = (message, type = 'success') => {
+    setToast({ show: true, message, type });
+  };
   
   // Builder form state
   const [formData, setFormData] = useState({
-    name: 'Dubai World Cup Draft',
-    tier: 'Group 1 (Elite)',
-    eligibility: {
-      thoroughbreds: true,
-      age3Plus: true,
-      previousWin: false,
-    },
-    track: 'Meydan Racecourse'
+    tournamentCode: '',
+    name: '',
+    description: '',
+    location: '',
+    startDate: '',
+    endDate: '',
+    registrationOpenAt: '',
+    registrationCloseAt: '',
+    status: 'DRAFT'
   });
 
-  useEffect(() => {
-    async function loadData() {
-      setLoading(true);
-      try {
-        const rawData = await getTournaments();
-        // Giả sử backend trả về dạng { data: [...] } hoặc trả thẳng mảng
-        const tournamentList = rawData?.data || rawData;
+  const loadData = async () => {
+    setLoading(true);
+    try {
+      const response = await getTournaments({ page: 0, size: 50 });
+      const payload = response?.data ?? response;
+      const items = Array.isArray(payload) ? payload : (payload?.content ?? payload?.items ?? []);
 
-        if (Array.isArray(tournamentList) && tournamentList.length > 0) {
-          setTournaments(tournamentList);
-        } else {
-          setTournaments(mockTournaments);
-        }
-      } catch (err) {
-        console.error("Failed to fetch tournaments, using mock data", err);
-        setTournaments(mockTournaments);
-      } finally {
-        setLoading(false);
+      if (items.length > 0) {
+        const mapped = items.map(t => ({
+          id: t.tournamentId || t.id,
+          code: t.tournamentCode || t.id?.substring(0, 8),
+          tournamentName: t.name,
+          description: t.description || '',
+          location: t.location || '',
+          startDate: t.startDate,
+          endDate: t.endDate,
+          registrationOpenAt: t.registrationOpenAt,
+          registrationCloseAt: t.registrationCloseAt,
+          dateTime: t.startDate ? new Date(t.startDate).toLocaleDateString() : 'TBD',
+          status: t.status || 'DRAFT'
+        }));
+        setTournaments(mapped);
+      } else {
+        setTournaments([]);
       }
+    } catch (err) {
+      console.error("Failed to fetch tournaments", err);
+      setTournaments([]);
+    } finally {
+      setLoading(false);
     }
+  };
+
+  useEffect(() => {
     loadData();
   }, []);
 
-  const handleSaveDraft = async () => {
+  const handleNewTournament = () => {
+    setSelectedId(null);
+    setFormData({
+      tournamentCode: '',
+      name: '',
+      description: '',
+      location: '',
+      startDate: '',
+      endDate: '',
+      registrationOpenAt: '',
+      registrationCloseAt: '',
+      status: 'DRAFT'
+    });
+  };
+
+  const handleSelect = (item) => {
+    setSelectedId(item.id);
+    setFormData({
+      tournamentCode: item.code || '',
+      name: item.tournamentName || '',
+      description: item.description || '',
+      location: item.location || '',
+      startDate: item.startDate ? new Date(item.startDate).toISOString().slice(0, 16) : '',
+      endDate: item.endDate ? new Date(item.endDate).toISOString().slice(0, 16) : '',
+      registrationOpenAt: item.registrationOpenAt ? new Date(item.registrationOpenAt).toISOString().slice(0, 16) : '',
+      registrationCloseAt: item.registrationCloseAt ? new Date(item.registrationCloseAt).toISOString().slice(0, 16) : '',
+      status: item.status || 'DRAFT'
+    });
+  };
+
+  const handleSave = async (overrideStatus) => {
     try {
-      // await createTournament({ ...formData, status: 'DRAFT' });
-      alert("Draft saved successfully!");
+      const finalStatus = overrideStatus || formData.status;
+      const payload = {
+        ...formData,
+        startDate: formData.startDate ? new Date(formData.startDate).toISOString() : null,
+        endDate: formData.endDate ? new Date(formData.endDate).toISOString() : null,
+        registrationOpenAt: formData.registrationOpenAt ? new Date(formData.registrationOpenAt).toISOString() : null,
+        registrationCloseAt: formData.registrationCloseAt ? new Date(formData.registrationCloseAt).toISOString() : null,
+        status: finalStatus
+      };
+      if (selectedId) {
+        await updateTournament(selectedId, payload);
+        showToast(`Tournament updated successfully!`, 'success');
+      } else {
+        await createTournament(payload);
+        showToast(`Tournament ${finalStatus === 'DRAFT' ? 'saved as draft' : 'published'} successfully!`, 'success');
+        handleNewTournament();
+      }
+      loadData();
     } catch (err) {
-      alert("Error saving draft");
+      showToast("Error saving tournament: " + (err.response?.data?.message || err.message), 'error');
     }
   };
 
-  const handlePublish = async () => {
-    try {
-      // await createTournament({ ...formData, status: 'PENDING ENTRIES' });
-      alert("Tournament published successfully!");
-    } catch (err) {
-      alert("Error publishing tournament");
-    }
-  };
-
-  const tableColumns = ['RACE ID', 'TOURNAMENT', 'LOCATION', 'DATE & TIME', 'STATUS'];
+  const tableColumns = ['CODE', 'TOURNAMENT', 'LOCATION', 'START DATE', 'STATUS'];
 
   return (
     <>
@@ -74,7 +133,7 @@ export default function TournamentOrchestration() {
         actions={
           <>
             <Button variant="ghost" icon={FilterIcon}>Filter View</Button>
-            <Button icon={PlusIcon}>New Tournament</Button>
+            <Button icon={PlusIcon} onClick={handleNewTournament}>New Tournament</Button>
           </>
         }
       />
@@ -163,15 +222,20 @@ export default function TournamentOrchestration() {
               loading={loading}
               totalItems={tournaments.length}
               renderRow={(item) => (
-                <tr key={item.id} className={styles.tableRow} style={{ borderBottom: '1px solid #e2e8f0' }}>
-                  <td style={{ padding: '16px 24px', fontSize: '13px', fontWeight: '600', color: '#0f172a' }}>{item.raceId}</td>
+                <tr 
+                  key={item.id} 
+                  className={styles.tableRow} 
+                  style={{ borderBottom: '1px solid #e2e8f0', cursor: 'pointer', background: selectedId === item.id ? '#f1f5f9' : 'transparent' }}
+                  onClick={() => handleSelect(item)}
+                >
+                  <td style={{ padding: '16px 24px', fontSize: '13px', fontWeight: '600', color: '#0f172a' }}>{item.code}</td>
                   <td style={{ padding: '16px 24px', fontSize: '14px', color: '#0f172a', fontWeight: '500' }}>{item.tournamentName}</td>
-                  <td style={{ padding: '16px 24px', fontSize: '14px', color: '#64748b' }}>{item.location}</td>
+                  <td style={{ padding: '16px 24px', fontSize: '14px', color: '#64748b' }}>{item.location || 'Not Specified'}</td>
                   <td style={{ padding: '16px 24px', fontSize: '14px', color: '#64748b' }}>{item.dateTime}</td>
                   <td style={{ padding: '16px 24px' }}>
                     <span className={`${styles.statusBadge} ${
-                      item.status === 'CONFIRMED' ? styles.statusConfirmed :
-                      item.status === 'PENDING ENTRIES' ? styles.statusPending :
+                      item.status === 'PUBLISHED' ? styles.statusConfirmed :
+                      item.status === 'ONGOING' ? styles.statusPending :
                       styles.statusDraft
                     }`}>
                       {item.status}
@@ -198,7 +262,18 @@ export default function TournamentOrchestration() {
             
             <div className={styles.builderBody}>
               <div className={styles.formGroup}>
-                <label className={styles.formLabel}>Tournament Name</label>
+                <label className={styles.formLabel}>Tournament Code <span style={{color: 'red'}}>*</span></label>
+                <input 
+                  type="text" 
+                  className={styles.formInput} 
+                  placeholder="e.g. TRN-2026-01"
+                  value={formData.tournamentCode}
+                  onChange={e => setFormData({...formData, tournamentCode: e.target.value})}
+                />
+              </div>
+
+              <div className={styles.formGroup}>
+                <label className={styles.formLabel}>Tournament Name <span style={{color: 'red'}}>*</span></label>
                 <input 
                   type="text" 
                   className={styles.formInput} 
@@ -207,94 +282,123 @@ export default function TournamentOrchestration() {
                 />
               </div>
 
-              <div className={styles.formGroup}>
-                <label className={styles.formLabel}>Circuit Tier</label>
-                <select 
-                  className={styles.formSelect}
-                  value={formData.tier}
-                  onChange={e => setFormData({...formData, tier: e.target.value})}
-                >
-                  <option>Group 1 (Elite)</option>
-                  <option>Group 2</option>
-                  <option>Group 3</option>
-                </select>
-              </div>
-
-              <div className={styles.criteriaBox}>
-                <div className={styles.criteriaTitle}>Eligibility Criteria</div>
-                <div className={styles.checkboxList}>
-                  <label className={styles.checkboxItem}>
-                    <input 
-                      type="checkbox" 
-                      className={styles.checkboxInput} 
-                      checked={formData.eligibility.thoroughbreds}
-                      onChange={e => setFormData({
-                        ...formData, 
-                        eligibility: {...formData.eligibility, thoroughbreds: e.target.checked}
-                      })}
-                    />
-                    Thoroughbreds Only
-                  </label>
-                  <label className={styles.checkboxItem}>
-                    <input 
-                      type="checkbox" 
-                      className={styles.checkboxInput} 
-                      checked={formData.eligibility.age3Plus}
-                      onChange={e => setFormData({
-                        ...formData, 
-                        eligibility: {...formData.eligibility, age3Plus: e.target.checked}
-                      })}
-                    />
-                    Age 3+ Years
-                  </label>
-                  <label className={styles.checkboxItem}>
-                    <input 
-                      type="checkbox" 
-                      className={styles.checkboxInput} 
-                      checked={formData.eligibility.previousWin}
-                      onChange={e => setFormData({
-                        ...formData, 
-                        eligibility: {...formData.eligibility, previousWin: e.target.checked}
-                      })}
-                    />
-                    Requires Previous Group Win
-                  </label>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                <div className={styles.formGroup}>
+                  <label className={styles.formLabel}>Location</label>
+                  <input 
+                    type="text" 
+                    className={styles.formInput} 
+                    value={formData.location}
+                    onChange={e => setFormData({...formData, location: e.target.value})}
+                  />
+                </div>
+                <div className={styles.formGroup}>
+                  <label className={styles.formLabel}>Status</label>
+                  <select 
+                    className={styles.formInput} 
+                    value={formData.status}
+                    onChange={e => setFormData({...formData, status: e.target.value})}
+                  >
+                    <option value="DRAFT">Draft</option>
+                    <option value="PUBLISHED">Published</option>
+                    <option value="REGISTRATION_OPEN">Reg. Open</option>
+                    <option value="REGISTRATION_CLOSED">Reg. Closed</option>
+                    <option value="ONGOING">Ongoing</option>
+                    <option value="COMPLETED">Completed</option>
+                    <option value="CANCELLED">Cancelled</option>
+                  </select>
                 </div>
               </div>
 
-              <div className={styles.formGroup}>
-                <label className={styles.formLabel}>Track Selection</label>
-                {formData.track ? (
-                  <div className={styles.trackBox}>
-                    <div className={styles.trackInfo}>
-                      <LayoutIcon style={{ color: '#64748b', width: 16, height: 16 }} />
-                      {formData.track}
-                    </div>
-                    <button className={styles.removeTrack} onClick={() => setFormData({...formData, track: ''})}>
-                      <XIcon />
-                    </button>
-                  </div>
-                ) : null}
-                <button className={styles.addTrackBtn}>
-                  <PlusIcon style={{ width: 14, height: 14 }} /> Add Track
-                </button>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                <div className={styles.formGroup}>
+                  <label className={styles.formLabel}>Start Date</label>
+                  <input 
+                    type="datetime-local" 
+                    className={styles.formInput} 
+                    value={formData.startDate}
+                    onChange={e => setFormData({...formData, startDate: e.target.value})}
+                  />
+                </div>
+                <div className={styles.formGroup}>
+                  <label className={styles.formLabel}>End Date</label>
+                  <input 
+                    type="datetime-local" 
+                    className={styles.formInput} 
+                    value={formData.endDate}
+                    onChange={e => setFormData({...formData, endDate: e.target.value})}
+                  />
+                </div>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                <div className={styles.formGroup}>
+                  <label className={styles.formLabel}>Reg. Open</label>
+                  <input 
+                    type="datetime-local" 
+                    className={styles.formInput} 
+                    value={formData.registrationOpenAt}
+                    onChange={e => setFormData({...formData, registrationOpenAt: e.target.value})}
+                  />
+                </div>
+                <div className={styles.formGroup}>
+                  <label className={styles.formLabel}>Reg. Close</label>
+                  <input 
+                    type="datetime-local" 
+                    className={styles.formInput} 
+                    value={formData.registrationCloseAt}
+                    onChange={e => setFormData({...formData, registrationCloseAt: e.target.value})}
+                  />
+                </div>
               </div>
             </div>
 
             <div className={styles.builderFooter}>
-              <button className={styles.btnSecondary} onClick={handleSaveDraft}>Save Draft</button>
-              <button className={styles.btnPrimary} onClick={handlePublish}>Publish</button>
+              {selectedId ? (
+                <>
+                  <button className={styles.btnSecondary} onClick={() => handleNewTournament()}>
+                    Cancel Edit
+                  </button>
+                  <button className={styles.btnPrimary} onClick={() => handleSave()}>
+                    Update Tournament
+                  </button>
+                </>
+              ) : (
+                <>
+                  <button className={styles.btnSecondary} onClick={() => handleSave('DRAFT')}>
+                    Save Draft
+                  </button>
+                  <button className={styles.btnPrimary} onClick={() => handleSave('PUBLISHED')}>
+                    Publish
+                  </button>
+                </>
+              )}
             </div>
           </div>
         </div>
       </div>
+
+      {toast.show && (
+        <div className={styles.toastOverlay}>
+          <div className={styles.toastModal}>
+            <div className={`${styles.toastIcon} ${styles[`toastIcon_${toast.type}`]}`}>
+              {toast.type === "success" ? "✓" : "✕"}
+            </div>
+            <h3 className={styles.toastTitle}>
+              {toast.type === "success" ? "Thành công" : "Thất bại"}
+            </h3>
+            <p className={styles.toastMessage}>{toast.message}</p>
+            <button
+              className={`${styles.toastButton} ${styles[`toastButton_${toast.type}`]}`}
+              onClick={() => setToast({ ...toast, show: false })}
+            >
+              Đóng
+            </button>
+          </div>
+        </div>
+      )}
     </>
   );
 }
 
-// Mock Data
-const mockTournaments = [
-  { id: 1, raceId: 'RC-2049', tournamentName: 'Royal Ascot Inv. - R1', location: 'Ascot, UK (Turf)', dateTime: 'Oct 14, 2023 - 14:00', status: 'CONFIRMED' },
-  { id: 2, raceId: 'RC-2050', tournamentName: 'Royal Ascot Inv. - R2', location: 'Ascot, UK (Turf)', dateTime: 'Oct 15, 2023 - 15:30', status: 'PENDING ENTRIES' },
-  { id: 3, raceId: 'RC-2051', tournamentName: 'Dubai Draft - Qualifiers', location: 'Meydan, UAE (Dirt)', dateTime: 'Nov 02, 2023 - 18:00', status: 'DRAFT' },
-];
+

@@ -72,11 +72,14 @@ export default function StableManagement() {
   const [selectedRaceId, setSelectedRaceId] = useState("");
 
   // Notifications state
-  const [toastMessage, setToastMessage] = useState("");
+  const [toast, setToast] = useState({
+    show: false,
+    message: "",
+    type: "success",
+  });
 
-  const triggerToast = (msg) => {
-    setToastMessage(msg);
-    setTimeout(() => setToastMessage(""), 3000);
+  const triggerToast = (message, type = "success") => {
+    setToast({ show: true, message, type });
   };
 
   // Load horses on mount
@@ -246,8 +249,29 @@ export default function StableManagement() {
 
   return (
     <div className={styles.stableContainer}>
-      {/* Toast Alert Notification */}
-      {toastMessage && <div className={styles.toast}>{toastMessage}</div>}
+      {/* Modal Alert Notification */}
+      {toast.show && (
+        <div className={styles.modalOverlay}>
+          <div className={`${styles.modalBox} ${styles[`modal_${toast.type}`]}`}>
+            <div className={styles.modalContent}>
+              <span className={styles.modalIcon}>
+                {toast.type === "success" ? "✓" : "❌"}
+              </span>
+              <div className={styles.modalText}>
+                <h3 className={styles.modalTitle}>
+                  {toast.type === "success" ? "Thành công" : "Thất bại"}
+                </h3>
+                <p className={styles.modalMessage}>{toast.message}</p>
+              </div>
+            </div>
+            <div className={styles.modalActions}>
+              <button className={styles.saveBtn} onClick={() => setToast({ ...toast, show: false })}>
+                Đóng
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Main Header */}
       <div className={styles.pageHeader}>
