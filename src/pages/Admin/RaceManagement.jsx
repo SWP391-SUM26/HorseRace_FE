@@ -56,6 +56,10 @@ function statusClass(status) {
   return styles[`status${status}`] || styles.statusDRAFT;
 }
 
+function hasParticipantLimit(race) {
+  return Number.isFinite(race?.maxParticipants) && race.maxParticipants > 0;
+}
+
 function unwrapApiPayload(response) {
   return response?.data?.data ?? response?.data ?? response;
 }
@@ -114,6 +118,7 @@ export default function RaceManagement() {
   const [submitting, setSubmitting] = useState(false);
   const [notice, setNotice] = useState(null);
   const [openActionId, setOpenActionId] = useState(null);
+  const [actionMenuPosition, setActionMenuPosition] = useState(null);
 
   const [sortBy, sortOrder] = sort.split("-");
 
@@ -214,13 +219,18 @@ export default function RaceManagement() {
         return;
       }
       setOpenActionId(null);
+      setActionMenuPosition(null);
     }
 
     document.addEventListener("click", closeActionMenu);
     document.addEventListener("keydown", closeActionMenu);
+    window.addEventListener("scroll", closeActionMenu, true);
+    window.addEventListener("resize", closeActionMenu);
     return () => {
       document.removeEventListener("click", closeActionMenu);
       document.removeEventListener("keydown", closeActionMenu);
+      window.removeEventListener("scroll", closeActionMenu, true);
+      window.removeEventListener("resize", closeActionMenu);
     };
   }, [openActionId]);
 
@@ -410,7 +420,34 @@ export default function RaceManagement() {
 
   function runAction(action) {
     setOpenActionId(null);
+    setActionMenuPosition(null);
     action();
+  }
+
+  function toggleActionMenu(event, raceId) {
+    if (openActionId === raceId) {
+      setOpenActionId(null);
+      setActionMenuPosition(null);
+      return;
+    }
+
+    const rect = event.currentTarget.getBoundingClientRect();
+    const menuWidth = 180;
+    const menuHeight = 238;
+    const gap = 6;
+    const viewportPadding = 12;
+    const openUp = rect.bottom + gap + menuHeight > window.innerHeight;
+
+    setActionMenuPosition({
+      top: openUp
+        ? Math.max(viewportPadding, rect.top - menuHeight - gap)
+        : rect.bottom + gap,
+      left: Math.min(
+        window.innerWidth - menuWidth - viewportPadding,
+        Math.max(viewportPadding, rect.right - menuWidth),
+      ),
+    });
+    setOpenActionId(raceId);
   }
 
   return (
@@ -531,7 +568,7 @@ export default function RaceManagement() {
               ) : races.length === 0 ? (
                 <StateRow text="No races match the selected filters." />
               ) : (
-                races.map((race, raceIndex) => (
+                races.map((race) => (
                   <tr key={race.id}>
                     <td>
                       <button className={styles.raceName} onClick={() => openDetail(race)}>
@@ -551,17 +588,20 @@ export default function RaceManagement() {
                     <td>
                       <div className={styles.participantCount}>
                         <span>
-                          {(race.participantIds || []).length}/{race.maxParticipants}
+                          {(race.participantIds || []).length}/
+                          {hasParticipantLimit(race) ? race.maxParticipants : "Unlimited"}
                         </span>
                         <div>
                           <i
                             style={{
-                              width: `${Math.min(
-                                100,
-                                ((race.participantIds || []).length /
-                                  race.maxParticipants) *
-                                  100,
-                              )}%`,
+                              width: hasParticipantLimit(race)
+                                ? `${Math.min(
+                                    100,
+                                    ((race.participantIds || []).length /
+                                      race.maxParticipants) *
+                                      100,
+                                  )}%`
+                                : "0%",
                             }}
                           />
                         </div>
@@ -579,11 +619,7 @@ export default function RaceManagement() {
                           className={styles.actionMenuTrigger}
                           aria-label={`Actions for ${race.name}`}
                           aria-expanded={openActionId === race.id}
-                          onClick={() =>
-                            setOpenActionId((current) =>
-                              current === race.id ? null : race.id,
-                            )
-                          }
+                          onClick={(event) => toggleActionMenu(event, race.id)}
                         >
                           <span></span>
                           <span></span>
@@ -591,11 +627,8 @@ export default function RaceManagement() {
                         </button>
                         {openActionId === race.id && (
                           <div
-                            className={`${styles.actionMenu} ${
-                              raceIndex >= races.length - 2
-                                ? styles.actionMenuUp
-                                : ""
-                            }`}
+                            className={styles.actionMenu}
+                            style={actionMenuPosition || undefined}
                             role="menu"
                           >
                             <button type="button" onClick={() => runAction(() => openDetail(race))}>
@@ -771,7 +804,11 @@ export default function RaceManagement() {
         <Modal title="Assign Participants" onClose={closeModal}>
           <form className={styles.form} onSubmit={handleAssign}>
             <p className={styles.selectionInfo}>
-              Selected {participantIds.length} of {selectedRace.maxParticipants} available slots
+              Selected {participantIds.length} of{" "}
+              {hasParticipantLimit(selectedRace)
+                ? selectedRace.maxParticipants
+                : "unlimited"}{" "}
+              available slots
             </p>
             <div className={styles.participantList}>
               {participantOptions.length === 0 && (
@@ -785,6 +822,7 @@ export default function RaceManagement() {
                     type="checkbox"
                     checked={participantIds.includes(participant.id)}
                     disabled={
+                      hasParticipantLimit(selectedRace) &&
                       !participantIds.includes(participant.id) &&
                       participantIds.length >= selectedRace.maxParticipants
                     }
@@ -884,7 +922,13 @@ function DetailDrawer({ race, participants = [], onClose, onEdit }) {
             <div><dt>Distance</dt><dd>{race.distanceMeter ? `${race.distanceMeter}m` : "N/A"}</dd></div>
             <div><dt>Track Condition</dt><dd>{race.trackCondition || "N/A"}</dd></div>
             <div><dt>Weather Condition</dt><dd>{race.weatherCondition || "N/A"}</dd></div>
-            <div><dt>Capacity</dt><dd>{(race.participantIds || []).length}/{race.maxParticipants}</dd></div>
+            <div>
+              <dt>Capacity</dt>
+              <dd>
+                {(race.participantIds || []).length}/
+                {hasParticipantLimit(race) ? race.maxParticipants : "Unlimited"}
+              </dd>
+            </div>
             <div><dt>Prediction Cutoff</dt><dd>{race.predictionCutoffAt ? new Date(race.predictionCutoffAt).toLocaleString() : "N/A"}</dd></div>
           </dl>
           <section className={styles.detailSection}>

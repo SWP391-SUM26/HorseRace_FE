@@ -221,7 +221,7 @@ export async function refreshAccessToken() {
   }
 
   try {
-    const response = await api.post("/v1/auth/refresh", {
+    const response = await api.post("/api/v1/auth/refresh", {
       refreshToken: session.refreshToken,
     });
     const authData = response.data?.data;
@@ -245,6 +245,6 @@ export function logout() {
   localStorage.removeItem(SESSION_KEY);
 
   if (refreshToken) {
-    api.post("/v1/auth/logout", { refreshToken }).catch(() => {});
+    api.post("/api/v1/auth/logout", { refreshToken }).catch(() => {});
   }
 }
