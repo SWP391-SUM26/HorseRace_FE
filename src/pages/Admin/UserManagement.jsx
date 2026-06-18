@@ -234,7 +234,7 @@ const UserManagementView = () => {
             <Button variant="ghost" icon={DownloadIcon}>
               Export CSV
             </Button>
-            <Button icon={UserPlusIcon}>Provision User</Button>
+            <Button icon={UserPlusIcon} onClick={() => showToast("Tính năng thêm người dùng mới đang được phát triển!", "success")}>Provision User</Button>
           </>
         }
       />
