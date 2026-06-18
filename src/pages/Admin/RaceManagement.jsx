@@ -323,6 +323,11 @@ export default function RaceManagement() {
     setModal("participants");
   }
 
+  function openDelete(race) {
+    setSelectedRace(race);
+    setModal("delete");
+  }
+
   async function refreshAfter(message) {
     closeModal(true);
     await loadRaces();
@@ -399,14 +404,19 @@ export default function RaceManagement() {
     }
   }
 
-  async function handleDelete(race) {
-    if (!window.confirm(`Delete ${race.name}? This action cannot be undone.`)) return;
+  async function handleDelete(event) {
+    if (event) event.preventDefault();
+    setSubmitting(true);
     try {
-      await deleteRace(race.id);
+      await deleteRace(selectedRace.id);
       await loadRaces();
+      closeModal(true);
       showNotice("Race deleted successfully.");
     } catch (requestError) {
+      closeModal(true);
       showNotice(getErrorMessage(requestError, "Unable to delete race."), "error");
+    } finally {
+      setSubmitting(false);
     }
   }
 
@@ -453,8 +463,22 @@ export default function RaceManagement() {
   return (
     <div className={styles.page}>
       {notice && (
-        <div className={`${styles.notice} ${styles[`notice${notice.type}`]}`}>
-          {notice.text}
+        <div className={styles.toastOverlay}>
+          <div className={styles.toastModal}>
+            <div className={`${styles.toastIcon} ${styles[`toastIcon_${notice.type}`]}`}>
+              {notice.type === "success" ? "✓" : "✕"}
+            </div>
+            <h3 className={styles.toastTitle}>
+              {notice.type === "success" ? "Thành công" : "Thất bại"}
+            </h3>
+            <p className={styles.toastMessage}>{notice.text}</p>
+            <button
+              className={`${styles.toastButton} ${styles[`toastButton_${notice.type}`]}`}
+              onClick={() => setNotice(null)}
+            >
+              Đóng
+            </button>
+          </div>
         </div>
       )}
 
@@ -653,7 +677,7 @@ export default function RaceManagement() {
                             <button
                               type="button"
                               className={styles.dangerAction}
-                              onClick={() => runAction(() => handleDelete(race))}
+                              onClick={() => runAction(() => openDelete(race))}
                             >
                               Delete Race
                             </button>
@@ -836,6 +860,17 @@ export default function RaceManagement() {
               ))}
             </div>
             <ModalActions submitting={submitting} onCancel={closeModal} submitLabel="Assign Participants" />
+          </form>
+        </Modal>
+      )}
+
+      {modal === "delete" && selectedRace && (
+        <Modal title={`Delete Race`} onClose={closeModal}>
+          <form className={styles.form} onSubmit={handleDelete}>
+            <p className={styles.warningText}>
+              Are you sure you want to delete <strong>{selectedRace.name}</strong>? This action cannot be undone.
+            </p>
+            <ModalActions submitting={submitting} onCancel={closeModal} submitLabel="Delete Race" danger />
           </form>
         </Modal>
       )}
