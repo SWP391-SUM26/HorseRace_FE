@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import styles from './TournamentOrchestration.module.css';
-import { getTournaments, createTournament, updateTournament } from '../../services/tournament';
+import { getTournaments, createTournament, updateTournament, getTournamentById } from '../../services/tournament';
 import { getRaceList } from '../../services/race';
 
 import PageHeader from '../../components/ui/PageHeader';
@@ -12,6 +12,10 @@ export default function TournamentOrchestration() {
   const [tournaments, setTournaments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedId, setSelectedId] = useState(null);
+  const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
+  const [page, setPage] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
   const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
 
   const showToast = (message, type = 'success') => {
@@ -34,9 +38,15 @@ export default function TournamentOrchestration() {
   const loadData = async () => {
     setLoading(true);
     try {
-      const response = await getTournaments({ page: 0, size: 50 });
+      const params = { page, size: 50 };
+      if (search) params.name = search;
+      if (statusFilter) params.status = statusFilter;
+      
+      const response = await getTournaments(params);
       const payload = response?.data ?? response;
       const items = Array.isArray(payload) ? payload : (payload?.content ?? payload?.items ?? []);
+
+      if (payload?.totalPages) setTotalPages(payload.totalPages);
 
       if (items.length > 0) {
         const mapped = items.map(t => ({
@@ -66,7 +76,7 @@ export default function TournamentOrchestration() {
 
   useEffect(() => {
     loadData();
-  }, []);
+  }, [page, statusFilter]);
 
   const handleNewTournament = () => {
     setSelectedId(null);
@@ -83,19 +93,26 @@ export default function TournamentOrchestration() {
     });
   };
 
-  const handleSelect = (item) => {
-    setSelectedId(item.id);
-    setFormData({
-      tournamentCode: item.code || '',
-      name: item.tournamentName || '',
-      description: item.description || '',
-      location: item.location || '',
-      startDate: item.startDate ? new Date(item.startDate).toISOString().slice(0, 16) : '',
-      endDate: item.endDate ? new Date(item.endDate).toISOString().slice(0, 16) : '',
-      registrationOpenAt: item.registrationOpenAt ? new Date(item.registrationOpenAt).toISOString().slice(0, 16) : '',
-      registrationCloseAt: item.registrationCloseAt ? new Date(item.registrationCloseAt).toISOString().slice(0, 16) : '',
-      status: item.status || 'DRAFT'
-    });
+  const handleSelect = async (item) => {
+    try {
+      const detail = await getTournamentById(item.id);
+      const detailData = detail?.data ?? detail;
+      
+      setSelectedId(detailData.tournamentId || detailData.id);
+      setFormData({
+        tournamentCode: detailData.tournamentCode || '',
+        name: detailData.name || '',
+        description: detailData.description || '',
+        location: detailData.location || '',
+        startDate: detailData.startDate ? new Date(detailData.startDate).toISOString().slice(0, 16) : '',
+        endDate: detailData.endDate ? new Date(detailData.endDate).toISOString().slice(0, 16) : '',
+        registrationOpenAt: detailData.registrationOpenAt ? new Date(detailData.registrationOpenAt).toISOString().slice(0, 16) : '',
+        registrationCloseAt: detailData.registrationCloseAt ? new Date(detailData.registrationCloseAt).toISOString().slice(0, 16) : '',
+        status: detailData.status || 'DRAFT'
+      });
+    } catch (err) {
+      showToast("Error loading tournament details", "error");
+    }
   };
 
   const handleSave = async (overrideStatus) => {
@@ -212,8 +229,26 @@ export default function TournamentOrchestration() {
             <div className={styles.builderHeader}>
               <h3 className={styles.builderTitle}>Master Schedule</h3>
               <div style={{ display: 'flex', gap: '8px' }}>
-                 <button style={{ background: 'none', border: 'none', color: '#64748b', cursor: 'pointer' }}><LayoutIcon /></button>
-                 <button style={{ background: '#f1f5f9', border: 'none', color: '#022c22', cursor: 'pointer', padding: '4px', borderRadius: '4px' }}><LayoutIcon /></button>
+                 <select 
+                   value={statusFilter} 
+                   onChange={e => { setStatusFilter(e.target.value); setPage(0); }}
+                   style={{ padding: '4px 8px', borderRadius: '4px', border: '1px solid #e2e8f0', fontSize: '13px' }}
+                 >
+                   <option value="">All Statuses</option>
+                   <option value="DRAFT">Draft</option>
+                   <option value="PUBLISHED">Published</option>
+                   <option value="REGISTRATION_OPEN">Reg. Open</option>
+                   <option value="ONGOING">Ongoing</option>
+                 </select>
+                 <input 
+                   type="text" 
+                   value={search} 
+                   onChange={e => setSearch(e.target.value)}
+                   onKeyDown={e => e.key === 'Enter' && loadData()}
+                   placeholder="Search..."
+                   style={{ padding: '4px 8px', borderRadius: '4px', border: '1px solid #e2e8f0', fontSize: '13px', width: '120px' }}
+                 />
+                 <button onClick={() => { setPage(0); loadData(); }} style={{ background: '#f1f5f9', border: 'none', color: '#022c22', cursor: 'pointer', padding: '4px 8px', borderRadius: '4px', fontSize: '13px', fontWeight: '500' }}>Search</button>
               </div>
             </div>
             <DataTable 
@@ -244,9 +279,23 @@ export default function TournamentOrchestration() {
                 </tr>
               )}
             />
-            <div style={{ padding: '12px', textAlign: 'center', borderTop: '1px solid #e2e8f0' }}>
-              <button style={{ background: 'none', border: 'none', color: '#022c22', fontSize: '13px', fontWeight: '600', cursor: 'pointer' }}>
-                View Full Schedule
+            <div style={{ padding: '12px', textAlign: 'center', borderTop: '1px solid #e2e8f0', display: 'flex', justifyContent: 'center', gap: '10px' }}>
+              <button 
+                disabled={page === 0} 
+                onClick={() => setPage(p => Math.max(0, p - 1))}
+                style={{ background: '#f1f5f9', border: 'none', color: page === 0 ? '#cbd5e1' : '#022c22', fontSize: '13px', fontWeight: '600', cursor: page === 0 ? 'not-allowed' : 'pointer', padding: '4px 12px', borderRadius: '4px' }}
+              >
+                Prev
+              </button>
+              <span style={{ fontSize: '13px', color: '#64748b', display: 'flex', alignItems: 'center' }}>
+                Page {page + 1} of {totalPages}
+              </span>
+              <button 
+                disabled={page >= totalPages - 1} 
+                onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))}
+                style={{ background: '#f1f5f9', border: 'none', color: page >= totalPages - 1 ? '#cbd5e1' : '#022c22', fontSize: '13px', fontWeight: '600', cursor: page >= totalPages - 1 ? 'not-allowed' : 'pointer', padding: '4px 12px', borderRadius: '4px' }}
+              >
+                Next
               </button>
             </div>
           </div>

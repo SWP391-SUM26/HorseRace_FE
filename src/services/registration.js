@@ -18,6 +18,7 @@ function mapRegistrationToUI(item) {
   return {
     ...item,
     id: item.registrationId || item.id,
+    code: item.registrationCode || 'N/A',
     status: item.status,
     submittedAt: item.submittedAt,
     reviewedAt: item.reviewedAt,
@@ -41,10 +42,6 @@ function mapRegistrationToUI(item) {
     tournament: item.tournament || {
       id: item.tournamentId || 'N/A',
       name: item.tournamentName || 'Unknown',
-    },
-    race: item.race || {
-      id: item.raceId || 'N/A',
-      name: item.raceName || 'N/A',
     },
     eligibility: item.eligibility || {
       vaccinationRecords: 'VALID',

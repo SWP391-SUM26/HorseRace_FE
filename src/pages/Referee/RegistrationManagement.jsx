@@ -179,14 +179,11 @@ export default function RegistrationManagement() {
 
   const filterOptions = useMemo(() => {
     const tournamentMap = new Map();
-    const raceMap = new Map();
     allRegistrations.forEach((item) => {
       tournamentMap.set(item.tournament.id, item.tournament.name);
-      raceMap.set(item.race.id, item.race.name);
     });
     return {
       tournaments: [...tournamentMap.entries()],
-      races: [...raceMap.entries()],
     };
   }, [allRegistrations]);
 
@@ -254,16 +251,14 @@ export default function RegistrationManagement() {
         "Horse",
         "Owner",
         "Tournament",
-        "Race",
         "Status",
         "Submitted Date",
       ],
       ...registrations.map((item) => [
-        item.id,
+        item.code,
         item.horse.name,
         item.owner.name,
         item.tournament.name,
-        item.race.name,
         item.status,
         formatDate(item.submittedAt),
       ]),
@@ -388,7 +383,6 @@ export default function RegistrationManagement() {
               "HORSE",
               "OWNER",
               "TOURNAMENT",
-              "RACE",
               "STATUS",
               "SUBMITTED DATE",
             ]}
@@ -411,14 +405,13 @@ export default function RegistrationManagement() {
                   selectedRegistration?.id === item.id ? styles.selectedRow : ""
                 }`}
               >
-                <td>{item.id}</td>
+                <td>{item.code}</td>
                 <td>
                   <strong>{item.horse.name}</strong>
-                  <span>{item.horse.id}</span>
+                  <span>{item.horse.code}</span>
                 </td>
                 <td>{item.owner.name}</td>
                 <td>{item.tournament.name}</td>
-                <td>{item.race.name}</td>
                 <td>
                   <Badge variant={statusVariant(item.status)}>
                     {item.status}
@@ -463,7 +456,7 @@ export default function RegistrationManagement() {
                 />
                 <div>
                   <h3>{selectedRegistration.horse.name}</h3>
-                  <span>{selectedRegistration.horse.id}</span>
+                  <span>{selectedRegistration.horse.code}</span>
                 </div>
               </div>
 

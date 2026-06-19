@@ -95,9 +95,6 @@ export default function RaceManagement() {
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [tournamentId, setTournamentId] = useState("");
   const [status, setStatus] = useState("");
-  const [dateFrom, setDateFrom] = useState("");
-  const [dateTo, setDateTo] = useState("");
-  const [appliedDates, setAppliedDates] = useState({ dateFrom: "", dateTo: "" });
   const [sort, setSort] = useState("date-asc");
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -131,7 +128,6 @@ export default function RaceManagement() {
           search: debouncedSearch,
           tournamentId,
           status,
-          ...appliedDates,
           sortBy,
           sortOrder,
           page,
@@ -152,7 +148,6 @@ export default function RaceManagement() {
       setLoading(false);
     }
   }, [
-    appliedDates,
     debouncedSearch,
     page,
     sortBy,
@@ -542,14 +537,6 @@ export default function RaceManagement() {
           </select>
         </label>
         <label>
-          <span>Date From</span>
-          <input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} />
-        </label>
-        <label>
-          <span>Date To</span>
-          <input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} />
-        </label>
-        <label>
           <span>Sort</span>
           <select value={sort} onChange={(event) => setFilter(setSort, event.target.value)}>
             <option value="date-asc">Date: Earliest</option>
@@ -562,7 +549,6 @@ export default function RaceManagement() {
         <button
           className={styles.filterButton}
           onClick={() => {
-            setAppliedDates({ dateFrom, dateTo });
             setPage(1);
           }}
         >
