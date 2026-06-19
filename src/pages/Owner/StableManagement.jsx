@@ -9,40 +9,17 @@ import {
   assignHorseToRace,
   toggleMedicalStatus,
 } from "../../services/horse";
+import { getTournaments } from "../../services/tournament";
+import { submitRegistration } from "../../services/registration";
 
-// Pre-define upcoming races for assignment
-const UPCOMING_EVENTS = [
-  {
-    id: "ev_001",
-    name: "Ascot Summer Stakes",
-    track: "Ascot Racecourse",
-    date: "Jul 14, 2026",
-  },
-  {
-    id: "ev_002",
-    name: "The Gold Jubilee",
-    track: "Epsom Downs",
-    date: "Jul 22, 2026",
-  },
-  {
-    id: "ev_003",
-    name: "Champions Cup",
-    track: "York Racecourse",
-    date: "Aug 05, 2026",
-  },
-  {
-    id: "ev_004",
-    name: "Belmont Stakes",
-    track: "Belmont Park",
-    date: "Oct 20, 2026",
-  },
-];
+// Tournaments will be loaded from API
 
 export default function StableManagement() {
   const { stableOverview } = ownerMock;
 
   // React State for Roster loaded from local service
   const [horses, setHorses] = useState([]);
+  const [tournaments, setTournaments] = useState([]);
   const [loading, setLoading] = useState(true);
 
   // Table control state
@@ -86,9 +63,16 @@ export default function StableManagement() {
   useEffect(() => {
     async function loadData() {
       setLoading(true);
-      const data = await getHorses();
-      setHorses(data);
-      setLoading(false);
+      try {
+        const data = await getHorses();
+        setHorses(data);
+        const tourneys = await getTournaments({ status: "REGISTRATION_OPEN" });
+        setTournaments(tourneys?.data?.content || tourneys?.items || []);
+      } catch (err) {
+        console.error("Failed to load stable data", err);
+      } finally {
+        setLoading(false);
+      }
     }
     loadData();
   }, []);
@@ -184,19 +168,21 @@ export default function StableManagement() {
     }
   };
 
-  // ASSIGN HORSE TO RACE
+  // REGISTER HORSE FOR TOURNAMENT
   const handleAssignRace = async (e) => {
     e.preventDefault();
     if (!selectedHorse || !selectedRaceId) return;
 
-    const targetRace = UPCOMING_EVENTS.find((r) => r.id === selectedRaceId);
-    if (!targetRace) return;
-
-    const data = await assignHorseToRace(selectedHorse.id, targetRace);
-    setHorses((prev) => prev.map((h) => (h.id === data.id ? data : h)));
-    setSelectedHorse(data);
-    setSelectedRaceId("");
-    triggerToast(`${data.name} assigned to ${targetRace.name}!`);
+    try {
+      await submitRegistration({
+        tournamentId: selectedRaceId,
+        horseId: selectedHorse.id,
+      });
+      setSelectedRaceId("");
+      triggerToast(`${selectedHorse.name} registered for tournament successfully!`);
+    } catch (err) {
+      triggerToast("Registration failed: " + (err.response?.data?.message || err.message), "error");
+    }
   };
 
   // UPDATE MEDICAL STATUS FROM DETAILS DIRECTLY
@@ -967,12 +953,12 @@ export default function StableManagement() {
                 </div>
               </div>
 
-              {/* Assignment Section (Assign Horse to Race) */}
+              {/* Registration Section */}
               <div className={styles.detailSection}>
                 <div className={styles.sectionHeader}>
                   <span className={styles.sectionTitleIcon}>🏁</span>
                   <h4 className={styles.sectionTitle}>
-                    Assign Horse to Upcoming Race
+                    Register for Tournament
                   </h4>
                 </div>
                 <form onSubmit={handleAssignRace} className={styles.assignForm}>
@@ -982,10 +968,10 @@ export default function StableManagement() {
                     className={styles.formSelect}
                     required
                   >
-                    <option value="">-- Choose Upcoming Race --</option>
-                    {UPCOMING_EVENTS.map((race) => (
-                      <option key={race.id} value={race.id}>
-                        {race.name} ({race.track} • {race.date})
+                    <option value="">-- Choose Open Tournament --</option>
+                    {tournaments.map((tournament) => (
+                      <option key={tournament.tournamentId || tournament.id} value={tournament.tournamentId || tournament.id}>
+                        {tournament.name || tournament.tournamentName} ({tournament.location || 'Unknown'})
                       </option>
                     ))}
                   </select>
@@ -994,7 +980,7 @@ export default function StableManagement() {
                     className={styles.btnPrimary}
                     style={{ width: "100%", marginTop: "10px" }}
                   >
-                    Nominate & Register for Race
+                    Submit Registration
                   </button>
                 </form>
               </div>

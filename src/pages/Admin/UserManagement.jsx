@@ -7,6 +7,7 @@ import {
   getUserById,
   updateMyProfile,
   updateUserProfile,
+  uploadAvatar,
 } from "../../services/user";
 
 // Import newly extracted components
@@ -205,16 +206,29 @@ const UserManagementView = () => {
     }
   };
 
-  const handleAvatarUpload = (e) => {
+  const handleAvatarUpload = async (e) => {
     const file = e.target.files[0];
     if (!file || !selectedUser) return;
-    const localAvatarUrl = URL.createObjectURL(file);
-    setUsers(
-      users.map((u) =>
-        u.id === selectedUser.id ? { ...u, avatarUrl: localAvatarUrl } : u,
-      ),
-    );
-    setSelectedUser((prev) => ({ ...prev, avatarUrl: localAvatarUrl }));
+    
+    // Check if the user is uploading their own avatar
+    const currentSession = getStoredSession();
+    if (currentSession?.user && currentSession.user.id === selectedUser.id) {
+      try {
+        const updatedSelf = await uploadAvatar(file);
+        const processedSelf = {
+          ...updatedSelf,
+          roleIcon: selectedUser.roleIcon,
+          lastAuth: selectedUser.lastAuth,
+        };
+        setUsers(users.map((u) => (u.id === selectedUser.id ? processedSelf : u)));
+        setSelectedUser(processedSelf);
+        showToast("Avatar đã được tải lên thành công!", "success");
+      } catch (err) {
+        showToast("Lỗi upload avatar: " + (err.response?.data?.message || err.message), "error");
+      }
+    } else {
+      showToast("Chỉ có thể thay đổi avatar của chính bạn!", "warning");
+    }
   };
 
   const tableColumns = [
