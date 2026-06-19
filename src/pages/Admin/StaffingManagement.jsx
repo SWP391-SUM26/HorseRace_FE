@@ -7,7 +7,7 @@ import StatCard, { Card } from '../../components/ui/StatCard';
 import Badge from '../../components/ui/Badge';
 import Button from '../../components/ui/Button';
 import DataTable from '../../components/ui/DataTable';
-import { getRaceAssignments, getStaffingDashboard, getStaffList, assignReferee, reassignReferee, removeAssignment, createStaff } from '../../services/staffing';
+import { getRaceAssignments, getStaffingDashboard, getStaffList, assignReferee, reassignReferee, removeAssignment, createStaff, updateStaff } from '../../services/staffing';
 import {
   UserPlusIcon,
   CalendarIcon,
@@ -35,6 +35,14 @@ export default function StaffingManagement() {
   });
   const [loading, setLoading] = useState(true);
 
+  const [page, setPage] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalElements, setTotalElements] = useState(0);
+
+  const [staffPage, setStaffPage] = useState(0);
+  const [staffTotalPages, setStaffTotalPages] = useState(1);
+  const [staffData, setStaffData] = useState([]);
+
   // Modal states
   const [staffList, setStaffList] = useState([]);
   const [modalOpen, setModalOpen] = useState(false);
@@ -54,16 +62,47 @@ export default function StaffingManagement() {
     }, 2000);
   };
 
+  const [editStaffModal, setEditStaffModal] = useState(false);
+  const [editStaffForm, setEditStaffForm] = useState({ id: '', fullName: '', email: '', phone: '' });
+
+  const handleEditStaff = (staff) => {
+    setEditStaffForm({
+      id: staff.userId || staff.id,
+      fullName: staff.fullName || staff.name || '',
+      email: staff.email || '',
+      phone: staff.phone || ''
+    });
+    setEditStaffModal(true);
+  };
+
+  const handleSaveStaff = async () => {
+    try {
+      await updateStaff(editStaffForm.id, editStaffForm);
+      showToast("Staff updated successfully!");
+      setEditStaffModal(false);
+      fetchStaffData();
+      setStaffList([]);
+    } catch (err) {
+      showToast('Error: ' + (err.response?.data?.message || err.message), 'error');
+    }
+  };
+
   const fetchAssignments = async () => {
     setLoading(true);
     try {
       const db = await getStaffingDashboard();
       if (db) setDashboard(db);
 
-      const data = await getRaceAssignments({ page: 0, size: 50 });
-      // The API returns an array or pagination object
+      const params = { page, size: 50 };
+      if (search) params.search = search;
+      if (raceStatus !== "All Races") params.raceStatus = raceStatus.toUpperCase();
+      if (assignmentStatus !== "All Statuses") params.assignmentStatus = assignmentStatus.toUpperCase();
+
+      const data = await getRaceAssignments(params);
       const items = Array.isArray(data) ? data : (data?.content ?? []);
       setAssignments(items);
+      setTotalPages(data?.totalPages || 1);
+      setTotalElements(data?.totalElements || items.length);
     } catch (err) {
       console.error("Failed to fetch staffing data", err);
     } finally {
@@ -71,9 +110,24 @@ export default function StaffingManagement() {
     }
   };
 
+  const fetchStaffData = async () => {
+    try {
+      const res = await getStaffList({ page: staffPage, size: 20 });
+      const items = Array.isArray(res) ? res : (res?.content || []);
+      setStaffData(items);
+      setStaffTotalPages(res?.totalPages || 1);
+    } catch (err) {
+      console.error("Failed to fetch staff data", err);
+    }
+  };
+
   React.useEffect(() => {
     fetchAssignments();
-  }, []);
+  }, [page]);
+
+  React.useEffect(() => {
+    fetchStaffData();
+  }, [staffPage]);
 
   const fetchStaff = async () => {
     if (staffList.length > 0) return;
@@ -293,6 +347,7 @@ export default function StaffingManagement() {
               marginLeft: '8px'
             }}
             icon={FilterIcon}
+            onClick={() => { setPage(0); fetchAssignments(); }}
           >
             Filter
           </Button>
@@ -363,7 +418,38 @@ export default function StaffingManagement() {
       </Card>
       
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '16px', color: '#64748b', fontSize: '14px' }}>
-        <div>Showing <strong>1</strong> to <strong>{assignments.length}</strong> of <strong>{dashboard.totalScheduledRaces}</strong> races</div>
+        <div>Showing <strong>{assignments.length > 0 ? page * 50 + 1 : 0}</strong> to <strong>{page * 50 + assignments.length}</strong> of <strong>{totalElements}</strong> assignments</div>
+        <div style={{ display: 'flex', gap: '8px' }}>
+          <Button variant="outline" size="sm" disabled={page === 0} onClick={() => setPage(p => Math.max(0, p - 1))}>Prev</Button>
+          <Button variant="outline" size="sm" disabled={page >= totalPages - 1} onClick={() => setPage(p => p + 1)}>Next</Button>
+        </div>
+      </div>
+
+      <Card style={{ padding: 0, marginTop: '24px' }}>
+        <div style={{ padding: '20px', borderBottom: '1px solid #e2e8f0' }}>
+          <h3 style={{ margin: 0, fontSize: '18px', color: '#0f172a' }}>Staff Roster</h3>
+        </div>
+        <DataTable
+          columns={["NAME", "EMAIL", "PHONE", "ROLE", "ACTIONS"]}
+          data={staffData}
+          loading={false}
+          totalItems={staffData.length}
+          renderRow={(row) => (
+            <tr key={row.userId || row.id} className={styles.tableRow}>
+              <td className={styles.td} style={{ fontWeight: '500', color: '#0f172a' }}>{row.fullName || row.name}</td>
+              <td className={styles.td}>{row.email}</td>
+              <td className={styles.td}>{row.phone || '-'}</td>
+              <td className={styles.td}>{row.role || row.userCode || 'REFEREE'}</td>
+              <td className={styles.td}>
+                <Button variant="outline" size="sm" onClick={() => handleEditStaff(row)}>Edit</Button>
+              </td>
+            </tr>
+          )}
+        />
+      </Card>
+      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', marginTop: '16px', marginBottom: '32px' }}>
+        <Button variant="outline" size="sm" disabled={staffPage === 0} onClick={() => setStaffPage(p => Math.max(0, p - 1))}>Prev</Button>
+        <Button variant="outline" size="sm" disabled={staffPage >= staffTotalPages - 1} onClick={() => setStaffPage(p => p + 1)}>Next</Button>
       </div>
 
       {modalOpen && (
@@ -429,6 +515,34 @@ export default function StaffingManagement() {
             <div className={styles.modalFooter}>
               <Button variant="outline" onClick={() => setCreateStaffModal(false)}>Cancel</Button>
               <Button style={{ backgroundColor: '#022c22', color: 'white' }} onClick={handleCreateStaff}>Create Referee</Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Staff Modal */}
+      {editStaffModal && (
+        <div className={styles.modalOverlay}>
+          <div className={styles.modalContent}>
+            <div className={styles.modalHeader}>
+              <span>Edit Staff</span>
+              <button className={styles.closeButton} onClick={() => setEditStaffModal(false)}>&times;</button>
+            </div>
+            <div className={styles.formGroup}>
+              <label className={styles.formLabel}>Full Name <span style={{color: 'red'}}>*</span></label>
+              <input type="text" className={styles.formSelect} value={editStaffForm.fullName} onChange={e => setEditStaffForm({...editStaffForm, fullName: e.target.value})} placeholder="e.g. John Doe" />
+            </div>
+            <div className={styles.formGroup}>
+              <label className={styles.formLabel}>Email <span style={{color: 'red'}}>*</span></label>
+              <input type="email" className={styles.formSelect} value={editStaffForm.email} onChange={e => setEditStaffForm({...editStaffForm, email: e.target.value})} placeholder="email@example.com" />
+            </div>
+            <div className={styles.formGroup}>
+              <label className={styles.formLabel}>Phone Number</label>
+              <input type="text" className={styles.formSelect} value={editStaffForm.phone} onChange={e => setEditStaffForm({...editStaffForm, phone: e.target.value})} placeholder="Optional" />
+            </div>
+            <div className={styles.modalFooter}>
+              <Button variant="outline" onClick={() => setEditStaffModal(false)}>Cancel</Button>
+              <Button style={{ backgroundColor: '#022c22', color: 'white' }} onClick={handleSaveStaff}>Save Changes</Button>
             </div>
           </div>
         </div>

@@ -108,3 +108,22 @@ export async function updateUserProfile(id, profileData) {
   }
 }
 
+export async function uploadAvatar(file) {
+  try {
+    const formData = new FormData();
+    formData.append("file", file);
+    const response = await api.post("/api/v1/users/me/avatar", formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    });
+    const data = response.data?.data || response.data;
+    if (data) {
+      return normalizeUser(data);
+    }
+  } catch (err) {
+    console.error("API uploadAvatar failed:", err.message);
+    throw err;
+  }
+}
+

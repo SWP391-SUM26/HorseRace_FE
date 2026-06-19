@@ -7,8 +7,7 @@ import api from "./api";
 // 1 - 4. Get Staff List / Search / Filter / Pagination
 export const getStaffList = async (params = {}) => {
   const response = await api.get("/api/v1/staffing/staff", { params });
-  // Spring Boot trả về Page<StaffResponse> nên data thật thường nằm trong data.content
-  return response.data?.data?.content || response.data?.data;
+  return response.data?.data;
 };
 
 // 5. Create Staff
@@ -35,8 +34,7 @@ export const getStaffingDashboard = async () => {
 
 // (Hàm phụ) Lấy danh sách phân công (để hiển thị bảng Race Assignment)
 export const getRaceAssignments = async (params = {}) => {
-  const response = await api.get("/api/v1/staffing/assignments", { params });
-  return response.data?.data?.content || response.data?.data;
+  return response.data?.data;
 };
 
 // 7. Assign Referee (POST)
