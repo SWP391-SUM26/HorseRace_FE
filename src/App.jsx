@@ -30,6 +30,10 @@ import LiveMonitor from './pages/Referee/LiveMonitor';
 import NotificationsCenter from './pages/shared/NotificationsCenter';
 import Violations from './pages/Referee/Violations';
 import Reports from './pages/Referee/Reports';
+import SpectatorLayout from './layouts/SpectatorLayout';
+import LiveRaces from './pages/Spectator/LiveRaces';
+import Predictions from './pages/Spectator/Predictions';
+import Rewards from './pages/Spectator/Rewards';
 
 const OwnerPlaceholder = ({ title }) => (
   <div style={{ padding: '40px', textAlign: 'center', backgroundColor: '#ffffff', borderRadius: '12px', border: '1px solid #e2e8f0', boxShadow: '0 1px 3px rgba(0,0,0,0.02)' }}>
@@ -76,8 +80,12 @@ export default function App() {
         </Route>
 
         <Route element={<ProtectedRoute roles={['Spectator']} />}>
-          <Route element={<DashboardLayout />}>
-            <Route path="/spectator-dashboard" element={<DashboardHome />} />
+          <Route element={<SpectatorLayout />}>
+            <Route path="/spectator-dashboard" element={<LiveRaces />} />
+            <Route path="/spectator/live-races" element={<LiveRaces />} />
+            <Route path="/spectator/schedule" element={<OwnerPlaceholder title="📅 Race Schedule" />} />
+            <Route path="/spectator/predictions" element={<Predictions />} />
+            <Route path="/spectator/rewards" element={<Rewards />} />
             <Route path="/spectator/notifications" element={<NotificationsCenter />} />
           </Route>
         </Route>
