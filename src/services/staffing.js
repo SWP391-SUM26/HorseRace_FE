@@ -34,6 +34,7 @@ export const getStaffingDashboard = async () => {
 
 // (Hàm phụ) Lấy danh sách phân công (để hiển thị bảng Race Assignment)
 export const getRaceAssignments = async (params = {}) => {
+  const response = await api.get("/api/v1/staffing/assignments", { params });
   return response.data?.data;
 };
 
