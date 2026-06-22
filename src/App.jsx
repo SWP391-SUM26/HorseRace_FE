@@ -21,6 +21,7 @@ import Overview from './pages/Owner/Overview';
 import StableManagement from './pages/Owner/StableManagement';
 import JockeyMarket from './pages/Owner/JockeyMarket';
 import JockeyDetail from './pages/Owner/JockeyDetail';
+import RaceCalendar from './pages/Owner/RaceCalendar';
 import InvitationList from './pages/Jockey/InvitationList';
 import RefereeLayout from './layouts/RefereeLayout';
 import RegistrationManagement from './pages/Referee/RegistrationManagement';
@@ -32,6 +33,7 @@ import Violations from './pages/Referee/Violations';
 import Reports from './pages/Referee/Reports';
 import SpectatorLayout from './layouts/SpectatorLayout';
 import LiveRaces from './pages/Spectator/LiveRaces';
+import Schedule from './pages/Spectator/Schedule';
 import Predictions from './pages/Spectator/Predictions';
 import Rewards from './pages/Spectator/Rewards';
 
@@ -66,7 +68,7 @@ export default function App() {
             <Route path="/owner/jockey-market" element={<JockeyMarket />} />
             <Route path="/owner/jockey-market/:jockeyId" element={<JockeyDetail />} />
             <Route path="/owner-dashboard/jockeys" element={<JockeyMarket />} />
-            <Route path="/owner-dashboard/calendar" element={<OwnerPlaceholder title="📅 Race Calendar" />} />
+            <Route path="/owner-dashboard/calendar" element={<RaceCalendar />} />
             <Route path="/owner-dashboard/financials" element={<OwnerPlaceholder title="💵 Financials" />} />
           </Route>
         </Route>
@@ -83,7 +85,7 @@ export default function App() {
           <Route element={<SpectatorLayout />}>
             <Route path="/spectator-dashboard" element={<LiveRaces />} />
             <Route path="/spectator/live-races" element={<LiveRaces />} />
-            <Route path="/spectator/schedule" element={<OwnerPlaceholder title="📅 Race Schedule" />} />
+            <Route path="/spectator/schedule" element={<Schedule />} />
             <Route path="/spectator/predictions" element={<Predictions />} />
             <Route path="/spectator/rewards" element={<Rewards />} />
             <Route path="/spectator/notifications" element={<NotificationsCenter />} />
