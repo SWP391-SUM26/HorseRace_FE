@@ -1,6 +1,33 @@
-import { Play, BarChart2 } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Play, BarChart2, Loader2 } from 'lucide-react';
+import { getTournaments } from '../../services/tournament';
+import { getRaceList } from '../../services/race';
+import { Link } from 'react-router-dom';
 
 export default function LiveRaces() {
+  const [liveRaces, setLiveRaces] = useState([]);
+  const [tournaments, setTournaments] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      try {
+        const [racesRes, tournamentsRes] = await Promise.all([
+          getRaceList({ status: 'LIVE', size: 2 }),
+          getTournaments({ status: 'UPCOMING', size: 4 })
+        ]);
+        
+        setLiveRaces(racesRes?.items || []);
+        setTournaments(tournamentsRes?.items || tournamentsRes || []);
+      } catch (error) {
+        console.error("Failed to fetch live races data", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchDashboardData();
+  }, []);
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
       
@@ -63,51 +90,39 @@ export default function LiveRaces() {
             </div>
             
             <div className="grid sm:grid-cols-2 gap-4">
-              {/* Race Card 1 */}
-              <div className="bg-white rounded-xl border border-slate-200 p-5 hover:shadow-md transition-shadow cursor-pointer">
-                <div className="flex justify-between items-start mb-4">
-                  <div>
-                    <span className="inline-block bg-red-100 text-red-700 text-xs font-bold px-2 py-1 rounded mb-2 uppercase tracking-wider">
-                      Race 4 • In Progress
-                    </span>
-                    <h3 className="font-bold text-lg text-slate-900">Ascot Racecourse</h3>
-                    <p className="text-sm text-slate-500">Turf • 7 Furlongs</p>
-                  </div>
-                  <button className="text-[#0b3b24] hover:text-[#0f4d2f]">
-                    <Play size={20} />
-                  </button>
+              {loading ? (
+                <div className="col-span-2 flex justify-center py-8">
+                  <Loader2 className="animate-spin text-[#0b3b24]" size={24} />
                 </div>
-                <div className="bg-slate-50 rounded border border-slate-100 p-3 flex justify-between items-center mt-6">
-                  <div className="flex items-center gap-3">
-                    <div className="w-6 h-6 bg-[#0b3b24] text-white flex items-center justify-center rounded font-bold text-xs">7</div>
-                    <span className="font-medium text-sm">Midnight Runner</span>
+              ) : liveRaces.length > 0 ? (
+                liveRaces.map((race, idx) => (
+                  <div key={race.id || idx} className="bg-white rounded-xl border border-slate-200 p-5 hover:shadow-md transition-shadow cursor-pointer">
+                    <div className="flex justify-between items-start mb-4">
+                      <div>
+                        <span className="inline-block bg-red-100 text-red-700 text-xs font-bold px-2 py-1 rounded mb-2 uppercase tracking-wider">
+                          Race {race.raceCode} • In Progress
+                        </span>
+                        <h3 className="font-bold text-lg text-slate-900">{race.name || `Race ${race.raceCode}`}</h3>
+                        <p className="text-sm text-slate-500">{race.trackCondition || 'Turf'} • {race.distanceMeter ? `${race.distanceMeter}m` : 'Unknown dist'}</p>
+                      </div>
+                      <Link to={`/spectator/predictions`} className="text-[#0b3b24] hover:text-[#0f4d2f]">
+                        <Play size={20} />
+                      </Link>
+                    </div>
+                    <div className="bg-slate-50 rounded border border-slate-100 p-3 flex justify-between items-center mt-6">
+                      <div className="flex items-center gap-3">
+                        <div className="w-6 h-6 bg-[#0b3b24] text-white flex items-center justify-center rounded font-bold text-xs">1</div>
+                        <span className="font-medium text-sm">Participant</span>
+                      </div>
+                      <span className="font-bold text-sm text-[#0b3b24]">Leading</span>
+                    </div>
                   </div>
-                  <span className="font-bold text-sm text-[#0b3b24]">Leading</span>
+                ))
+              ) : (
+                <div className="col-span-2 bg-slate-50 border border-slate-200 rounded-xl p-8 text-center text-slate-500">
+                  No live races at the moment. Check the schedule for upcoming events.
                 </div>
-              </div>
-
-              {/* Race Card 2 */}
-              <div className="bg-white rounded-xl border border-slate-200 p-5 hover:shadow-md transition-shadow cursor-pointer">
-                <div className="flex justify-between items-start mb-4">
-                  <div>
-                    <span className="inline-block bg-blue-100 text-blue-700 text-xs font-bold px-2 py-1 rounded mb-2 uppercase tracking-wider">
-                      Race 1 • Loading
-                    </span>
-                    <h3 className="font-bold text-lg text-slate-900">Belmont Park</h3>
-                    <p className="text-sm text-slate-500">Dirt • 1 Mile</p>
-                  </div>
-                  <button className="text-slate-400 hover:text-slate-600">
-                    <BarChart2 size={20} />
-                  </button>
-                </div>
-                <div className="bg-slate-50 rounded border border-slate-100 p-3 flex justify-between items-center mt-6">
-                  <div className="flex items-center gap-3">
-                    <div className="w-6 h-6 bg-blue-100 text-blue-800 flex items-center justify-center rounded font-bold text-xs">2</div>
-                    <span className="font-medium text-sm">Golden Gale</span>
-                  </div>
-                  <span className="font-bold text-sm text-slate-600">Fav: 3/1</span>
-                </div>
-              </div>
+              )}
             </div>
           </section>
 
@@ -134,50 +149,35 @@ export default function LiveRaces() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
-                    <tr className="hover:bg-slate-50/50">
-                      <td className="px-6 py-4">Today, 14:00 EST</td>
-                      <td className="px-6 py-4">
-                        <div className="font-bold text-slate-900">Derby Prep Stakes</div>
-                        <div className="text-slate-500 text-xs">Churchill Downs</div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className="bg-blue-100 text-blue-800 text-xs font-bold px-2 py-0.5 rounded">G2</span>
-                      </td>
-                      <td className="px-6 py-4 text-right font-medium">$500,000</td>
-                    </tr>
-                    <tr className="hover:bg-slate-50/50">
-                      <td className="px-6 py-4">Tomorrow, 15:30 BST</td>
-                      <td className="px-6 py-4">
-                        <div className="font-bold text-slate-900">Queen's Cup</div>
-                        <div className="text-slate-500 text-xs">Ascot Racecourse</div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className="bg-[#0b3b24] text-white text-xs font-bold px-2 py-0.5 rounded">G1</span>
-                      </td>
-                      <td className="px-6 py-4 text-right font-medium">£1,200,000</td>
-                    </tr>
-                    <tr className="hover:bg-slate-50/50">
-                      <td className="px-6 py-4">Oct 12, 16:15 EST</td>
-                      <td className="px-6 py-4">
-                        <div className="font-bold text-slate-900">Breeder's Classic</div>
-                        <div className="text-slate-500 text-xs">Santa Anita</div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className="bg-[#0b3b24] text-white text-xs font-bold px-2 py-0.5 rounded">G1</span>
-                      </td>
-                      <td className="px-6 py-4 text-right font-medium">$6,000,000</td>
-                    </tr>
-                    <tr className="hover:bg-slate-50/50">
-                      <td className="px-6 py-4">Oct 20, 13:00 JST</td>
-                      <td className="px-6 py-4">
-                        <div className="font-bold text-slate-900">Emperor's Plate</div>
-                        <div className="text-slate-500 text-xs">Tokyo Racecourse</div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className="bg-purple-100 text-purple-800 text-xs font-bold px-2 py-0.5 rounded">G3</span>
-                      </td>
-                      <td className="px-6 py-4 text-right font-medium">¥80,000,000</td>
-                    </tr>
+                    {loading ? (
+                      <tr>
+                        <td colSpan="4" className="px-6 py-8 text-center">
+                          <Loader2 className="animate-spin text-[#0b3b24] mx-auto" size={24} />
+                        </td>
+                      </tr>
+                    ) : tournaments.length > 0 ? (
+                      tournaments.slice(0, 4).map((tournament, idx) => (
+                        <tr key={tournament.id || idx} className="hover:bg-slate-50/50">
+                          <td className="px-6 py-4">{tournament.startDate ? new Date(tournament.startDate).toLocaleDateString() : 'TBA'}</td>
+                          <td className="px-6 py-4">
+                            <div className="font-bold text-slate-900">{tournament.name || 'Unnamed Tournament'}</div>
+                            <div className="text-slate-500 text-xs">{tournament.location || 'Multiple Tracks'}</div>
+                          </td>
+                          <td className="px-6 py-4">
+                            <span className="bg-blue-100 text-blue-800 text-xs font-bold px-2 py-0.5 rounded">
+                              {tournament.status || 'TBA'}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 text-right font-medium">{tournament.purse ? `$${tournament.purse.toLocaleString()}` : 'TBA'}</td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td colSpan="4" className="px-6 py-8 text-center text-slate-500">
+                          No tournaments scheduled at the moment.
+                        </td>
+                      </tr>
+                    )}
                   </tbody>
                 </table>
               </div>
