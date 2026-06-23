@@ -116,25 +116,60 @@ function mapInspectionEntry(entry, horse, medical, assignment) {
   };
 }
 
-export async function getInspectionRoster(params = {}) {
-  const raceData = unwrap(
+// Helpers for Race & Reports
+export async function getRaceCatalog(params = {}) {
+  const data = unwrap(
     await api.get(RACE_ENDPOINT, {
       params: {
         page: 0,
         size: 100,
-        sortBy: "scheduledStartAt",
-        sortDir: "asc",
+        ...params,
       },
     }),
   );
-  const races = listFrom(raceData).filter((race) =>
+  return listFrom(data);
+}
+
+export async function enrichReportsWithRaces(reports) {
+  const raceIds = [...new Set(reports.map((r) => r.raceId).filter(Boolean))];
+  const raceMap = new Map();
+  await Promise.all(
+    raceIds.map(async (id) => {
+      try {
+        const race = unwrap(await api.get(`${RACE_ENDPOINT}/${id}`));
+        raceMap.set(id, race);
+      } catch (err) {
+        console.warn(`Could not fetch race ${id}`);
+      }
+    }),
+  );
+  return reports.map((report) => ({
+    ...report,
+    race: raceMap.get(report.raceId) || null,
+  }));
+}
+
+function normalizePage(data, params) {
+  const items = listFrom(data);
+  const totalItems = data?.totalElements ?? items.length;
+  const pageSize = Number(params.pageSize) || 10;
+  const totalPages = Math.max(Math.ceil(totalItems / pageSize), 1);
+  return { items, totalPages };
+}
+
+export async function getInspectionRoster(params = {}) {
+  const races = await getRaceCatalog({
+    sortBy: "scheduledStartAt",
+    sortDir: "asc",
+  });
+  const filteredRaces = races.filter((race) =>
     ["SCHEDULED", "OPEN"].includes(race.status),
   );
   const selectedRace =
-    races.find((race) => race.raceId === params.raceId) || races[0] || null;
+    filteredRaces.find((race) => race.raceId === params.raceId) || filteredRaces[0] || null;
 
   if (!selectedRace) {
-    return { races, race: null, items: [] };
+    return { races: filteredRaces, race: null, items: [] };
   }
 
   const [entryResponse, invitationResponse] = await Promise.all([
@@ -171,7 +206,7 @@ export async function getInspectionRoster(params = {}) {
     }),
   );
 
-  return { races, race: selectedRace, items };
+  return { races: filteredRaces, race: selectedRace, items };
 }
 
 export async function getInspectionDetail(horseId) {
@@ -207,5 +242,209 @@ export async function submitHorseHealthCheck(payload) {
     },
   );
   return unwrap(response);
+}
+
+
+
+// ==========================================
+// Appended from develop (Missing functions)
+// ==========================================
+export async function getLiveRaceMonitor(params = {}) {
+  const races = await getRaceCatalog({
+    status: "RUNNING",
+    sortBy: "actualStartAt",
+    sortDir: "desc",
+  });
+  const selectedRace =
+    races.find((race) => race.raceId === params.raceId) || races[0] || null;
+  if (!selectedRace) return { races, race: null, entries: [], incidents: [] };
+  return getRaceLiveDetail(selectedRace.raceId).then((detail) => ({
+    races,
+    ...detail,
+  }));
+}
+
+export async function getRaceLiveDetail(raceId) {
+  const [raceResponse, entriesResponse, reportsResponse, assignmentsResponse] =
+    await Promise.all([
+      api.get(`${RACE_ENDPOINT}/${raceId}`),
+      api.get(`${RACE_ENDPOINT}/${raceId}/entries`),
+      api.get(`${REFEREE_ENDPOINT}/reports`, {
+        params: {
+          raceId,
+          page: 0,
+          size: 100,
+          sortBy: "createdAt",
+          sortDir: "desc",
+        },
+      }),
+      api.get(INVITATION_ENDPOINT, {
+        params: {
+          status: "ACCEPTED",
+          page: 0,
+          size: 100,
+          sortBy: "respondedAt",
+          sortDir: "desc",
+        },
+      }),
+    ]);
+  const race = unwrap(raceResponse);
+  const assignments = listFrom(unwrap(assignmentsResponse));
+  const jockeyByEntry = new Map(
+    assignments.map((assignment) => [assignment.entryId, assignment.jockeyName]),
+  );
+  const entries = listFrom(unwrap(entriesResponse)).map((entry) => ({
+    ...entry,
+    jockeyName: jockeyByEntry.get(entry.entryId) || "Not assigned",
+  }));
+  return {
+    race,
+    entries,
+    incidents: listFrom(unwrap(reportsResponse)),
+  };
+}
+
+export async function createViolationReport(payload) {
+  return unwrap(
+    await api.post(`${REFEREE_ENDPOINT}/reports`, {
+      raceId: payload.raceId,
+      reportType: "VIOLATION",
+      summary: payload.summary?.trim() || null,
+      decision: payload.decision?.trim() || null,
+      severityLevel: payload.severityLevel,
+    }),
+  );
+}
+
+export async function getViolationList(params = {}) {
+  const data = unwrap(
+    await api.get(`${REFEREE_ENDPOINT}/reports`, {
+      params: {
+        raceId: params.raceId || undefined,
+        reportType: "VIOLATION",
+        status: params.status || undefined,
+        page: Math.max((Number(params.page) || 1) - 1, 0),
+        size: params.pageSize || 10,
+        sortBy: params.sortBy || "createdAt",
+        sortDir: params.sortOrder || "desc",
+      },
+    }),
+  );
+  const result = normalizePage(data, params);
+  const enriched = await enrichReportsWithRaces(result.items);
+  const search = params.search?.trim().toLowerCase();
+  return {
+    ...result,
+    items: search
+      ? enriched.filter(
+          (item) =>
+            item.reportId?.toLowerCase().includes(search) ||
+            item.summary?.toLowerCase().includes(search) ||
+            item.race?.name?.toLowerCase().includes(search),
+        )
+      : enriched,
+  };
+}
+
+export async function getViolationDetail(id) {
+  const result = await getViolationList({ page: 1, pageSize: 100 });
+  return result.items.find((item) => item.reportId === id) || null;
+}
+
+export async function updateViolationReport(id, payload) {
+  return unwrap(
+    await api.put(`${REFEREE_ENDPOINT}/reports/${id}`, {
+      reportType: "VIOLATION",
+      summary: payload.summary?.trim() || null,
+      decision: payload.decision?.trim() || null,
+      severityLevel: payload.severityLevel,
+    }),
+  );
+}
+
+export async function getRaceResultDetail(raceId) {
+  const [raceResponse, entriesResponse] = await Promise.all([
+    api.get(`${RACE_ENDPOINT}/${raceId}`),
+    api.get(`${RACE_ENDPOINT}/${raceId}/entries`),
+  ]);
+  return {
+    race: unwrap(raceResponse),
+    entries: listFrom(unwrap(entriesResponse)),
+    resultRecordingSupported: false,
+  };
+}
+
+export async function getFinishedRaceList() {
+  const [finished, official] = await Promise.all([
+    getRaceCatalog({ status: "FINISHED" }),
+    getRaceCatalog({ status: "OFFICIAL" }),
+  ]);
+  return [...finished, ...official];
+}
+
+export async function recordRaceResult() {
+  throw new Error(
+    "Race result recording is unavailable because Swagger exposes no race-result endpoint.",
+  );
+}
+
+export async function getOfficialReportList(params = {}) {
+  const data = unwrap(
+    await api.get(`${REFEREE_ENDPOINT}/reports`, {
+      params: {
+        raceId: params.raceId || undefined,
+        reportType: "GENERAL",
+        status: params.status || undefined,
+        page: Math.max((Number(params.page) || 1) - 1, 0),
+        size: params.pageSize || 20,
+        sortBy: "createdAt",
+        sortDir: "desc",
+      },
+    }),
+  );
+  const result = normalizePage(data, params);
+  return {
+    ...result,
+    items: await enrichReportsWithRaces(result.items),
+  };
+}
+
+export async function getOfficialRaceCertification(raceId) {
+  if (!raceId) return { race: null, entries: [] };
+  const [raceResponse, entriesResponse] = await Promise.all([
+    api.get(`${RACE_ENDPOINT}/${raceId}`),
+    api.get(`${RACE_ENDPOINT}/${raceId}/entries`),
+  ]);
+
+  return {
+    race: unwrap(raceResponse),
+    entries: listFrom(unwrap(entriesResponse)),
+  };
+}
+
+export async function submitOfficialReport(payload) {
+  let reportId = payload.reportId;
+  if (!reportId) {
+    const created = unwrap(
+      await api.post(`${REFEREE_ENDPOINT}/reports`, {
+        raceId: payload.raceId,
+        reportType: "GENERAL",
+        summary: payload.summary?.trim() || null,
+        decision: payload.decision?.trim() || null,
+        severityLevel: payload.severityLevel || "LOW",
+      }),
+    );
+    reportId = created.reportId;
+  } else {
+    await api.put(`${REFEREE_ENDPOINT}/reports/${reportId}`, {
+      reportType: "GENERAL",
+      summary: payload.summary?.trim() || null,
+      decision: payload.decision?.trim() || null,
+      severityLevel: payload.severityLevel || "LOW",
+    });
+  }
+  return unwrap(
+    await api.patch(`${REFEREE_ENDPOINT}/reports/${reportId}/submit`),
+  );
 }
 
