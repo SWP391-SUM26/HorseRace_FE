@@ -29,6 +29,7 @@ import PreRaceInspection from './pages/Referee/PreRaceInspection';
 import RefereeDashboard from './pages/Referee/RefereeDashboard';
 import LiveMonitor from './pages/Referee/LiveMonitor';
 import NotificationsCenter from './pages/shared/NotificationsCenter';
+import UserProfile from './pages/shared/UserProfile';
 import Violations from './pages/Referee/Violations';
 import Reports from './pages/Referee/Reports';
 import SpectatorLayout from './layouts/SpectatorLayout';
@@ -57,6 +58,9 @@ export default function App() {
         <Route path="/spectator-register" element={<SpectatorRegistrationPage />} />
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
         <Route path="/reset-password" element={<ResetPasswordPage />} />
+        <Route element={<ProtectedRoute />}>
+          <Route path="/profile" element={<UserProfile />} />
+        </Route>
 
         {/* DASHBOARDS */}
         <Route element={<ProtectedRoute roles={['Owner']} />}>

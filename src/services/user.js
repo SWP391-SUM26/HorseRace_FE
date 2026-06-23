@@ -25,6 +25,7 @@ function normalizeUser(user) {
   return {
     id: user.userId || user.id,
     userId: user.userId || user.id,
+    userCode: user.userCode || "",
     name: user.fullName || user.name || "",
     email: user.email || "",
     phone: user.phone || "",
@@ -35,9 +36,22 @@ function normalizeUser(user) {
     roleName: user.roleName || appRole,
     status: user.status || "ACTIVE",
     kycStatus: user.kycStatus || "PENDING",
+    emailVerified: Boolean(user.emailVerified),
+    createdAt: user.createdAt || null,
     stable: user.stable || (appRole === "Owner" ? "Hartwell Racing Syndicate" : "Flemington Pro Circuit"),
     provider: user.provider || "credentials"
   };
+}
+
+export async function getMyProfile() {
+  try {
+    const response = await api.get("/api/v1/users/me");
+    const data = response.data?.data || response.data;
+    return normalizeUser(data);
+  } catch (err) {
+    console.error("API getMyProfile failed:", err.message);
+    throw err;
+  }
 }
 
 // Fetch all users

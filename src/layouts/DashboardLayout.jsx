@@ -1,4 +1,4 @@
-import { Outlet, useOutletContext } from "react-router-dom";
+import { Outlet, useNavigate, useOutletContext } from "react-router-dom";
 import Sidebar from "../components/layout/Sidebar";
 import {
   BarChartIcon,
@@ -37,6 +37,7 @@ const roleNavItems = {
 };
 
 export default function DashboardLayout() {
+  const navigate = useNavigate();
   const { session } = useOutletContext();
   const permissions = session.permissions || getUserPermissions(session.user);
 
@@ -58,8 +59,23 @@ export default function DashboardLayout() {
             <span className={styles.eyebrow}>{session.user.role} Dashboard</span>
             <h1>{session.user.stable || "Equine Elite Workspace"}</h1>
           </div>
-          <div className={styles.permissionSummary}>
-            {permissions.length} permissions active
+          <div className={styles.topbarActions}>
+            <div className={styles.permissionSummary}>
+              {permissions.length} permissions active
+            </div>
+            <button
+              type="button"
+              className={styles.profileAvatar}
+              onClick={() => navigate("/profile")}
+              title="View profile"
+              aria-label="View user profile"
+            >
+              {session.user.avatarUrl ? (
+                <img src={session.user.avatarUrl} alt="" />
+              ) : (
+                session.user.avatar || "US"
+              )}
+            </button>
           </div>
         </header>
 
