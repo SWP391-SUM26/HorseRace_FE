@@ -1,6 +1,5 @@
-import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getStoredSession, logout } from '../../services/auth';
+import { getStoredSession } from '../../services/auth';
 import { BellIcon } from '../ui/Icons';
 import styles from './Navbar.module.css';
 
@@ -9,11 +8,6 @@ export default function Navbar({ title, systemStatus }) {
   const session = getStoredSession();
   const adminName = session?.user?.name || "System Admin";
   const adminAvatar = session?.user?.avatar || "AD";
-
-  const handleLogout = () => {
-    logout();
-    navigate('/login');
-  };
 
   const handleNotificationsClick = () => {
     const role = session?.user?.role;
@@ -41,9 +35,10 @@ export default function Navbar({ title, systemStatus }) {
         <div className={styles.userInfo}>
           <span className={styles.userName}>{adminName}</span>
           <button 
-            onClick={handleLogout} 
+            onClick={() => navigate('/profile')}
             className={styles.userAvatar} 
-            title="Sign out"
+            title="View profile"
+            aria-label="View user profile"
           >
             {adminAvatar}
           </button>
