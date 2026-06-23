@@ -4,8 +4,10 @@ import {
   cancelInvitation,
   getInvitationList,
   getJockeyList,
+  getOwnerUnassignedEntries,
   sendInvitation,
 } from "../../services/jockey";
+import defaultHorseImage from "../../assets/silver_streak.png";
 import styles from "./JockeyMarket.module.css";
 
 const PAGE_SIZE = 4;
@@ -38,6 +40,17 @@ function getErrorMessage(error, fallback) {
   return error?.response?.data?.message || error?.message || fallback;
 }
 
+function formatRaceDate(value) {
+  if (!value) return "Not scheduled";
+  return new Intl.DateTimeFormat("en-GB", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(new Date(value));
+}
+
 export default function JockeyMarket() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -54,7 +67,12 @@ export default function JockeyMarket() {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
-  const [selectedHorseId] = useState(location.state?.selectedHorseId || "");
+  const [availableEntries, setAvailableEntries] = useState([]);
+  const [entryLoading, setEntryLoading] = useState(true);
+  const [entryError, setEntryError] = useState("");
+  const [selectedHorse, setSelectedHorse] = useState(
+    location.state?.selectedEntry || null,
+  );
   const [selectedJockey, setSelectedJockey] = useState(null);
   const [message, setMessage] = useState("");
   const [sending, setSending] = useState(false);
@@ -63,18 +81,17 @@ export default function JockeyMarket() {
   const [invitationLoading, setInvitationLoading] = useState(true);
   const [cancellingId, setCancellingId] = useState("");
 
-  const selectedHorse = useMemo(
-    () => location.state?.selectedEntry || null,
-    [location.state?.selectedEntry],
-  );
+  const selectedHorseId =
+    selectedHorse?.horseId || location.state?.selectedHorseId || "";
   const requestedJockey = useMemo(
     () =>
-      jockeys.find((jockey) => jockey.id === location.state?.inviteJockeyId) ||
-      null,
+      jockeys.find(
+        (jockey) => jockey.id === location.state?.inviteJockeyId,
+      ) || null,
     [jockeys, location.state?.inviteJockeyId],
   );
   const invitationJockey =
-    selectedJockey || (selectedHorse?.entryId ? requestedJockey : null);
+    selectedJockey || (selectedHorseId ? requestedJockey : null);
 
   const loadSentInvitations = useCallback(async () => {
     setInvitationLoading(true);
@@ -93,6 +110,40 @@ export default function JockeyMarket() {
       setInvitationLoading(false);
     }
   }, [session.user.id]);
+
+  const loadUnassignedEntries = useCallback(async () => {
+    setEntryLoading(true);
+    setEntryError("");
+    try {
+      const entries = await getOwnerUnassignedEntries(session.user.id);
+      setAvailableEntries(entries);
+      setSelectedHorse((current) => {
+        const preferredEntryId =
+          current?.entryId || location.state?.selectedEntry?.entryId;
+        return (
+          entries.find((entry) => entry.entryId === preferredEntryId) ||
+          entries.find(
+            (entry) =>
+              entry.horseId === location.state?.selectedHorseId,
+          ) ||
+          entries[0] ||
+          null
+        );
+      });
+    } catch (error) {
+      setAvailableEntries([]);
+      setSelectedHorse(null);
+      setEntryError(
+        getErrorMessage(error, "Unable to load unassigned race entries."),
+      );
+    } finally {
+      setEntryLoading(false);
+    }
+  }, [
+    location.state?.selectedEntry?.entryId,
+    location.state?.selectedHorseId,
+    session.user.id,
+  ]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -155,6 +206,11 @@ export default function JockeyMarket() {
     return () => window.clearTimeout(timer);
   }, [loadSentInvitations]);
 
+  useEffect(() => {
+    const timer = window.setTimeout(loadUnassignedEntries, 0);
+    return () => window.clearTimeout(timer);
+  }, [loadUnassignedEntries]);
+
   function resetPageAndSet(setter, value) {
     setter(value);
     setCurrentPage(1);
@@ -162,18 +218,12 @@ export default function JockeyMarket() {
 
   function openInvitation(jockey) {
     setNotice(null);
-    if (!selectedHorse?.entryId) {
-      setNotice({
-        type: "error",
-        text: "Please select a real race entry before sending an invitation.",
-      });
+    if (!selectedHorse) {
+      setNotice({ type: "error", text: "Please select a horse first." });
       return;
     }
     if (jockey.status === "UNAVAILABLE") {
-      setNotice({
-        type: "error",
-        text: `${jockey.name} is currently unavailable.`,
-      });
+      setNotice({ type: "error", text: `${jockey.name} is currently unavailable.` });
       return;
     }
     setSelectedJockey(jockey);
@@ -200,11 +250,7 @@ export default function JockeyMarket() {
     try {
       await sendInvitation({
         entryId: selectedHorse.entryId,
-        horseId: selectedHorse.id,
-        raceId: selectedHorse.raceId,
-        jockeyId: invitationJockey.id,
-        ownerId: session.user.id,
-        message: message.trim(),
+        jockeyUserId: invitationJockey.userId || invitationJockey.id,
       });
       setNotice({
         type: "success",
@@ -219,6 +265,7 @@ export default function JockeyMarket() {
         });
       }
       await loadSentInvitations();
+      await loadUnassignedEntries();
     } catch (error) {
       setNotice({
         type: "error",
@@ -230,8 +277,7 @@ export default function JockeyMarket() {
   }
 
   async function handleCancelInvitation(invitation) {
-    if (!window.confirm(`Cancel invitation for ${invitation.horseName}?`))
-      return;
+    if (!window.confirm(`Cancel invitation for ${invitation.horseName}?`)) return;
     const invitationId = invitation.assignmentId || invitation.id;
     setCancellingId(invitationId);
     try {
@@ -241,6 +287,7 @@ export default function JockeyMarket() {
         text: "Invitation cancelled successfully.",
       });
       await loadSentInvitations();
+      await loadUnassignedEntries();
     } catch (error) {
       setNotice({
         type: "error",
@@ -267,18 +314,12 @@ export default function JockeyMarket() {
       {notice && (
         <div
           className={`${styles.notice} ${
-            notice.type === "success"
-              ? styles.noticeSuccess
-              : styles.noticeError
+            notice.type === "success" ? styles.noticeSuccess : styles.noticeError
           }`}
           role="alert"
         >
           <span>{notice.text}</span>
-          <button
-            type="button"
-            onClick={() => setNotice(null)}
-            aria-label="Dismiss"
-          >
+          <button type="button" onClick={() => setNotice(null)} aria-label="Dismiss">
             x
           </button>
         </div>
@@ -289,13 +330,50 @@ export default function JockeyMarket() {
           <section className={styles.panel}>
             <div className={styles.panelHeader}>
               <h3>Unassigned Horses</h3>
-              <span>0</span>
+              <span>{availableEntries.length}</span>
             </div>
             <div className={styles.horseList}>
-              <p className={styles.emptySelection}>
-                No real race entry API is connected yet. Open this page with a
-                selected entry containing entryId to send invitations.
-              </p>
+              {entryLoading ? (
+                <p className={styles.emptySelection}>Loading horses...</p>
+              ) : entryError ? (
+                <p className={styles.emptySelection}>{entryError}</p>
+              ) : availableEntries.length === 0 ? (
+                <p className={styles.emptySelection}>
+                  No approved race entries are waiting for a jockey.
+                </p>
+              ) : (
+                availableEntries.map((entry) => (
+                  <button
+                    type="button"
+                    className={`${styles.horseCard} ${
+                      selectedHorse?.entryId === entry.entryId
+                        ? styles.horseCardSelected
+                        : ""
+                    }`}
+                    key={entry.entryId}
+                    onClick={() => setSelectedHorse(entry)}
+                  >
+                    <img
+                      src={entry.image || defaultHorseImage}
+                      alt={entry.name}
+                    />
+                    <span>
+                      <strong>{entry.name}</strong>
+                      <small>
+                        {[entry.breed, entry.gender]
+                          .filter(Boolean)
+                          .join(" / ") || entry.code}
+                      </small>
+                      <small>{entry.raceName}</small>
+                    </span>
+                    <span>
+                      {selectedHorse?.entryId === entry.entryId
+                        ? "Selected"
+                        : "Select"}
+                    </span>
+                  </button>
+                ))
+              )}
             </div>
           </section>
 
@@ -307,36 +385,33 @@ export default function JockeyMarket() {
               <dl className={styles.raceDetails}>
                 <div>
                   <dt>Race</dt>
-                  <dd>{selectedHorse.raceName || "Not available"}</dd>
+                  <dd>
+                    {selectedHorse.raceName} ({selectedHorse.raceCode})
+                  </dd>
                 </div>
                 <div>
-                  <dt>Venue</dt>
-                  <dd>{selectedHorse.raceVenue || "Not available"}</dd>
+                  <dt>Tournament</dt>
+                  <dd>{selectedHorse.tournamentName || "Not available"}</dd>
                 </div>
                 <div>
                   <dt>Date</dt>
-                  <dd>{selectedHorse.raceDate || "Not available"}</dd>
+                  <dd>{formatRaceDate(selectedHorse.scheduledStartAt)}</dd>
+                </div>
+                <div>
+                  <dt>Race Type</dt>
+                  <dd>{selectedHorse.raceType || "Not available"}</dd>
                 </div>
                 <div>
                   <dt>Distance</dt>
                   <dd>
-                    {selectedHorse.raceDistance || "Not available"}
-                    {selectedHorse.raceSurface
-                      ? ` (${selectedHorse.raceSurface})`
-                      : ""}
-                  </dd>
-                </div>
-                <div>
-                  <dt>Grade</dt>
-                  <dd>{selectedHorse.raceGrade || "Not available"}</dd>
-                </div>
-                <div>
-                  <dt>Purse</dt>
-                  <dd>
-                    {selectedHorse.racePurse
-                      ? formatCurrency(selectedHorse.racePurse)
+                    {selectedHorse.distanceMeter
+                      ? `${selectedHorse.distanceMeter}m`
                       : "Not available"}
                   </dd>
+                </div>
+                <div>
+                  <dt>Track</dt>
+                  <dd>{selectedHorse.trackCondition || "Not available"}</dd>
                 </div>
               </dl>
             ) : (
@@ -355,12 +430,11 @@ export default function JockeyMarket() {
               {invitationLoading ? (
                 <p className={styles.emptySelection}>Loading invitations...</p>
               ) : sentInvitations.length === 0 ? (
-                <p className={styles.emptySelection}>
-                  No invitations sent yet.
-                </p>
+                <p className={styles.emptySelection}>No invitations sent yet.</p>
               ) : (
                 sentInvitations.map((invitation) => {
-                  const invitationId = invitation.assignmentId || invitation.id;
+                  const invitationId =
+                    invitation.assignmentId || invitation.id;
                   return (
                     <article
                       className={styles.sentInvitation}
@@ -384,7 +458,9 @@ export default function JockeyMarket() {
                           <button
                             type="button"
                             disabled={cancellingId === invitationId}
-                            onClick={() => handleCancelInvitation(invitation)}
+                            onClick={() =>
+                              handleCancelInvitation(invitation)
+                            }
                           >
                             {cancellingId === invitationId
                               ? "Cancelling..."
@@ -493,105 +569,105 @@ export default function JockeyMarket() {
             ) : (
               <div className={styles.jockeyList}>
                 {jockeys.map((jockey) => (
-                  <article className={styles.jockeyCard} key={jockey.id}>
-                    <div className={styles.jockeyIdentity}>
+                <article className={styles.jockeyCard} key={jockey.id}>
+                  <div className={styles.jockeyIdentity}>
+                    <button
+                      type="button"
+                      className={styles.avatarButton}
+                      onClick={() =>
+                        navigate(`/owner/jockey-market/${jockey.id}`, {
+                          state: { selectedHorseId },
+                        })
+                      }
+                      aria-label={`View ${jockey.name} profile`}
+                    >
+                      {jockey.avatar ? (
+                        <img src={jockey.avatar} alt="" />
+                      ) : (
+                        getInitials(jockey.name)
+                      )}
+                    </button>
+                    <div>
                       <button
                         type="button"
-                        className={styles.avatarButton}
-                        onClick={() =>
-                          navigate(`/owner/jockey-market/${jockey.id}`, {
-                            state: { selectedHorseId },
-                          })
-                        }
-                        aria-label={`View ${jockey.name} profile`}
-                      >
-                        {jockey.avatar ? (
-                          <img src={jockey.avatar} alt="" />
-                        ) : (
-                          getInitials(jockey.name)
-                        )}
-                      </button>
-                      <div>
-                        <button
-                          type="button"
-                          className={styles.nameButton}
-                          onClick={() =>
-                            navigate(`/owner/jockey-market/${jockey.id}`, {
-                              state: { selectedHorseId },
-                            })
-                          }
-                        >
-                          {jockey.name}
-                        </button>
-                        <div className={styles.rating}>
-                          <span>Rating {jockey.rating}</span>
-                          <span>{jockey.careerWins} career wins</span>
-                        </div>
-                        <span
-                          className={`${styles.statusBadge} ${
-                            styles[`status${jockey.status}`]
-                          }`}
-                        >
-                          {jockey.status}
-                        </span>
-                      </div>
-                    </div>
-
-                    <div className={styles.winRate}>
-                      <span>Win Rate</span>
-                      <strong>{jockey.winRate}%</strong>
-                      <small>{jockey.compatibility}% compatibility</small>
-                    </div>
-
-                    <dl className={styles.jockeyStats}>
-                      <div>
-                        <dt>Riding Style</dt>
-                        <dd>{jockey.ridingStyle}</dd>
-                      </div>
-                      <div>
-                        <dt>Min Weight</dt>
-                        <dd>{jockey.minWeight}</dd>
-                      </div>
-                      <div>
-                        <dt>Stable Status</dt>
-                        <dd>{jockey.stableStatus}</dd>
-                      </div>
-                      <div>
-                        <dt>Base Riding Fee</dt>
-                        <dd>{formatCurrency(jockey.baseFee)}</dd>
-                      </div>
-                      <div>
-                        <dt>Prize Percentage</dt>
-                        <dd>{jockey.prizePercentage}% of purse</dd>
-                      </div>
-                      <div>
-                        <dt>Trophy Cabinet</dt>
-                        <dd>{jockey.trophies.join(", ")}</dd>
-                      </div>
-                    </dl>
-
-                    <div className={styles.cardActions}>
-                      <button
-                        type="button"
-                        className={styles.secondaryButton}
+                        className={styles.nameButton}
                         onClick={() =>
                           navigate(`/owner/jockey-market/${jockey.id}`, {
                             state: { selectedHorseId },
                           })
                         }
                       >
-                        View Profile
+                        {jockey.name}
                       </button>
-                      <button
-                        type="button"
-                        className={styles.primaryButton}
-                        onClick={() => openInvitation(jockey)}
-                        disabled={jockey.status === "UNAVAILABLE"}
+                      <div className={styles.rating}>
+                        <span>Rating {jockey.rating}</span>
+                        <span>{jockey.careerWins} career wins</span>
+                      </div>
+                      <span
+                        className={`${styles.statusBadge} ${
+                          styles[`status${jockey.status}`]
+                        }`}
                       >
-                        Invite to Ride
-                      </button>
+                        {jockey.status}
+                      </span>
                     </div>
-                  </article>
+                  </div>
+
+                  <div className={styles.winRate}>
+                    <span>Win Rate</span>
+                    <strong>{jockey.winRate}%</strong>
+                    <small>{jockey.compatibility}% compatibility</small>
+                  </div>
+
+                  <dl className={styles.jockeyStats}>
+                    <div>
+                      <dt>Riding Style</dt>
+                      <dd>{jockey.ridingStyle}</dd>
+                    </div>
+                    <div>
+                      <dt>Min Weight</dt>
+                      <dd>{jockey.minWeight}</dd>
+                    </div>
+                    <div>
+                      <dt>Stable Status</dt>
+                      <dd>{jockey.stableStatus}</dd>
+                    </div>
+                    <div>
+                      <dt>Base Riding Fee</dt>
+                      <dd>{formatCurrency(jockey.baseFee)}</dd>
+                    </div>
+                    <div>
+                      <dt>Prize Percentage</dt>
+                      <dd>{jockey.prizePercentage}% of purse</dd>
+                    </div>
+                    <div>
+                      <dt>Trophy Cabinet</dt>
+                      <dd>{jockey.trophies.join(", ")}</dd>
+                    </div>
+                  </dl>
+
+                  <div className={styles.cardActions}>
+                    <button
+                      type="button"
+                      className={styles.secondaryButton}
+                      onClick={() =>
+                        navigate(`/owner/jockey-market/${jockey.id}`, {
+                          state: { selectedHorseId },
+                        })
+                      }
+                    >
+                      View Profile
+                    </button>
+                    <button
+                      type="button"
+                      className={styles.primaryButton}
+                      onClick={() => openInvitation(jockey)}
+                      disabled={jockey.status === "UNAVAILABLE"}
+                    >
+                      Invite to Ride
+                    </button>
+                  </div>
+                </article>
                 ))}
               </div>
             )}
@@ -606,8 +682,7 @@ export default function JockeyMarket() {
               Previous
             </button>
             <span>
-              Page <strong>{currentPage}</strong> of{" "}
-              <strong>{totalPages}</strong>
+              Page <strong>{currentPage}</strong> of <strong>{totalPages}</strong>
             </span>
             <button
               type="button"
@@ -633,11 +708,7 @@ export default function JockeyMarket() {
                 <span>Confirm assignment request</span>
                 <h3 id="invitation-title">Invite to Ride</h3>
               </div>
-              <button
-                type="button"
-                onClick={closeInvitation}
-                disabled={sending}
-              >
+              <button type="button" onClick={closeInvitation} disabled={sending}>
                 x
               </button>
             </div>
@@ -650,7 +721,7 @@ export default function JockeyMarket() {
                 </div>
                 <div>
                   <dt>Race</dt>
-                  <dd>{selectedHorse.raceName || "Not available"}</dd>
+                  <dd>{selectedHorse.raceName}</dd>
                 </div>
                 <div>
                   <dt>Jockey</dt>
