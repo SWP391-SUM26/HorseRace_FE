@@ -1,8 +1,9 @@
-import { Link, Outlet, useLocation } from 'react-router-dom';
+import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { Search, Bell, User } from 'lucide-react';
 
 export default function SpectatorLayout() {
   const location = useLocation();
+  const navigate = useNavigate();
 
   const navLinks = [
     { name: 'Live Races', path: '/spectator/live-races' },
@@ -56,7 +57,13 @@ export default function SpectatorLayout() {
                 <Bell size={20} />
                 <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>
               </button>
-              <button className="text-slate-500 hover:text-slate-900 p-2 rounded-full hover:bg-slate-100 transition-colors">
+              <button
+                type="button"
+                onClick={() => navigate('/profile')}
+                className="text-slate-500 hover:text-slate-900 p-2 rounded-full hover:bg-slate-100 transition-colors"
+                title="View profile"
+                aria-label="View user profile"
+              >
                 <User size={20} />
               </button>
             </div>
