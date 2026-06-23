@@ -97,6 +97,7 @@ export default function App() {
             <Route path="/referee/dashboard" element={<RefereeDashboard />} />
             <Route path="/referee/registration" element={<RegistrationManagement />} />
             <Route path="/referee/inspection" element={<PreRaceInspection />} />
+            <Route path="/referee/pre-race-inspection" element={<PreRaceInspection />} />
             <Route path="/referee/live-monitor" element={<LiveMonitor />} />
             <Route path="/referee/notifications" element={<NotificationsCenter />} />
             <Route path="/referee/violations" element={<Violations />} />
