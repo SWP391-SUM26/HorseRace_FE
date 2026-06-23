@@ -71,6 +71,51 @@ function listFrom(data) {
   return data?.content ?? data?.items ?? [];
 }
 
+function normalizePage(data, params = {}) {
+  const items = listFrom(data);
+  const size = Number(data?.size ?? params.pageSize ?? 10);
+  const page = Number(data?.number ?? 0) + 1;
+  const totalItems = Number(data?.totalElements ?? items.length);
+  return {
+    items,
+    page,
+    pageSize: size,
+    totalItems,
+    totalPages: Number(data?.totalPages ?? Math.max(1, Math.ceil(totalItems / size))),
+  };
+}
+
+async function getRaceCatalog(params = {}) {
+  const data = unwrap(
+    await api.get(RACE_ENDPOINT, {
+      params: {
+        status: params.status || undefined,
+        page: 0,
+        size: params.size || 100,
+        sortBy: params.sortBy || "scheduledStartAt",
+        sortDir: params.sortDir || "desc",
+      },
+    }),
+  );
+  return listFrom(data);
+}
+
+async function enrichReportsWithRaces(reports) {
+  const raceIds = [...new Set(reports.map((report) => report.raceId).filter(Boolean))];
+  const races = await Promise.all(
+    raceIds.map((raceId) =>
+      api.get(`${RACE_ENDPOINT}/${raceId}`).then(unwrap),
+    ),
+  );
+  const raceById = new Map(races.map((race) => [race.raceId, race]));
+  return reports.map((report) => ({
+    ...report,
+    id: report.reportId,
+    status: report.reportStatus,
+    race: raceById.get(report.raceId) || null,
+  }));
+}
+
 function calculateAge(dateOfBirth) {
   if (!dateOfBirth) return null;
   const birthDate = new Date(dateOfBirth);
@@ -95,7 +140,7 @@ function mapInspectionEntry(entry, horse, medical, assignment) {
     id: entry.entryId,
     entryId: entry.entryId,
     entryCode: entry.entryCode,
-    gate: entry.laneNo ?? entry.entryNo ?? "—",
+    gate: entry.laneNo ?? entry.entryNo ?? "-",
     horseId: entry.horseId,
     horseName: entry.horseName || horse?.name || "Unknown horse",
     jockeyName: assignment?.jockeyName || "Not assigned",
