@@ -1,4 +1,4 @@
-import { Outlet, useNavigate, useOutletContext } from "react-router-dom";
+import { Outlet, useOutletContext } from "react-router-dom";
 import Sidebar from "../components/layout/Sidebar";
 import {
   BarChartIcon,
@@ -9,7 +9,7 @@ import {
   TrophyIcon,
   BellIcon,
 } from "../components/ui/Icons";
-import { getUserPermissions, logout } from "../services/auth";
+import { getUserPermissions } from "../services/auth";
 import styles from "./DashboardLayout.module.css";
 
 const roleNavItems = {
@@ -37,20 +37,11 @@ const roleNavItems = {
 };
 
 export default function DashboardLayout() {
-  const navigate = useNavigate();
   const { session } = useOutletContext();
   const permissions = session.permissions || getUserPermissions(session.user);
 
-  function handleLogout() {
-    logout();
-    navigate("/login", { replace: true });
-  }
-
-  const navItems = [
-    ...(roleNavItems[session.user.role] || [])
-      .filter((item) => !item.permission || permissions.includes(item.permission)),
-    { label: "Logout", icon: CheckSquareIcon, onClick: handleLogout, bottom: true },
-  ];
+  const navItems = (roleNavItems[session.user.role] || [])
+    .filter((item) => !item.permission || permissions.includes(item.permission));
 
   return (
     <div className={styles.dashboardShell}>
