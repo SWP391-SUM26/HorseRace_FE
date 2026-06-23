@@ -90,6 +90,7 @@ export async function updateMyProfile(profileData) {
     const response = await api.put("/api/v1/users/me", {
       fullName: profileData.fullName,
       phone: profileData.phone,
+
       avatarUrl: profileData.avatarUrl
     });
     const data = response.data?.data || response.data;
@@ -105,12 +106,10 @@ export async function updateMyProfile(profileData) {
 // Update profile of any user by ID (admin call)
 export async function updateUserProfile(id, profileData) {
   try {
-    // Assuming the backend has a PUT endpoint for admin to update user profiles
     const response = await api.put(`/api/v1/users/${id}`, {
       fullName: profileData.name,
-      email: profileData.email,
-      stable: profileData.stable,
-      phone: profileData.phone
+      phone: profileData.phone,
+      avatarUrl: profileData.avatarUrl
     });
     const data = response.data?.data || response.data;
     if (data) {
@@ -119,6 +118,17 @@ export async function updateUserProfile(id, profileData) {
   } catch (err) {
     console.error(`API updateUserProfile for ${id} failed:`, err.message);
     throw err;
+  }
+}
+
+// Get user permissions
+export async function getUserPermissions(id) {
+  try {
+    const response = await api.get(`/api/v1/users/${id}/permissions`);
+    return response.data?.data || response.data || [];
+  } catch (err) {
+    console.error(`API getUserPermissions for ${id} failed:`, err.message);
+    return [];
   }
 }
 
@@ -141,3 +151,12 @@ export async function uploadAvatar(file) {
   }
 }
 
+export async function deleteUser(id) {
+  try {
+    const response = await api.delete(`/api/v1/users/${id}`);
+    return response.data;
+  } catch (error) {
+    console.error('Error deleting user:', error);
+    throw error;
+  }
+}

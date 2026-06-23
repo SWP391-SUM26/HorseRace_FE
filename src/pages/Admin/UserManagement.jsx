@@ -8,7 +8,10 @@ import {
   updateMyProfile,
   updateUserProfile,
   uploadAvatar,
+  deleteUser,
+  getUserPermissions,
 } from "../../services/user";
+import { MoreVertical, Edit2, Trash2, Ban } from 'lucide-react';
 
 // Import newly extracted components
 import Badge from '../../components/ui/Badge';
@@ -49,6 +52,54 @@ const UserManagementView = () => {
     message: "",
     type: "success",
   });
+
+  const [actionMenuOpenId, setActionMenuOpenId] = useState(null);
+  const [deleteModalUser, setDeleteModalUser] = useState(null);
+  const [suspendModalUser, setSuspendModalUser] = useState(null);
+
+  useEffect(() => {
+    if (!actionMenuOpenId) return;
+    const closeMenu = (e) => {
+      if (!e.target.closest('[data-user-actions]')) {
+        setActionMenuOpenId(null);
+      }
+    };
+    document.addEventListener("click", closeMenu);
+    return () => document.removeEventListener("click", closeMenu);
+  }, [actionMenuOpenId]);
+
+  const handleDeleteUser = async () => {
+    if (!deleteModalUser) return;
+    try {
+      await deleteUser(deleteModalUser.id);
+      setUsers(users.filter(u => u.id !== deleteModalUser.id));
+      showToast("User has been deleted successfully", "success");
+      if (selectedUser?.id === deleteModalUser.id) {
+        setSelectedUser(null);
+      }
+    } catch (err) {
+      showToast("Failed to delete user", "error");
+    } finally {
+      setDeleteModalUser(null);
+    }
+  };
+
+  const handleSuspendUser = async () => {
+    if (!suspendModalUser) return;
+    try {
+      // Mocked suspend action
+      const updatedStatus = suspendModalUser.status === "ACTIVE" ? "SUSPENDED" : "ACTIVE";
+      setUsers(users.map(u => u.id === suspendModalUser.id ? { ...u, status: updatedStatus } : u));
+      if (selectedUser?.id === suspendModalUser.id) {
+        setSelectedUser({ ...selectedUser, status: updatedStatus });
+      }
+      showToast(`User has been ${updatedStatus === "SUSPENDED" ? "suspended" : "activated"}`, "success");
+    } catch (err) {
+      showToast("Failed to change user status", "error");
+    } finally {
+      setSuspendModalUser(null);
+    }
+  };
 
   const showToast = (message, type = "success") => {
     setToast({ show: true, message, type });
@@ -115,11 +166,15 @@ const UserManagementView = () => {
 
   const handleSelectUser = async (user) => {
     // Load fresh details from API
-    const freshUser = await getUserById(user.id);
+    const [freshUser, permissions] = await Promise.all([
+      getUserById(user.id),
+      getUserPermissions(user.id).catch(() => [])
+    ]);
     if (!freshUser) return;
 
     const processed = {
       ...freshUser,
+      permissions: permissions,
       roleIcon:
         freshUser.role === "Owner"
           ? OwnerIcon
@@ -236,6 +291,7 @@ const UserManagementView = () => {
     "SYSTEM ROLE",
     "CLEARANCE STATUS",
     "LAST AUTHENTICATION",
+    "ACTIONS"
   ];
 
   return (
@@ -369,6 +425,20 @@ const UserManagementView = () => {
                   {selectedUser.status}
                 </Badge>
               </div>
+              <div style={{ marginTop: '24px', textAlign: 'left', width: '100%' }}>
+                <h4 style={{ fontSize: '11px', fontWeight: 'bold', color: '#64748b', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>SYSTEM CLEARANCE / PERMISSIONS</h4>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                  {selectedUser.permissions?.length > 0 ? (
+                    selectedUser.permissions.map((perm, idx) => (
+                      <span key={idx} style={{ background: '#f1f5f9', color: '#334155', padding: '3px 8px', borderRadius: '4px', fontSize: '11px', fontWeight: '600' }}>
+                        {perm}
+                      </span>
+                    ))
+                  ) : (
+                    <span style={{ fontSize: '12px', color: '#94a3b8' }}>No specific permissions assigned</span>
+                  )}
+                </div>
+              </div>
             </div>
             <div className={styles.profileRightBox}>
               <form onSubmit={handleUpdateProfile}>
@@ -501,6 +571,53 @@ const UserManagementView = () => {
                 >
                   {u.lastAuth}
                 </td>
+                <td className={styles.td} style={{ width: '80px', textAlign: 'center' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }} data-user-actions>
+                    <button 
+                      onClick={(e) => { e.stopPropagation(); handleSelectUser(u); }}
+                      style={{ padding: '4px', color: '#64748b', cursor: 'pointer', background: 'transparent', border: 'none' }}
+                      title="Edit Identity"
+                    >
+                      <Edit2 size={16} />
+                    </button>
+                    <div style={{ position: 'relative' }}>
+                      <button 
+                        onClick={(e) => { 
+                          e.stopPropagation(); 
+                          setActionMenuOpenId(actionMenuOpenId === u.id ? null : u.id);
+                        }}
+                        style={{ padding: '4px', color: '#64748b', cursor: 'pointer', background: 'transparent', border: 'none' }}
+                        title="More Actions"
+                      >
+                        <MoreVertical size={16} />
+                      </button>
+                      {actionMenuOpenId === u.id && (
+                        <div style={{
+                          position: 'absolute', right: '0', top: '100%', zIndex: 50,
+                          background: 'white', border: '1px solid #e2e8f0', borderRadius: '6px',
+                          boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)', padding: '4px', minWidth: '150px'
+                        }}>
+                          <button
+                            onClick={(e) => { e.stopPropagation(); setActionMenuOpenId(null); setSuspendModalUser(u); }}
+                            style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', padding: '8px 12px', fontSize: '13px', textAlign: 'left', background: 'transparent', border: 'none', cursor: 'pointer', color: '#334155' }}
+                            onMouseOver={(e) => e.currentTarget.style.background = '#f1f5f9'}
+                            onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}
+                          >
+                            <Ban size={14} /> {u.status === "ACTIVE" ? "Suspend User" : "Activate User"}
+                          </button>
+                          <button
+                            onClick={(e) => { e.stopPropagation(); setActionMenuOpenId(null); setDeleteModalUser(u); }}
+                            style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', padding: '8px 12px', fontSize: '13px', textAlign: 'left', background: 'transparent', border: 'none', cursor: 'pointer', color: '#ef4444' }}
+                            onMouseOver={(e) => e.currentTarget.style.background = '#fef2f2'}
+                            onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}
+                          >
+                            <Trash2 size={14} /> Delete Record
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </td>
               </tr>
             );
           }}
@@ -527,6 +644,46 @@ const UserManagementView = () => {
               <Button onClick={() => setToast({ ...toast, show: false })}>
                 Đóng
               </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {deleteModalUser && (
+        <div className={styles.modalOverlay}>
+          <div className={styles.modalBox}>
+            <div className={styles.modalContent}>
+              <span className={styles.modalIcon} style={{ background: '#fee2e2', color: '#ef4444' }}>
+                <Trash2 size={24} />
+              </span>
+              <div className={styles.modalText}>
+                <h3 className={styles.modalTitle}>Delete User Record</h3>
+                <p className={styles.modalMessage}>Are you sure you want to permanently delete {deleteModalUser.name}? This action cannot be undone.</p>
+              </div>
+            </div>
+            <div className={styles.modalActions}>
+              <Button variant="ghost" onClick={() => setDeleteModalUser(null)}>Cancel</Button>
+              <Button style={{ background: '#ef4444', color: 'white', borderColor: '#ef4444' }} onClick={handleDeleteUser}>Delete User</Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {suspendModalUser && (
+        <div className={styles.modalOverlay}>
+          <div className={styles.modalBox}>
+            <div className={styles.modalContent}>
+              <span className={styles.modalIcon} style={{ background: '#fef3c7', color: '#d97706' }}>
+                <Ban size={24} />
+              </span>
+              <div className={styles.modalText}>
+                <h3 className={styles.modalTitle}>{suspendModalUser.status === "ACTIVE" ? "Suspend" : "Activate"} User</h3>
+                <p className={styles.modalMessage}>Are you sure you want to {suspendModalUser.status === "ACTIVE" ? "suspend" : "activate"} access for {suspendModalUser.name}?</p>
+              </div>
+            </div>
+            <div className={styles.modalActions}>
+              <Button variant="ghost" onClick={() => setSuspendModalUser(null)}>Cancel</Button>
+              <Button style={{ background: '#d97706', color: 'white', borderColor: '#d97706' }} onClick={handleSuspendUser}>Confirm</Button>
             </div>
           </div>
         </div>

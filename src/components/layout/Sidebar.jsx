@@ -18,7 +18,7 @@ import {
 
 const defaultMenuItems = [
   { path: '/admin/users', icon: UsersIcon, label: 'User Management' },
-  { path: '/admin/approvals', icon: ClipboardIcon, label: 'Registration Approval' },
+  { path: '/admin/approvals', icon: ClipboardIcon, label: 'Tournament Approval' },
   { path: '/admin/tournaments', icon: TrophyIcon, label: 'Tournaments' },
   { path: '/admin/races', icon: CheckSquareIcon, label: 'Race Management' },
   { path: '/admin/race-approval', icon: FileTextIcon, label: 'Race Approval' },

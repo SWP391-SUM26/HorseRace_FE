@@ -104,25 +104,60 @@ function mapInspectionEntry(entry, horse, medical, assignment) {
   };
 }
 
-export async function getInspectionRoster(params = {}) {
-  const raceData = unwrap(
+// Helpers for Race & Reports
+export async function getRaceCatalog(params = {}) {
+  const data = unwrap(
     await api.get(RACE_ENDPOINT, {
       params: {
         page: 0,
         size: 100,
-        sortBy: "scheduledStartAt",
-        sortDir: "asc",
+        ...params,
       },
     }),
   );
-  const races = listFrom(raceData).filter((race) =>
+  return listFrom(data);
+}
+
+export async function enrichReportsWithRaces(reports) {
+  const raceIds = [...new Set(reports.map((r) => r.raceId).filter(Boolean))];
+  const raceMap = new Map();
+  await Promise.all(
+    raceIds.map(async (id) => {
+      try {
+        const race = unwrap(await api.get(`${RACE_ENDPOINT}/${id}`));
+        raceMap.set(id, race);
+      } catch (err) {
+        console.warn(`Could not fetch race ${id}`);
+      }
+    }),
+  );
+  return reports.map((report) => ({
+    ...report,
+    race: raceMap.get(report.raceId) || null,
+  }));
+}
+
+function normalizePage(data, params) {
+  const items = listFrom(data);
+  const totalItems = data?.totalElements ?? items.length;
+  const pageSize = Number(params.pageSize) || 10;
+  const totalPages = Math.max(Math.ceil(totalItems / pageSize), 1);
+  return { items, totalPages };
+}
+
+export async function getInspectionRoster(params = {}) {
+  const races = await getRaceCatalog({
+    sortBy: "scheduledStartAt",
+    sortDir: "asc",
+  });
+  const filteredRaces = races.filter((race) =>
     ["SCHEDULED", "OPEN"].includes(race.status),
   );
   const selectedRace =
-    races.find((race) => race.raceId === params.raceId) || races[0] || null;
+    filteredRaces.find((race) => race.raceId === params.raceId) || filteredRaces[0] || null;
 
   if (!selectedRace) {
-    return { races, race: null, items: [] };
+    return { races: filteredRaces, race: null, items: [] };
   }
 
   const [entryResponse, invitationResponse] = await Promise.all([
@@ -159,7 +194,7 @@ export async function getInspectionRoster(params = {}) {
     }),
   );
 
-  return { races, race: selectedRace, items };
+  return { races: filteredRaces, race: selectedRace, items };
 }
 
 export async function getInspectionDetail(horseId) {
@@ -196,6 +231,69 @@ export async function submitHorseHealthCheck(payload) {
   );
   return unwrap(response);
 }
+
+
+// ==========================================
+// Added from HEAD for Reports (Our Changes)
+// ==========================================
+export const recordHealthCheck = async (horseId, data) => {
+  try {
+    const response = await api.post(`/api/v1/referee/horses/${horseId}/health-check`, data);
+    return response.data?.data || response.data;
+  } catch (error) {
+    console.error('API recordHealthCheck failed:', error.message);
+    throw error;
+  }
+};
+
+export const getReports = async (filter = {}) => {
+  try {
+    const params = new URLSearchParams();
+    if (filter.raceId) params.append('raceId', filter.raceId);
+    if (filter.reportType) params.append('reportType', filter.reportType);
+    if (filter.status) params.append('status', filter.status);
+
+    const response = await api.get(`/api/v1/referee/reports`, { params });
+    return response.data?.data || response.data;
+  } catch (error) {
+    console.error('API getReports failed:', error.message);
+    throw error;
+  }
+};
+
+export const getReportById = async (id) => {
+  try {
+    const response = await api.get(`/api/v1/referee/reports/${id}`);
+    return response.data?.data || response.data;
+  } catch (error) {
+    console.error(`API getReportById (${id}) failed:`, error.message);
+    throw error;
+  }
+};
+
+export const createReport = async (data) => {
+  try {
+    const response = await api.post(`/api/v1/referee/reports`, data);
+    return response.data?.data || response.data;
+  } catch (error) {
+    console.error('API createReport failed:', error.message);
+    throw error;
+  }
+};
+
+export const submitReport = async (id) => {
+  try {
+    const response = await api.put(`/api/v1/referee/reports/${id}/submit`);
+    return response.data?.data || response.data;
+  } catch (error) {
+    console.error(`API submitReport (${id}) failed:`, error.message);
+    throw error;
+  }
+};
+
+// ==========================================
+// Appended from develop (Missing functions)
+// ==========================================
 
 export async function getLiveRaceMonitor(params = {}) {
   const races = await getRaceCatalog({

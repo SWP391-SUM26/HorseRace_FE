@@ -13,8 +13,8 @@ export default function LiveRaces() {
     const fetchDashboardData = async () => {
       try {
         const [racesRes, tournamentsRes] = await Promise.all([
-          getRaceList({ status: 'LIVE', size: 2 }),
-          getTournaments({ status: 'UPCOMING', size: 4 })
+          getRaceList({ status: 'RUNNING', size: 2 }),
+          getTournaments({ status: 'PUBLISHED', size: 4 })
         ]);
         
         setLiveRaces(racesRes?.items || []);
