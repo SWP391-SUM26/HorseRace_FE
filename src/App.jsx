@@ -27,11 +27,13 @@ import RefereeLayout from './layouts/RefereeLayout';
 import RegistrationManagement from './pages/Referee/RegistrationManagement';
 import PreRaceInspection from './pages/Referee/PreRaceInspection';
 import RefereeDashboard from './pages/Referee/RefereeDashboard';
-import LiveMonitor from './pages/Referee/LiveMonitor';
+import LiveRaceMonitor from './pages/Referee/LiveRaceMonitor';
 import NotificationsCenter from './pages/shared/NotificationsCenter';
 import UserProfile from './pages/shared/UserProfile';
-import Violations from './pages/Referee/Violations';
-import Reports from './pages/Referee/Reports';
+import ViolationManagement from './pages/Referee/ViolationManagement';
+import RaceResultRecording from './pages/Referee/RaceResultRecording';
+import OfficialReports from './pages/Referee/OfficialReports';
+import Settings from './pages/Admin/Settings';
 import SpectatorLayout from './layouts/SpectatorLayout';
 import LiveRaces from './pages/Spectator/LiveRaces';
 import Schedule from './pages/Spectator/Schedule';
@@ -102,10 +104,12 @@ export default function App() {
             <Route path="/referee/registration" element={<RegistrationManagement />} />
             <Route path="/referee/inspection" element={<PreRaceInspection />} />
             <Route path="/referee/pre-race-inspection" element={<PreRaceInspection />} />
-            <Route path="/referee/live-monitor" element={<LiveMonitor />} />
+            <Route path="/referee/live-monitor" element={<LiveRaceMonitor />} />
             <Route path="/referee/notifications" element={<NotificationsCenter />} />
-            <Route path="/referee/violations" element={<Violations />} />
-            <Route path="/referee/reports" element={<Reports />} />
+            <Route path="/referee/violations" element={<ViolationManagement />} />
+            <Route path="/referee/race-result-recording" element={<RaceResultRecording />} />
+            <Route path="/referee/reports" element={<OfficialReports />} />
+            <Route path="/referee/settings" element={<Settings />} />
           </Route>
         </Route>
 
