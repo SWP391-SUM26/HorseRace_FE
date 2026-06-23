@@ -130,19 +130,19 @@ export default function Sidebar({
         ) : footerAction}
         <button
           type="button"
+          className={styles.logoutButton}
+          onClick={handleLogout}
+        >
+          <span className={styles.itemLabel}>Log out</span>
+        </button>
+        <button
+          type="button"
           className={styles.toggleButton}
           onClick={toggleSidebar}
           aria-label={collapsed ? 'Open sidebar' : 'Collapse sidebar'}
           title={collapsed ? 'Open sidebar' : 'Collapse sidebar'}
         >
           {collapsed ? <ChevronRightIcon /> : <ChevronLeftIcon />}
-        </button>
-        <button
-          type="button"
-          className={styles.logoutButton}
-          onClick={handleLogout}
-        >
-          <span className={styles.itemLabel}>Log out</span>
         </button>
       </div>
     </aside>
