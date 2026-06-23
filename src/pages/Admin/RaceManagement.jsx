@@ -41,8 +41,8 @@ function getErrorMessage(error, fallback) {
 }
 
 function formatDateTime(race) {
-  if (!race.date) return "Not scheduled";
-  const date = new Date(`${race.date}T${race.time || "00:00"}`);
+  if (!race.scheduledStartAt) return "Not scheduled";
+  const date = new Date(race.scheduledStartAt);
   return new Intl.DateTimeFormat("en-GB", {
     day: "2-digit",
     month: "short",
@@ -268,13 +268,20 @@ export default function RaceManagement() {
 
   function openEdit(race) {
     setSelectedRace(race);
+    let dateStr = "";
+    let timeStr = "";
+    if (race.scheduledStartAt) {
+      const dt = new Date(race.scheduledStartAt);
+      dateStr = dt.toISOString().split("T")[0];
+      timeStr = dt.toTimeString().slice(0, 5);
+    }
     setForm({
       tournamentId: race.tournamentId || "",
       name: race.name || "",
       raceType: race.raceType || "",
       distanceMeter: race.distanceMeter || "",
-      date: race.date || "",
-      time: race.time || "",
+      date: dateStr,
+      time: timeStr,
       predictionCutoffAt: race.predictionCutoffAt ? race.predictionCutoffAt.slice(0, 16) : "",
       trackCondition: race.trackCondition || "",
       weatherCondition: race.weatherCondition || "",
@@ -297,10 +304,17 @@ export default function RaceManagement() {
 
   function openSchedule(race = null) {
     setSelectedRace(race);
+    let dateStr = "";
+    let timeStr = "";
+    if (race?.scheduledStartAt) {
+      const dt = new Date(race.scheduledStartAt);
+      dateStr = dt.toISOString().split("T")[0];
+      timeStr = dt.toTimeString().slice(0, 5);
+    }
     setScheduleForm({
       raceId: race?.id || "",
-      date: race?.date || "",
-      time: race?.time || "",
+      date: dateStr,
+      time: timeStr,
       predictionCutoffAt: race?.predictionCutoffAt ? race.predictionCutoffAt.slice(0, 16) : "",
     });
     setModal("schedule");
@@ -333,7 +347,17 @@ export default function RaceManagement() {
     event.preventDefault();
     setSubmitting(true);
     try {
-      const payload = { ...form, maxParticipants: Number(form.maxParticipants) };
+      const scheduledStartAt = form.date && form.time ? new Date(`${form.date}T${form.time}`).toISOString() : null;
+      const predictionCutoffAt = form.predictionCutoffAt ? new Date(form.predictionCutoffAt).toISOString() : null;
+      const payload = { 
+        ...form, 
+        scheduledStartAt,
+        predictionCutoffAt,
+        maxParticipants: Number(form.maxParticipants) 
+      };
+      delete payload.date;
+      delete payload.time;
+
       if (selectedRace) {
         await updateRace(selectedRace.id, payload);
         await refreshAfter("Race updated successfully.");
@@ -357,10 +381,16 @@ export default function RaceManagement() {
     }
     setSubmitting(true);
     try {
+      const scheduledStartAt = scheduleForm.date && scheduleForm.time 
+        ? new Date(`${scheduleForm.date}T${scheduleForm.time}`).toISOString() 
+        : null;
+      const predictionCutoffAt = scheduleForm.predictionCutoffAt 
+        ? new Date(scheduleForm.predictionCutoffAt).toISOString() 
+        : null;
+
       await scheduleRace(raceId, {
-        date: scheduleForm.date,
-        time: scheduleForm.time,
-        predictionCutoffAt: scheduleForm.predictionCutoffAt,
+        scheduledStartAt,
+        predictionCutoffAt,
       });
       await refreshAfter("Race scheduled successfully.");
     } catch (requestError) {

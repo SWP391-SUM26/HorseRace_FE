@@ -16,7 +16,7 @@ export default function Schedule() {
       try {
         if (activeTab === 'tournaments') {
           // Fetch tournaments
-          const data = await getTournaments({ status: 'UPCOMING' }); // Assuming there's a way to filter, or just get all
+          const data = await getTournaments({ status: 'PUBLISHED' }); // Assuming there's a way to filter, or just get all
           // Fallback if the API structure is different: data.items or data
           setTournaments(data?.items || data || []);
         } else {
@@ -95,28 +95,38 @@ export default function Schedule() {
               <thead className="text-xs text-slate-500 uppercase bg-slate-50 border-b border-slate-200">
                 <tr>
                   <th className="px-6 py-4 font-bold tracking-wider">Date & Time</th>
-                  <th className="px-6 py-4 font-bold tracking-wider">Race Name</th>
+                  <th className="px-6 py-4 font-bold tracking-wider">Race Info</th>
                   <th className="px-6 py-4 font-bold tracking-wider">Tournament</th>
+                  <th className="px-6 py-4 font-bold tracking-wider">Participants</th>
                   <th className="px-6 py-4 font-bold tracking-wider">Status</th>
                   <th className="px-6 py-4 font-bold tracking-wider text-right">Action</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {races.length > 0 ? races.map((race, idx) => (
-                  <tr key={race.id || idx} className="hover:bg-slate-50 transition-colors">
+                {races.length > 0 ? races.map((race, idx) => {
+                  const startDate = race.scheduledStartAt ? new Date(race.scheduledStartAt) : null;
+                  return (
+                  <tr key={race.raceId || idx} className="hover:bg-slate-50 transition-colors">
                     <td className="px-6 py-4">
-                      <div className="font-bold text-slate-900">{race.date || 'TBA'}</div>
-                      <div className="text-slate-500 text-xs">{race.time || 'TBA'}</div>
+                      <div className="font-bold text-slate-900">{startDate ? startDate.toLocaleDateString() : 'TBA'}</div>
+                      <div className="text-slate-500 text-xs">{startDate ? startDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'TBA'}</div>
                     </td>
                     <td className="px-6 py-4">
                       <div className="font-bold text-slate-900">{race.name || `Race ${race.raceCode}`}</div>
-                      <div className="text-slate-500 text-xs">{race.trackCondition || 'Unknown Track'} • {race.distanceMeter ? `${race.distanceMeter}m` : 'Unknown dist'}</div>
+                      <div className="text-slate-500 text-xs mt-1">
+                        <span className="font-medium text-slate-700">{race.raceType || 'FLAT'}</span> • {race.distanceMeter ? `${race.distanceMeter}m` : 'Unknown dist'} 
+                        <br/>
+                        Track: {race.trackCondition || 'TBA'} • Weather: {race.weatherCondition || 'TBA'}
+                      </div>
                     </td>
                     <td className="px-6 py-4 text-slate-700">
                       {race.tournamentName || 'N/A'}
                     </td>
+                    <td className="px-6 py-4 text-slate-700 font-medium">
+                      {race.maxParticipants || 'Unlimited'}
+                    </td>
                     <td className="px-6 py-4">
-                      <span className={`text-[10px] font-bold px-2 py-1 rounded uppercase ${race.status === 'LIVE' ? 'bg-red-100 text-red-800' : 'bg-blue-100 text-blue-800'}`}>
+                      <span className={`text-[10px] font-bold px-2 py-1 rounded uppercase ${race.status === 'LIVE' ? 'bg-red-100 text-red-800' : 'bg-emerald-100 text-emerald-800'}`}>
                         {race.status || 'SCHEDULED'}
                       </span>
                     </td>
@@ -126,9 +136,9 @@ export default function Schedule() {
                       </Link>
                     </td>
                   </tr>
-                )) : (
+                )}) : (
                   <tr>
-                    <td colSpan="5" className="px-6 py-12 text-center text-slate-500">
+                    <td colSpan="6" className="px-6 py-12 text-center text-slate-500">
                       No scheduled races found.
                     </td>
                   </tr>

@@ -180,7 +180,9 @@ export default function RegistrationManagement() {
   const filterOptions = useMemo(() => {
     const tournamentMap = new Map();
     allRegistrations.forEach((item) => {
-      tournamentMap.set(item.tournament.id, item.tournament.name);
+      if (item?.tournament?.id) {
+        tournamentMap.set(item.tournament.id, item.tournament.name);
+      }
     });
     return {
       tournaments: [...tournamentMap.entries()],
@@ -255,12 +257,12 @@ export default function RegistrationManagement() {
         "Submitted Date",
       ],
       ...registrations.map((item) => [
-        item.code,
-        item.horse.name,
-        item.owner.name,
-        item.tournament.name,
-        item.status,
-        formatDate(item.submittedAt),
+        item?.code || '',
+        item?.horse?.name || 'Unknown',
+        item?.owner?.name || 'Unknown',
+        item?.tournament?.name || 'Unknown',
+        item?.status || '',
+        formatDate(item?.submittedAt),
       ]),
     ];
     const csv = rows
@@ -405,13 +407,13 @@ export default function RegistrationManagement() {
                   selectedRegistration?.id === item.id ? styles.selectedRow : ""
                 }`}
               >
-                <td>{item.code}</td>
+                <td>{item?.code}</td>
                 <td>
-                  <strong>{item.horse.name}</strong>
-                  <span>{item.horse.code}</span>
+                  <strong>{item?.horse?.name || 'Unknown Horse'}</strong>
+                  <span>{item?.horse?.code}</span>
                 </td>
-                <td>{item.owner.name}</td>
-                <td>{item.tournament.name}</td>
+                <td>{item?.owner?.name || 'Unknown Owner'}</td>
+                <td>{item?.tournament?.name || 'Unknown Tournament'}</td>
                 <td>
                   <Badge variant={statusVariant(item.status)}>
                     {item.status}

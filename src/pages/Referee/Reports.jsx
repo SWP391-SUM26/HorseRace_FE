@@ -1,11 +1,53 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import styles from './Reports.module.css';
 import placeholderImg from '../../assets/photofinish.png';
+import { getReports, createReport, submitReport } from '../../services/referee';
+import Button from '../../components/ui/Button';
+import Badge from '../../components/ui/Badge';
 
 export default function Reports() {
   const [agreed, setAgreed] = useState(false);
   const [certified, setCertified] = useState(false);
-  
+  const [reports, setReports] = useState([]);
+  const [newReport, setNewReport] = useState({ reportType: 'GENERAL', summary: '', severityLevel: 'LOW', decision: '' });
+  const [raceId, setRaceId] = useState('00000000-0000-0000-0000-000000000000'); // We need a valid raceId in reality
+
+  useEffect(() => {
+    fetchReports();
+  }, [raceId]);
+
+  const fetchReports = async () => {
+    try {
+      const data = await getReports({ raceId });
+      // Filter out violations since they belong to another page
+      const filtered = (data?.content || data || []).filter(r => r.reportType !== 'VIOLATION');
+      setReports(filtered);
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const handleCreateReport = async () => {
+    try {
+      await createReport({ ...newReport, raceId });
+      alert('Report saved!');
+      setNewReport({ reportType: 'GENERAL', summary: '', severityLevel: 'LOW', decision: '' });
+      fetchReports();
+    } catch (e) {
+      alert('Failed to save report: ' + e.message);
+    }
+  };
+
+  const handleSubmitReport = async (id) => {
+    try {
+      await submitReport(id);
+      alert('Report submitted officially!');
+      fetchReports();
+    } catch (e) {
+      alert('Failed to submit report');
+    }
+  };
+
   const finishOrder = [
     { rank: 1, pgm: 7, name: 'Midnight Strike', jockey: 'J. Rosario', weight: 126, margin: '-', odds: '3.50' },
     { rank: 2, pgm: 3, name: 'Golden Emblem', jockey: 'I. Ortiz Jr.', weight: 126, margin: 'Nose', odds: '1.20*' },
@@ -162,17 +204,49 @@ export default function Reports() {
         {/* Official Stewards Report */}
         <div className={styles.card}>
           <div className={styles.cardHeader}>
-            <h2 className={styles.cardTitle}>Official Stewards Report</h2>
+            <h2 className={styles.cardTitle}>Official Stewards Reports</h2>
           </div>
           <div className={styles.reportArea}>
-            <p className={styles.reportDesc}>This document will be appended to the permanent race record.</p>
-            <textarea 
-              className={styles.textarea}
-              defaultValue="Following the start of Race 8, an inquiry was posted to review the break involving #4 and #5. After reviewing multiple camera angles and speaking with the riders involved, the Stewards determined that #4 broke outward, initiating contact with #5, but the incident did not cost #5 an opportunity for a better placing. The result stands as completely official.&#10;&#10;Clear running thereafter. Photofinish reviewed for Win. #7 Midnight Strike over #3 Golden Emblem by a nose."
-            />
+            <p className={styles.reportDesc}>These documents will be appended to the permanent race record.</p>
+            
+            {/* List existing reports */}
+            {reports.length > 0 ? (
+              reports.map(r => (
+                <div key={r.id || r.reportId} style={{border: '1px solid #e2e8f0', borderRadius: '4px', padding: '12px', marginBottom: '12px'}}>
+                  <div style={{fontWeight: 'bold'}}>{r.reportType} - {r.severityLevel}</div>
+                  <div style={{margin: '8px 0'}}>{r.summary}</div>
+                  {r.status !== 'SUBMITTED' && (
+                    <Button onClick={() => handleSubmitReport(r.id || r.reportId)} variant="primary" style={{marginTop: '8px'}}>Submit Final</Button>
+                  )}
+                  {r.status === 'SUBMITTED' && <Badge variant="ghost" style={{background: '#dcfce3', color: '#16a34a'}}>Submitted ✓</Badge>}
+                </div>
+              ))
+            ) : (
+              <p>No reports found for this race.</p>
+            )}
+
+            {/* Create new report form */}
+            <div style={{marginTop: '24px', borderTop: '1px dashed #cbd5e1', paddingTop: '16px'}}>
+              <h3 style={{fontSize: '14px', marginBottom: '12px'}}>Create New Report</h3>
+              <select 
+                value={newReport.reportType} 
+                onChange={e => setNewReport({...newReport, reportType: e.target.value})}
+                style={{padding: '8px', marginBottom: '12px', width: '100%', borderRadius: '4px', border: '1px solid #cbd5e1'}}
+              >
+                <option value="GENERAL">General</option>
+                <option value="INCIDENT">Incident</option>
+                <option value="OBJECTION">Objection</option>
+              </select>
+              <textarea 
+                className={styles.textarea}
+                placeholder="Write report summary..."
+                value={newReport.summary}
+                onChange={e => setNewReport({...newReport, summary: e.target.value})}
+              />
+            </div>
           </div>
           <div className={styles.reportFooter}>
-            <button className={styles.btnDraft}>Save Draft</button>
+            <button className={styles.btnDraft} onClick={handleCreateReport}>Save Report</button>
           </div>
         </div>
 

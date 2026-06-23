@@ -8,6 +8,10 @@ import {
   deleteHorse,
   assignHorseToRace,
   toggleMedicalStatus,
+  getHorseStats,
+  getHorseRaceHistory,
+  getHorseMedicalStatus,
+  getHorsePedigree
 } from "../../services/horse";
 import { getTournaments } from "../../services/tournament";
 import { submitRegistration } from "../../services/registration";
@@ -36,6 +40,13 @@ export default function StableManagement() {
 
   // Selected horse state for detail/edit
   const [selectedHorse, setSelectedHorse] = useState(null);
+  const [horseDetails, setHorseDetails] = useState({
+    stats: null,
+    history: [],
+    medical: null,
+    pedigree: null,
+    loading: false
+  });
 
   // Form states
   const [formName, setFormName] = useState("");
@@ -194,9 +205,28 @@ export default function StableManagement() {
   };
 
   // VIEW HORSE DETAILS
-  const handleOpenDetail = (horse) => {
+  const handleOpenDetail = async (horse) => {
     setSelectedHorse(horse);
     setIsDetailOpen(true);
+    setHorseDetails(prev => ({ ...prev, loading: true }));
+    try {
+      const [stats, history, medical, pedigree] = await Promise.all([
+        getHorseStats(horse.id).catch(() => null),
+        getHorseRaceHistory(horse.id).catch(() => []),
+        getHorseMedicalStatus(horse.id).catch(() => null),
+        getHorsePedigree(horse.id).catch(() => null),
+      ]);
+      setHorseDetails({
+        stats,
+        history,
+        medical,
+        pedigree,
+        loading: false
+      });
+    } catch (error) {
+      console.error("Failed to fetch advanced horse data", error);
+      setHorseDetails(prev => ({ ...prev, loading: false }));
+    }
   };
 
   // Filter, search, and sort roster
@@ -906,7 +936,7 @@ export default function StableManagement() {
                 </button>
               </div>
 
-              {/* Medical Section (Get Medical Status & Update Medical Status) */}
+              {/* Medical Section */}
               <div className={styles.detailSection}>
                 <div className={styles.sectionHeader}>
                   <span className={styles.sectionTitleIcon}>🏥</span>
@@ -914,43 +944,90 @@ export default function StableManagement() {
                     Medical Records & Status
                   </h4>
                 </div>
-                <div className={styles.medicalBox}>
-                  <div className={styles.medicalField}>
-                    <span>READINESS:</span>
-                    <strong>{selectedHorse.medicalStatus}</strong>
-                  </div>
-                  <div className={styles.medicalField}>
-                    <span>COGGINS TEST:</span>
-                    <strong
-                      style={{
-                        color:
-                          selectedHorse.cogginsTest === "Up to date"
-                            ? "#16a34a"
-                            : "#ef4444",
-                      }}
-                    >
-                      {selectedHorse.cogginsTest}
-                    </strong>
-                  </div>
-                  <div className={styles.medicalField}>
-                    <span>VACCINATIONS:</span>
-                    <strong style={{ color: "#16a34a" }}>
-                      {selectedHorse.vaccines}
-                    </strong>
-                  </div>
+                {horseDetails.loading ? (
+                  <p style={{color: '#64748b', fontSize: '14px', fontStyle: 'italic'}}>Loading medical data...</p>
+                ) : (
+                  <div className={styles.medicalBox}>
+                    <div className={styles.medicalField}>
+                      <span>READINESS:</span>
+                      <strong>{horseDetails.medical?.healthStatus || selectedHorse.status}</strong>
+                    </div>
+                    <div className={styles.medicalField}>
+                      <span>LAST CHECKUP:</span>
+                      <strong>{horseDetails.medical?.lastCheckupDate ? new Date(horseDetails.medical.lastCheckupDate).toLocaleDateString() : 'N/A'}</strong>
+                    </div>
+                    <div className={styles.medicalField}>
+                      <span>WEIGHT:</span>
+                      <strong style={{ color: "#16a34a" }}>
+                        {horseDetails.medical?.weight || 'N/A'} lbs
+                      </strong>
+                    </div>
 
-                  <button
-                    type="button"
-                    className={styles.medicalToggleBtn}
-                    onClick={() => handleToggleMedical(selectedHorse)}
-                  >
-                    Toggle Fitness Status (Mark as{" "}
-                    {selectedHorse.status === "FIT TO RACE"
-                      ? "RESTING"
-                      : "FIT FOR RACING"}
-                    )
-                  </button>
+                    <button
+                      type="button"
+                      className={styles.medicalToggleBtn}
+                      onClick={() => handleToggleMedical(selectedHorse)}
+                    >
+                      Toggle Fitness Status (Mark as{" "}
+                      {selectedHorse.status === "FIT TO RACE"
+                        ? "RESTING"
+                        : "FIT FOR RACING"}
+                      )
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {/* Pedigree Section */}
+              <div className={styles.detailSection}>
+                <div className={styles.sectionHeader}>
+                  <span className={styles.sectionTitleIcon}>🧬</span>
+                  <h4 className={styles.sectionTitle}>Pedigree (Lineage)</h4>
                 </div>
+                {horseDetails.loading ? (
+                  <p style={{color: '#64748b', fontSize: '14px', fontStyle: 'italic'}}>Loading pedigree data...</p>
+                ) : horseDetails.pedigree ? (
+                  <div className={styles.medicalBox}>
+                    <div className={styles.medicalField}>
+                      <span>SIRE (FATHER):</span>
+                      <strong>{horseDetails.pedigree.sireName || 'Unknown'}</strong>
+                    </div>
+                    <div className={styles.medicalField}>
+                      <span>DAM (MOTHER):</span>
+                      <strong>{horseDetails.pedigree.damName || 'Unknown'}</strong>
+                    </div>
+                  </div>
+                ) : (
+                  <p className={styles.emptyHistory}>No pedigree information available.</p>
+                )}
+              </div>
+
+              {/* Stats Section */}
+              <div className={styles.detailSection}>
+                <div className={styles.sectionHeader}>
+                  <span className={styles.sectionTitleIcon}>📊</span>
+                  <h4 className={styles.sectionTitle}>Performance Stats</h4>
+                </div>
+                {horseDetails.loading ? (
+                  <p style={{color: '#64748b', fontSize: '14px', fontStyle: 'italic'}}>Loading stats...</p>
+                ) : horseDetails.stats ? (
+                  <div className={styles.medicalBox} style={{display: 'flex', gap: '16px'}}>
+                    <div style={{flex: 1, textAlign: 'center'}}>
+                      <div style={{fontSize: '24px', fontWeight: 'bold', color: '#0b3b24'}}>{horseDetails.stats.totalRaces || 0}</div>
+                      <div style={{fontSize: '12px', color: '#64748b'}}>TOTAL RACES</div>
+                    </div>
+                    <div style={{flex: 1, textAlign: 'center', borderLeft: '1px solid #e2e8f0', borderRight: '1px solid #e2e8f0'}}>
+                      <div style={{fontSize: '24px', fontWeight: 'bold', color: '#16a34a'}}>{horseDetails.stats.winRate || '0%'}</div>
+                      <div style={{fontSize: '12px', color: '#64748b'}}>WIN RATE</div>
+                    </div>
+                    <div style={{flex: 1, textAlign: 'center'}}>
+                      <div style={{fontSize: '24px', fontWeight: 'bold', color: '#d97706'}}>${horseDetails.stats.totalEarnings?.toLocaleString() || 0}</div>
+                      <div style={{fontSize: '12px', color: '#64748b'}}>EARNINGS</div>
+                    </div>
+                  </div>
+                ) : (
+                  <p className={styles.emptyHistory}>No performance stats available.</p>
+                )}
               </div>
 
               {/* Registration Section */}
@@ -985,39 +1062,42 @@ export default function StableManagement() {
                 </form>
               </div>
 
-              {/* Race History Section (Get Horse Race History) */}
+              {/* Race History Section */}
               <div className={styles.detailSection}>
                 <div className={styles.sectionHeader}>
                   <span className={styles.sectionTitleIcon}>🏆</span>
                   <h4 className={styles.sectionTitle}>Race History Log</h4>
                 </div>
-                <div className={styles.historyList}>
-                  {selectedHorse.raceHistory &&
-                  selectedHorse.raceHistory.length > 0 ? (
-                    selectedHorse.raceHistory.map((hist, idx) => (
-                      <div key={idx} className={styles.historyRow}>
-                        <div className={styles.historyMeta}>
-                          <strong>{hist.race}</strong>
-                          <span>
-                            {hist.date} • Jockey: {hist.jockey}
-                          </span>
+                {horseDetails.loading ? (
+                  <p style={{color: '#64748b', fontSize: '14px', fontStyle: 'italic'}}>Loading history...</p>
+                ) : (
+                  <div className={styles.historyList}>
+                    {horseDetails.history && horseDetails.history.length > 0 ? (
+                      horseDetails.history.map((hist, idx) => (
+                        <div key={idx} className={styles.historyRow}>
+                          <div className={styles.historyMeta}>
+                            <strong>{hist.raceName || `Race #${hist.raceId}`}</strong>
+                            <span>
+                              {hist.raceDate ? new Date(hist.raceDate).toLocaleDateString() : 'Unknown Date'}
+                            </span>
+                          </div>
+                          <div className={styles.historyStats}>
+                            <span className={styles.historyPlace}>
+                              {hist.position ? `${hist.position}${hist.position===1?'st':hist.position===2?'nd':hist.position===3?'rd':'th'}` : 'Unplaced'}
+                            </span>
+                            <span className={styles.historyPrize}>
+                              ${hist.prizeEarned?.toLocaleString() || 0}
+                            </span>
+                          </div>
                         </div>
-                        <div className={styles.historyStats}>
-                          <span className={styles.historyPlace}>
-                            {hist.place}
-                          </span>
-                          <span className={styles.historyPrize}>
-                            {hist.prize}
-                          </span>
-                        </div>
-                      </div>
-                    ))
-                  ) : (
-                    <p className={styles.emptyHistory}>
-                      This horse has no recorded past race entries.
-                    </p>
-                  )}
-                </div>
+                      ))
+                    ) : (
+                      <p className={styles.emptyHistory}>
+                        This horse has no recorded past race entries.
+                      </p>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
           </div>
