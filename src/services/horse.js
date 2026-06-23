@@ -91,3 +91,33 @@ export async function assignHorseToRace(id, race) {
 export async function toggleMedicalStatus(id) {
   throw new Error("Medical status toggle via this API is not supported yet");
 }
+
+export async function getHorseMedicalStatus(id) {
+  try {
+    const response = await api.get(`/api/v1/horses/${id}/medical-status`);
+    return response.data?.data || response.data;
+  } catch (err) {
+    console.error('API getHorseMedicalStatus for ' + id + ' failed:', err.message);
+    throw err;
+  }
+}
+
+export async function getHorseStats(id) {
+  const response = await api.get(`/api/v1/horses/${id}/stats`);
+  return response.data?.data || response.data;
+}
+
+export async function getHorseRaceHistory(id) {
+  const response = await api.get(`/api/v1/horses/${id}/race-history`);
+  return response.data?.data || response.data;
+}
+
+export async function getHorsePedigree(id) {
+  const response = await api.get(`/api/v1/horses/${id}/pedigree`);
+  return response.data?.data || response.data;
+}
+
+export async function getHorseImage(id) {
+  const response = await api.get(`/api/v1/horses/${id}/image`);
+  return response.data?.data || response.data;
+}

@@ -248,3 +248,51 @@ export function logout() {
     api.post("/api/v1/auth/logout", { refreshToken }).catch(() => {});
   }
 }
+
+// ==========================================
+// REGISTRATION & VERIFICATION
+// ==========================================
+
+export async function registerSpectator(data) {
+  const response = await api.post("/api/v1/auth/register/spectator", data);
+  return response.data;
+}
+
+export async function registerOwner(data) {
+  const response = await api.post("/api/v1/auth/register/owner", data);
+  return response.data;
+}
+
+export async function registerJockey(data) {
+  const response = await api.post("/api/v1/auth/register/jockey", data);
+  return response.data;
+}
+
+export async function requestEmailVerification(email) {
+  const response = await api.post("/api/v1/auth/verify-email/request", { email });
+  return response.data;
+}
+
+export async function verifyCode(email, code) {
+  const response = await api.post("/api/v1/auth/verify-code", { email, code });
+  return response.data;
+}
+
+export async function verifyEmail(email, code) {
+  const response = await api.post("/api/v1/auth/verify-email", { email, code });
+  return response.data;
+}
+
+// ==========================================
+// PASSWORD RECOVERY
+// ==========================================
+
+export async function forgotPassword(email) {
+  const response = await api.post("/api/v1/auth/forgot-password", { email });
+  return response.data;
+}
+
+export async function resetPassword(email, code, newPassword) {
+  const response = await api.post("/api/v1/auth/reset-password", { email, code, newPassword });
+  return response.data;
+}
