@@ -13,17 +13,27 @@ import OwnerRegistrationPage from './pages/auth/OwnerRegistrationPage';
 import SpectatorRegistrationPage from './pages/auth/SpectatorRegistrationPage';
 import ForgotPasswordPage from './pages/auth/ForgotPasswordPage';
 import ResetPasswordPage from './pages/auth/ResetPasswordPage';
+import VerifyEmailPage from './pages/auth/VerifyEmailPage';
+import { Toaster } from 'react-hot-toast';
 import ProtectedRoute from './components/ProtectedRoute';
-import DashboardLayout from './layouts/DashboardLayout';
+import { DashboardLayout } from '@/common/layouts/DashboardLayout';
 import DashboardHome from './pages/dashboard/DashboardHome';
 import AdminDashboard from './pages/Admin/UserManagement';
 import Overview from './pages/Owner/Overview';
 import StableManagement from './pages/Owner/StableManagement';
-import JockeyMarket from './pages/Owner/JockeyMarket';
-import JockeyDetail from './pages/Owner/JockeyDetail';
 import RaceCalendar from './pages/Owner/RaceCalendar';
-import InvitationList from './pages/Jockey/InvitationList';
 import RefereeLayout from './layouts/RefereeLayout';
+
+// --- NEW JOCKEY & OWNER-JOCKEY PAGES ---
+import JockeyMarketPage from '@/features/jockey/pages/JockeyMarketPage';
+import JockeyDetail from './pages/Owner/JockeyDetail';
+import MyInvitationsPage from '@/features/jockey/pages/MyInvitationsPage'; // For Owner
+import JockeyDashboardPage from '@/features/jockey/pages/JockeyDashboardPage';
+import JockeyInvitationsPage from '@/features/jockey/pages/JockeyInvitationsPage';
+import JockeyProfilePage from '@/features/jockey/pages/JockeyProfilePage';
+import PerformancePage from '@/features/jockey/pages/PerformancePage';
+import RaceSchedulePage from '@/features/jockey/pages/RaceSchedulePage';
+// ---------------------------------------
 import RegistrationManagement from './pages/Referee/RegistrationManagement';
 import PreRaceInspection from './pages/Referee/PreRaceInspection';
 import RefereeDashboard from './pages/Referee/RefereeDashboard';
@@ -50,6 +60,7 @@ const OwnerPlaceholder = ({ title }) => (
 export default function App() {
   return (
     <BrowserRouter>
+      <Toaster position="top-right" />
       <Routes>
 
         {/* HOME */}
@@ -60,6 +71,7 @@ export default function App() {
         <Route path="/spectator-register" element={<SpectatorRegistrationPage />} />
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
         <Route path="/reset-password" element={<ResetPasswordPage />} />
+        <Route path="/verify-email" element={<VerifyEmailPage />} />
         <Route element={<ProtectedRoute />}>
           <Route path="/profile" element={<UserProfile />} />
         </Route>
@@ -71,9 +83,10 @@ export default function App() {
             <Route path="/owner-dashboard" element={<Overview />} />
             <Route path="/owner-dashboard/stable" element={<StableManagement />} />
             <Route path="/owner-dashboard/notifications" element={<NotificationsCenter />} />
-            <Route path="/owner/jockey-market" element={<JockeyMarket />} />
+            <Route path="/owner/jockey-market" element={<JockeyMarketPage />} />
             <Route path="/owner/jockey-market/:jockeyId" element={<JockeyDetail />} />
-            <Route path="/owner-dashboard/jockeys" element={<JockeyMarket />} />
+            <Route path="/owner-dashboard/jockeys" element={<JockeyMarketPage />} />
+            <Route path="/owner/invitations" element={<MyInvitationsPage />} />
             <Route path="/owner-dashboard/calendar" element={<RaceCalendar />} />
             <Route path="/owner-dashboard/financials" element={<OwnerPlaceholder title="💵 Financials" />} />
           </Route>
@@ -81,8 +94,11 @@ export default function App() {
 
         <Route element={<ProtectedRoute roles={['Jockey']} />}>
           <Route element={<DashboardLayout />}>
-            <Route path="/jockey-dashboard" element={<DashboardHome />} />
-            <Route path="/jockey/invitations" element={<InvitationList />} />
+            <Route path="/jockey-dashboard" element={<JockeyDashboardPage />} />
+            <Route path="/jockey/profile" element={<JockeyProfilePage />} />
+            <Route path="/jockey/invitations" element={<JockeyInvitationsPage />} />
+            <Route path="/jockey/schedule" element={<RaceSchedulePage />} />
+            <Route path="/jockey/performance" element={<PerformancePage />} />
             <Route path="/jockey/notifications" element={<NotificationsCenter />} />
           </Route>
         </Route>
