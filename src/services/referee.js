@@ -85,7 +85,7 @@ function normalizePage(data, params = {}) {
   };
 }
 
-async function getRaceCatalog(params = {}) {
+export async function getRaceCatalog(params = {}) {
   const data = unwrap(
     await api.get(RACE_ENDPOINT, {
       params: {
@@ -100,7 +100,7 @@ async function getRaceCatalog(params = {}) {
   return listFrom(data);
 }
 
-async function enrichReportsWithRaces(reports) {
+export async function enrichReportsWithRaces(reports) {
   const raceIds = [...new Set(reports.map((report) => report.raceId).filter(Boolean))];
   const races = await Promise.all(
     raceIds.map((raceId) =>
@@ -161,47 +161,7 @@ function mapInspectionEntry(entry, horse, medical, assignment) {
   };
 }
 
-// Helpers for Race & Reports
-export async function getRaceCatalog(params = {}) {
-  const data = unwrap(
-    await api.get(RACE_ENDPOINT, {
-      params: {
-        page: 0,
-        size: 100,
-        ...params,
-      },
-    }),
-  );
-  return listFrom(data);
-}
-
-export async function enrichReportsWithRaces(reports) {
-  const raceIds = [...new Set(reports.map((r) => r.raceId).filter(Boolean))];
-  const raceMap = new Map();
-  await Promise.all(
-    raceIds.map(async (id) => {
-      try {
-        const race = unwrap(await api.get(`${RACE_ENDPOINT}/${id}`));
-        raceMap.set(id, race);
-      } catch (err) {
-        console.warn(`Could not fetch race ${id}`);
-      }
-    }),
-  );
-  return reports.map((report) => ({
-    ...report,
-    race: raceMap.get(report.raceId) || null,
-  }));
-}
-
-function normalizePage(data, params) {
-  const items = listFrom(data);
-  const totalItems = data?.totalElements ?? items.length;
-  const pageSize = Number(params.pageSize) || 10;
-  const totalPages = Math.max(Math.ceil(totalItems / pageSize), 1);
-  return { items, totalPages };
-}
-
+// Helpers for Race & Reports already defined above
 export async function getInspectionRoster(params = {}) {
   const races = await getRaceCatalog({
     sortBy: "scheduledStartAt",
