@@ -47,10 +47,11 @@ export default function RegistrationApproval() {
     setHorseDetail(null);
     setMedicalStatus(null);
     try {
-      if (reg.horseId) {
+      const horseId = reg.horse?.id || reg.horseId;
+      if (horseId) {
         const [horse, medical] = await Promise.all([
-          getHorseDetail(reg.horseId).catch(() => null),
-          getHorseMedicalStatus(reg.horseId).catch(() => null)
+          getHorseDetail(horseId).catch(() => null),
+          getHorseMedicalStatus(horseId).catch(() => null)
         ]);
         setHorseDetail(horse);
         setMedicalStatus(medical);
@@ -133,11 +134,11 @@ export default function RegistrationApproval() {
                   style={{ cursor: 'pointer' }}
                 >
                   <div className={styles.queueCardTop}>
-                    <h3 className={styles.queueName}>{reg.horseName || 'Unknown Horse'}</h3>
+                    <h3 className={styles.queueName}>{reg.horse?.name || 'Unknown Horse'}</h3>
                     <span className={styles.badgeNew}>{reg.status}</span>
                   </div>
                   <div className={styles.queueRole}>
-                    {reg.tournamentName} • Owner: {reg.ownerName}
+                    {reg.tournament?.name || 'Unknown Tournament'} • Owner: {reg.owner?.name || 'Unknown'}
                   </div>
                 </div>
               );
@@ -155,13 +156,13 @@ export default function RegistrationApproval() {
             <>
               <div className={styles.userProfile}>
                 <div className={styles.profileInfo}>
-                  <img src={horseDetail?.avatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(selectedReg.horseName || 'Horse')}&background=0D8ABC&color=fff`} alt={selectedReg.horseName || 'Horse'} className={styles.profileAvatar} />
+                  <img src={horseDetail?.avatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(selectedReg.horse?.name || 'Horse')}&background=0D8ABC&color=fff`} alt={selectedReg.horse?.name || 'Horse'} className={styles.profileAvatar} />
                   <div>
-                    <h2 className={styles.profileName}>{selectedReg.horseName || 'Unknown Horse'}</h2>
-                    <p className={styles.profileMeta}>Owner: {selectedReg.ownerName}</p>
+                    <h2 className={styles.profileName}>{selectedReg.horse?.name || 'Unknown Horse'}</h2>
+                    <p className={styles.profileMeta}>Owner: {selectedReg.owner?.name || 'Unknown'}</p>
                     <div className={styles.profileTags}>
-                      <span className={styles.tagBlue}>Tournament: {selectedReg.tournamentName}</span>
-                      <span className={styles.tagBlue}>Race: {selectedReg.raceName}</span>
+                      <span className={styles.tagBlue}>Tournament: {selectedReg.tournament?.name || 'N/A'}</span>
+                      <span className={styles.tagBlue}>Race: {selectedReg.race?.name || 'N/A'}</span>
                     </div>
                   </div>
                 </div>
@@ -174,11 +175,11 @@ export default function RegistrationApproval() {
                   <div className={styles.infoBox} style={{marginBottom: '24px'}}>
                     <div className={styles.infoRow}>
                       <span className={styles.infoLabel}>Horse Name</span>
-                      <span className={styles.infoVal}>{selectedReg.horseName || 'N/A'}</span>
+                      <span className={styles.infoVal}>{selectedReg.horse?.name || 'N/A'}</span>
                     </div>
                     <div className={styles.infoRow}>
                       <span className={styles.infoLabel}>Horse Code</span>
-                      <span className={styles.infoVal}>{selectedReg.horseCode || horseDetail?.horseCode || 'N/A'}</span>
+                      <span className={styles.infoVal}>{selectedReg.horse?.code || horseDetail?.horseCode || 'N/A'}</span>
                     </div>
                     <div className={styles.infoRow}>
                       <span className={styles.infoLabel}>Breed</span>
