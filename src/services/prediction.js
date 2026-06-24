@@ -23,6 +23,6 @@ export async function getMyPredictionDetail(id) {
 }
 
 export async function cancelPrediction(id) {
-  const response = await api.patch(`${ENDPOINT}/me/${id}/cancel`);
+  const response = await api.post(`${ENDPOINT}/me/${id}/cancel`);
   return response.data;
 }

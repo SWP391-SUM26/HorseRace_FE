@@ -158,5 +158,35 @@ export async function deleteUser(id) {
   } catch (error) {
     console.error('Error deleting user:', error);
     throw error;
+  } 
+}
+
+export async function requestEmailChange(newEmail) {
+  try {
+    const response = await api.post("/api/v1/users/me/email/change-request", { newEmail });
+    return response.data;
+  } catch (err) {
+    console.error("API requestEmailChange failed:", err.message);
+    throw err;
+  }
+}
+
+export async function verifyEmailChange(code) {
+  try {
+    const response = await api.post("/api/v1/users/me/email/verify", { code });
+    return response.data;
+  } catch (err) {
+    console.error("API verifyEmailChange failed:", err.message);
+    throw err;
+  }
+}
+
+export async function getMyPermissions() {
+  try {
+    const response = await api.get("/api/v1/users/me/permissions");
+    return response.data?.data || response.data || [];
+  } catch (err) {
+    console.error("API getMyPermissions failed:", err.message);
+    return [];
   }
 }
