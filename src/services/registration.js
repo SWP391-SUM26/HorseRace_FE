@@ -90,6 +90,16 @@ export async function getRegistrationDetail(id) {
     return mapRegistration(rawData);
   } catch (e) {
     throw e;
-  }
+  } 
 }
 export async function submitRegistration(data) { try { const res = await api.post('/api/v1/registrations', data); return res.data; } catch(e){ throw e; } }
+
+export async function withdrawRegistration(id) {
+  try {
+    const response = await api.patch(`/api/v1/registrations/${id}/withdraw`);
+    return response.data;
+  } catch (err) {
+    console.error(`API withdrawRegistration for ${id} failed:`, err.message);
+    throw err;
+  }
+}

@@ -81,11 +81,21 @@ export async function deleteHorse(id) {
 }
 
 export async function assignHorseToRace(id, race) {
-  const response = await api.post(`/api/v1/horses/${id}/assign`, { raceId: race.id });
+  const response = await api.post(`/api/v1/horses/${id}/assign-to-race`, { raceId: race.id });
   if (response.data?.success) {
     return response.data.data;
   }
   throw new Error(response.data?.message || "Failed to assign horse to race");
+}
+
+export async function updateMedicalStatus(id, statusData) {
+  try {
+    const response = await api.patch(`/api/v1/horses/${id}/medical-status`, statusData);
+    return response.data?.data || response.data;
+  } catch (err) {
+    console.error(`API updateMedicalStatus for ${id} failed:`, err.message);
+    throw err;
+  }
 }
 
 export async function toggleMedicalStatus(id) {
@@ -119,5 +129,14 @@ export async function getHorsePedigree(id) {
 
 export async function getHorseImage(id) {
   const response = await api.get(`/api/v1/horses/${id}/image`);
+  return response.data?.data || response.data;
+}
+
+export async function uploadHorseImage(id, file) {
+  const formData = new FormData();
+  formData.append("file", file);
+  const response = await api.post(`/api/v1/horses/${id}/image`, formData, {
+    headers: { "Content-Type": "multipart/form-data" }
+  });
   return response.data?.data || response.data;
 }

@@ -171,133 +171,28 @@ export async function getJockeyDetail(jockeyId) {
 
 export async function getOwnerUnassignedEntries(ownerUserId) {
   if (!ownerUserId) return [];
+  const data = unwrapResponse(await api.get("/api/v1/owner/unassigned-entries"));
+  if (!data || !Array.isArray(data)) return [];
+  return data.map((candidate) => ({
+    ...candidate,
+    id: candidate.horseId,
+    name: candidate.horseName,
+    code: candidate.horseCode,
+    image: candidate.horseImageUrl || "",
+    breed: candidate.horseBreed || "",
+    gender: candidate.horseGender || "",
+    dateOfBirth: candidate.horseDateOfBirth || null,
+  }));
+}
 
-  const [registrationResponse, raceResponse, invitationResult] = await Promise.all([
-    api.get("/api/v1/registrations", {
-      params: {
-        ownerUserId,
-        status: "APPROVED",
-        page: 0,
-        size: 100,
-        sortBy: "createdAt",
-        sortDir: "desc",
-      },
-    }),
-    api.get("/api/v1/races", {
-      params: {
-        page: 0,
-        size: 100,
-        sortBy: "scheduledStartAt",
-        sortDir: "asc",
-      },
-    }),
-    getInvitationList({
-      ownerId: ownerUserId,
-      page: 1,
-      pageSize: 100,
-      sortBy: "invitedAt",
-      sortOrder: "desc",
-    }),
-  ]);
+export async function searchJockeys(keyword) {
+  const data = unwrapResponse(await api.get(`${JOCKEY_ENDPOINT}/search`, { params: { keyword } }));
+  return Array.isArray(data) ? data.map(mapJockeyToUI) : [];
+}
 
-  const registrationData = unwrapResponse(registrationResponse);
-  const registrations = Array.isArray(registrationData)
-    ? registrationData
-    : registrationData?.content ?? registrationData?.items ?? [];
-  const raceData = unwrapResponse(raceResponse);
-  const races = (
-    Array.isArray(raceData)
-      ? raceData
-      : raceData?.content ?? raceData?.items ?? []
-  ).filter((race) => ["SCHEDULED", "OPEN"].includes(race.status));
-  const activeEntryIds = new Set(
-    invitationResult.items
-      .filter((invitation) =>
-        ["INVITED", "ACCEPTED"].includes(invitation.status),
-      )
-      .map((invitation) => invitation.entryId),
-  );
-
-  const raceBundles = await Promise.all(
-    races.map(async (race) => {
-      const entriesResponse = await api.get(
-        `/api/v1/races/${race.raceId}/entries`,
-      );
-      return {
-        race,
-        entries: unwrapResponse(entriesResponse) || [],
-      };
-    }),
-  );
-  const raceById = new Map(
-    raceBundles.map((bundle) => [bundle.race.raceId, bundle.race]),
-  );
-  const entryByRegistrationId = new Map(
-    raceBundles.flatMap((bundle) =>
-      bundle.entries.map((entry) => [entry.registrationId, entry]),
-    ),
-  );
-  const raceIdByRegistrationId = new Map(
-    raceBundles.flatMap((bundle) =>
-      bundle.entries.map((entry) => [
-        entry.registrationId,
-        bundle.race.raceId,
-      ]),
-    ),
-  );
-
-  const candidates = registrations
-    .map((registration) => {
-      const entry = entryByRegistrationId.get(registration.registrationId);
-      const raceId =
-        registration.raceId ||
-        raceIdByRegistrationId.get(registration.registrationId);
-      const race = raceById.get(raceId);
-      if (!entry || !race || activeEntryIds.has(entry.entryId)) return null;
-
-      return {
-        id: registration.horseId,
-        horseId: registration.horseId,
-        name: registration.horseName,
-        code: registration.horseCode,
-        registrationId: registration.registrationId,
-        entryId: entry.entryId,
-        entryCode: entry.entryCode,
-        entryStatus: entry.status,
-        raceId: race.raceId,
-        raceCode: race.raceCode,
-        raceName: race.name,
-        tournamentName: race.tournamentName,
-        scheduledStartAt: race.scheduledStartAt,
-        raceType: race.raceType,
-        distanceMeter: race.distanceMeter,
-        trackCondition: race.trackCondition,
-        weatherCondition: race.weatherCondition,
-      };
-    })
-    .filter(Boolean);
-
-  const horseIds = [...new Set(candidates.map((candidate) => candidate.horseId))];
-  const horseResponses = await Promise.all(
-    horseIds.map((horseId) => api.get(`/api/v1/horses/${horseId}`)),
-  );
-  const horseById = new Map(
-    horseResponses.map((response) => {
-      const horse = unwrapResponse(response);
-      return [horse.horseId, horse];
-    }),
-  );
-
-  return candidates.map((candidate) => {
-    const horse = horseById.get(candidate.horseId);
-    return {
-      ...candidate,
-      image: horse?.imageUrl || "",
-      breed: horse?.breed || "",
-      gender: horse?.gender || "",
-      dateOfBirth: horse?.dateOfBirth || null,
-    };
-  });
+export async function getJockeysPaginated(page = 0, size = 10, sortBy = "winCount", sortDir = "desc") {
+  const data = unwrapResponse(await api.get(`${JOCKEY_ENDPOINT}/page`, { params: { page, size, sortBy, sortDir } }));
+  return normalizeListResponse(data, { page: page + 1, pageSize: size }, ["jockeys"]);
 }
 
 export async function sendInvitation(payload) {

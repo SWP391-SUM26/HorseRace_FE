@@ -280,6 +280,11 @@ export async function verifyCode(email, code) {
 
 export async function verifyEmail(email, code) {
   const response = await api.post("/api/v1/auth/verify-email", { email, code });
+  return response.data; 
+}
+
+export async function resendAuthCode(email) {
+  const response = await api.post("/api/v1/auth/resend-code", { email });
   return response.data;
 }
 
