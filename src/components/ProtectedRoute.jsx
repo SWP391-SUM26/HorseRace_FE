@@ -1,17 +1,17 @@
 import { Navigate, Outlet, useLocation } from "react-router-dom";
-import { validateSession } from "../services/auth";
+import { useAuth } from "@/common/hooks/useAuth";
 
 export default function ProtectedRoute({ roles = [] }) {
   const location = useLocation();
-  const validation = validateSession(roles);
+  const { user } = useAuth();
 
-  if (!validation.isAuthenticated) {
+  if (!user) {
     return <Navigate to="/login" replace state={{ from: location.pathname }} />;
   }
 
-  if (!validation.isAuthorized) {
+  if (roles.length > 0 && !roles.includes(user.role)) {
     return <Navigate to="/" replace />;
   }
 
-  return <Outlet context={{ session: validation.session }} />;
+  return <Outlet context={{ session: { user } }} />;
 }

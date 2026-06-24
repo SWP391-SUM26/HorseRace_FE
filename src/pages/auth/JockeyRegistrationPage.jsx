@@ -1,505 +1,272 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import jockeyImage from "../../assets/Jockey preparing for race.png";
+import { useRef, useState } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { Link, useNavigate } from "react-router-dom";
+import { ArrowRight, Upload } from "lucide-react";
+import toast from "react-hot-toast";
+
+import { Button, Input, Select } from "@/common/ui";
 import { loginWithCredentials } from "../../services/auth";
-import api from "../../services/api";
-import styles from "./JockeyRegistrationPage.module.css";
+import jockeyImg from "../../assets/Jockey preparing for race.png";
+import { useRegisterJockey, useRequestEmailVerification } from "./hooks";
+import { emailField, passwordField } from "./validation";
+import { AuthSplitLayout } from "./components/AuthSplitLayout";
 
-export default function JockeyRegistrationPage() {
-  const navigate = useNavigate();
+const optionalNumber = z
+  .union([z.string(), z.number()])
+  .transform((v) =>
+    v === "" || v === undefined || v === null ? undefined : Number(v)
+  )
+  .refine((v) => v === undefined || !Number.isNaN(v), "Giá trị không hợp lệ")
+  .optional();
 
-  const [form, setForm] = useState({
-    email: "",
-    password: "",
-    firstName: "",
-    lastName: "",
-    age: "",
-    weight: "",
-    nationality: "",
-    yearsActive: "",
-    ridingStyle: "",
+const schema = z
+  .object({
+    email: emailField,
+    password: passwordField,
+    confirmPassword: z.string(),
+    firstName: z.string().min(1, "Vui lòng nhập tên"),
+    lastName: z.string().min(1, "Vui lòng nhập họ"),
+    age: optionalNumber,
+    weight: optionalNumber,
+    nationality: z.string().optional(),
+    yearsActive: optionalNumber,
+    ridingStyle: z.string().optional(),
+  })
+  .refine((d) => d.password === d.confirmPassword, {
+    path: ["confirmPassword"],
+    message: "Mật khẩu không khớp",
   });
 
-  const [loading, setLoading] = useState(false);
+const NATIONALITY_OPTIONS = [
+  { value: "", label: "Select your nationality" },
+  { value: "VN", label: "Vietnam" },
+  { value: "US", label: "United States" },
+  { value: "GB", label: "United Kingdom" },
+  { value: "IE", label: "Ireland" },
+  { value: "FR", label: "France" },
+  { value: "AU", label: "Australia" },
+  { value: "JP", label: "Japan" },
+];
 
-  const set = (k, v) =>
-    setForm((f) => ({
-      ...f,
-      [k]: v,
-    }));
+const RIDING_STYLE_OPTIONS = [
+  { value: "", label: "Select riding style" },
+  { value: "Flat", label: "Flat" },
+  { value: "Jump", label: "Jump" },
+  { value: "Harness", label: "Harness" },
+  { value: "Endurance", label: "Endurance" },
+];
 
-  const handleRegister = async (event) => {
-    event.preventDefault();
-    if (!form.email || !form.password) {
-      alert("Please fill in email and password");
-      return;
-    }
-    setLoading(true);
+function Section({ icon, title, children }) {
+  return (
+    <section className="rounded-xl border border-border bg-surface p-5">
+      <div className="mb-4 flex items-center gap-2">
+        <span className="flex h-7 w-7 items-center justify-center rounded-full bg-brand-50 text-sm font-semibold text-brand-700">
+          {icon}
+        </span>
+        <h2 className="font-semibold text-ink">{title}</h2>
+      </div>
+      {children}
+    </section>
+  );
+}
 
-    try {
-      const fullName =
-        `${form.firstName} ${form.lastName}`.trim() || "Jockey User";
-      // Mặc định confirmPassword giống password, firstName/lastName nếu trống thì lấy phần của email
-      const payload = {
-        email: form.email,
-        password: form.password,
-        confirmPassword: form.password,
-        firstName: form.firstName || form.email.split("@")[0],
-        lastName: form.lastName || "Jockey",
-        fullName: fullName,
-        phone: "0900000000", // Default phone nếu UI chưa có
-        // Các trường phụ như age, weight... tạm thời lưu hoặc bỏ qua tùy BE
-      };
+function UploadBox({ label }) {
+  const ref = useRef(null);
+  const [fileName, setFileName] = useState(null);
+  return (
+    <button
+      type="button"
+      onClick={() => ref.current?.click()}
+      className="flex w-full flex-col items-center rounded-lg border-2 border-dashed border-border p-6 text-center hover:bg-subtle"
+    >
+      <Upload size={20} className="text-muted" />
+      <span className="mt-2 text-sm font-medium text-ink">{label}</span>
+      <span className="mt-1 text-xs text-muted">
+        {fileName ?? "Upload a file or drag and drop"}
+      </span>
+      <span className="mt-1 text-xs text-muted">PDF, PNG, JPG up to 10MB</span>
+      <input
+        ref={ref}
+        type="file"
+        accept=".pdf,.png,.jpg,.jpeg"
+        className="hidden"
+        onChange={(e) => setFileName(e.target.files?.[0]?.name ?? null)}
+      />
+    </button>
+  );
+}
 
-      await api.post("/api/v1/auth/register/jockey", payload);
+export default function JockeyRegistrationPage() {
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm({
+    resolver: zodResolver(schema),
+  });
 
-      // Auto login after successful registration
-      await loginWithCredentials(form.email, form.password);
-      navigate("/jockey-dashboard");
-    } catch (err) {
-      console.error(err);
-      alert(
-        err.response?.data?.message || err.message || "Registration failed",
-      );
-    } finally {
-      setLoading(false);
-    }
+  const mutation = useRegisterJockey();
+  const requestVerification = useRequestEmailVerification();
+  const navigate = useNavigate();
+
+  const onSubmit = (data) => {
+    mutation.mutate(
+      {
+        email: data.email,
+        password: data.password,
+        confirmPassword: data.confirmPassword,
+        firstName: data.firstName,
+        lastName: data.lastName,
+        age: data.age,
+        weight: data.weight,
+        nationality: data.nationality || undefined,
+        yearsActive: data.yearsActive,
+        ridingStyle: data.ridingStyle || undefined,
+        jockeyLicenseUrl: undefined,
+        fitnessCertificateUrl: undefined,
+      },
+      {
+        onSuccess: async () => {
+          requestVerification.mutate({ email: data.email });
+          toast.success("Đã gửi mã xác thực tới email của bạn");
+          
+          await loginWithCredentials(data.email, data.password);
+          navigate(`/verify-email?email=${encodeURIComponent(data.email)}`);
+        },
+        onError: (err) => {
+          toast.error(
+            err.response?.data?.message || err.message || "Đăng ký thất bại"
+          );
+        },
+      }
+    );
   };
 
   return (
-    <div className={styles.page}>
-      <main className={styles.registrationPage}>
-        {/* CỘT TRÁI - PANEL ẢNH NỀN THẨM MỸ */}
-        <section className={styles.visualPanel} aria-label="Elite Performance">
-          <img
-            src={jockeyImage}
-            alt="Professional Jockey preparing for a race"
-            className={styles.jockeyImage}
-          />
-          <div className={styles.visualShade}></div>
-          <div className={styles.brandCard}>
-            <div className={styles.brandName}></div>
-          </div>
-        </section>
-
-        {/* CỘT PHẢI - BIỂU MẪU ĐĂNG KÝ */}
-        <section className={styles.formPanel} aria-label="Jockey registration">
-          <div className={styles.formWrap}>
-            <h2 className={styles.title}>Jockey Registration</h2>
-            <p className={styles.subtitle}>
-              Complete your profile to gain access to the Jockey Portal.
-            </p>
-
-            <form onSubmit={handleRegister}>
-              {/* 0. ACCOUNT CREDENTIALS */}
-              <div className={styles.card}>
-                <div className={styles.cardHeader}>
-                  <div className={styles.headerIconWrapper}>
-                    <ShieldCheckIcon />
-                  </div>
-                  <h3 className={styles.cardTitle}>Account Credentials</h3>
-                </div>
-
-                <div className={styles.cardBody}>
-                  <div className={styles.grid2}>
-                    <div className={styles.inputField}>
-                      <label className={styles.fieldLabel} htmlFor="email">
-                        EMAIL ADDRESS
-                      </label>
-                      <div className={styles.inputShell}>
-                        <input
-                          id="email"
-                          type="email"
-                          value={form.email}
-                          onChange={(e) => set("email", e.target.value)}
-                          placeholder="jockey@horserace.local"
-                          required
-                        />
-                      </div>
-                    </div>
-
-                    <div className={styles.inputField}>
-                      <label className={styles.fieldLabel} htmlFor="password">
-                        PASSWORD
-                      </label>
-                      <div className={styles.inputShell}>
-                        <input
-                          id="password"
-                          type="password"
-                          value={form.password}
-                          onChange={(e) => set("password", e.target.value)}
-                          placeholder="••••••••"
-                          required
-                        />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* 1. PERSONAL IDENTITY CARD */}
-              <div className={styles.card}>
-                <div className={styles.cardHeader}>
-                  <div className={styles.headerIconWrapper}>
-                    <IdCardIcon />
-                  </div>
-                  <h3 className={styles.cardTitle}>Personal Identity</h3>
-                </div>
-
-                <div className={styles.cardBody}>
-                  <div className={styles.grid2}>
-                    <div className={styles.inputField}>
-                      <label className={styles.fieldLabel} htmlFor="firstName">
-                        FIRST NAME
-                      </label>
-                      <div className={styles.inputShell}>
-                        <input
-                          id="firstName"
-                          value={form.firstName}
-                          onChange={(e) => set("firstName", e.target.value)}
-                          placeholder="e.g. William"
-                        />
-                      </div>
-                    </div>
-
-                    <div className={styles.inputField}>
-                      <label className={styles.fieldLabel} htmlFor="lastName">
-                        LAST NAME
-                      </label>
-                      <div className={styles.inputShell}>
-                        <input
-                          id="lastName"
-                          value={form.lastName}
-                          onChange={(e) => set("lastName", e.target.value)}
-                          placeholder="e.g. Buick"
-                        />
-                      </div>
-                    </div>
-
-                    <div className={styles.inputField}>
-                      <label className={styles.fieldLabel} htmlFor="age">
-                        AGE
-                      </label>
-                      <div className={styles.inputShell}>
-                        <input
-                          id="age"
-                          type="number"
-                          value={form.age}
-                          onChange={(e) => set("age", e.target.value)}
-                          placeholder="Years"
-                        />
-                      </div>
-                    </div>
-
-                    <div className={styles.inputField}>
-                      <label className={styles.fieldLabel} htmlFor="weight">
-                        WEIGHT (LBS)
-                      </label>
-                      <div className={styles.inputShell}>
-                        <input
-                          id="weight"
-                          type="number"
-                          value={form.weight}
-                          onChange={(e) => set("weight", e.target.value)}
-                          placeholder="e.g. 118"
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className={styles.selectWrap}>
-                    <label className={styles.fieldLabel}>NATIONALITY</label>
-                    <div className={styles.selectContainer}>
-                      <select
-                        className={styles.select}
-                        value={form.nationality}
-                        onChange={(e) => set("nationality", e.target.value)}
-                      >
-                        <option value="">Select your nationality</option>
-                        <option>United States</option>
-                        <option>United Kingdom</option>
-                        <option>Ireland</option>
-                        <option>France</option>
-                        <option>Australia</option>
-                      </select>
-                      <div className={styles.selectArrow}>
-                        <svg
-                          width="14"
-                          height="14"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2.5"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        >
-                          <polyline points="6 9 12 15 18 9" />
-                        </svg>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* 2. EXPERIENCE CARD */}
-              <div className={styles.card}>
-                <div className={styles.cardHeader}>
-                  <div className={styles.headerIconWrapper}>
-                    <ClockIcon />
-                  </div>
-                  <h3 className={styles.cardTitle}>Experience</h3>
-                </div>
-
-                <div className={styles.cardBody}>
-                  <div className={styles.grid2}>
-                    <div className={styles.inputField}>
-                      <label
-                        className={styles.fieldLabel}
-                        htmlFor="yearsActive"
-                      >
-                        YEARS ACTIVE
-                      </label>
-                      <div className={styles.inputShell}>
-                        <input
-                          id="yearsActive"
-                          type="number"
-                          value={form.yearsActive}
-                          onChange={(e) => set("yearsActive", e.target.value)}
-                          placeholder="Professional years"
-                        />
-                      </div>
-                    </div>
-
-                    <div className={styles.selectWrap} style={{ marginTop: 0 }}>
-                      <label className={styles.fieldLabel}>
-                        PRIMARY RIDING STYLE
-                      </label>
-                      <div className={styles.selectContainer}>
-                        <select
-                          className={styles.select}
-                          value={form.ridingStyle}
-                          onChange={(e) => set("ridingStyle", e.target.value)}
-                        >
-                          <option value="">Select riding style</option>
-                          <option>Front Runner</option>
-                          <option>Stalker / Closer</option>
-                          <option>Come-from-behind</option>
-                        </select>
-                        <div className={styles.selectArrow}>
-                          <svg
-                            width="14"
-                            height="14"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="2.5"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                          >
-                            <polyline points="6 9 12 15 18 9" />
-                          </svg>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* 3. CREDENTIALS CARD */}
-              <div className={styles.card}>
-                <div className={styles.cardHeader}>
-                  <div className={styles.headerIconWrapper}>
-                    <ShieldCheckIcon />
-                  </div>
-                  <h3 className={styles.cardTitle}>Credentials</h3>
-                </div>
-
-                <div className={styles.cardBody}>
-                  {/* License Upload */}
-                  <div className={styles.uploadContainer}>
-                    <span className={styles.fieldLabel}>
-                      JOCKEY LICENSE COPY
-                    </span>
-                    <div className={styles.uploadArea}>
-                      <div className={styles.uploadIcon}>
-                        <DocumentUploadIcon />
-                      </div>
-                      <div className={styles.uploadText}>
-                        <span className={styles.highlightText}>
-                          Upload a file
-                        </span>{" "}
-                        or drag and drop
-                      </div>
-                      <div className={styles.uploadHint}>
-                        PDF, PNG, JPG up to 10MB
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Fitness Certificate Upload */}
-                  <div className={styles.uploadContainer}>
-                    <span className={styles.fieldLabel}>
-                      CURRENT FITNESS CERTIFICATE
-                    </span>
-                    <div className={styles.uploadArea}>
-                      <div className={styles.uploadIcon}>
-                        <ShieldPlusIcon />
-                      </div>
-                      <div className={styles.uploadText}>
-                        <span className={styles.highlightText}>
-                          Upload a file
-                        </span>{" "}
-                        or drag and drop
-                      </div>
-                      <div className={styles.uploadHint}>
-                        PDF, PNG, JPG up to 10MB
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* ACTION FOOTER */}
-              <div className={styles.actionFooter}>
-                <button
-                  className={styles.backBtn}
-                  type="button"
-                  onClick={() => navigate("/login")}
-                >
-                  ← Back to Login
-                </button>
-
-                <button
-                  className={styles.submitBtn}
-                  type="submit"
-                  disabled={loading}
-                >
-                  {loading ? "Submitting..." : "Submit Registration →"}
-                </button>
-              </div>
-            </form>
-          </div>
-        </section>
-      </main>
-
-      <footer className={styles.footer}>
-        <div className={styles.footerInner}>
-          <div>
-            <div className={styles.footerBrand}>Equine Elite</div>
-            <p className={styles.footerCopy}>
-              © 2026 Equine Elite Racing. All rights reserved.
-            </p>
-          </div>
-          <div className={styles.footerLinks}>
-            <button type="button" className={styles.footerLink}>
-              Terms of Service
-            </button>
-            <button type="button" className={styles.footerLink}>
-              Privacy Policy
-            </button>
-            <button type="button" className={styles.footerLink}>
-              Help Center
-            </button>
-          </div>
+    <AuthSplitLayout
+      imageSide="left"
+      image={jockeyImg}
+      formMaxWidth="xl"
+      panel={
+        <div className="mt-auto">
+          <h2 className="text-2xl font-semibold">🏅 Equine Elite</h2>
+          <p className="mt-3 max-w-sm text-white/70">
+            Join the premier platform for elite racing management. Register your
+            credentials to access high-performance analytics and top-tier stable
+            relations.
+          </p>
         </div>
-      </footer>
-    </div>
-  );
-}
-
-/* SVG ICON COMPONENTS */
-
-function IdCardIcon() {
-  return (
-    <svg
-      width="18"
-      height="18"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
+      }
     >
-      <rect x="3" y="4" width="18" height="16" rx="2" ry="2" />
-      <line x1="7" y1="8" x2="17" y2="8" />
-      <line x1="7" y1="12" x2="17" y2="12" />
-      <line x1="7" y1="16" x2="13" y2="16" />
-    </svg>
-  );
-}
+      <div>
+        <h1 className="text-2xl font-semibold text-ink">Jockey Registration</h1>
+        <p className="mt-2 text-sm text-muted">
+          Complete your profile to gain access to the Jockey Portal.
+        </p>
+      </div>
 
-function ClockIcon() {
-  return (
-    <svg
-      width="18"
-      height="18"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <circle cx="12" cy="12" r="10" />
-      <polyline points="12 6 12 12 16 14" />
-    </svg>
-  );
-}
+      <form onSubmit={handleSubmit(onSubmit)} className="mt-8 flex flex-col gap-5">
+        <Section icon="@" title="Account Credentials">
+          <div className="flex flex-col gap-4">
+            <Input
+              label="Email"
+              type="email"
+              autoComplete="email"
+              {...register("email")}
+              error={errors.email?.message}
+            />
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <Input
+                label="Password"
+                type="password"
+                autoComplete="new-password"
+                {...register("password")}
+                error={errors.password?.message}
+              />
+              <Input
+                label="Confirm Password"
+                type="password"
+                autoComplete="new-password"
+                {...register("confirmPassword")}
+                error={errors.confirmPassword?.message}
+              />
+            </div>
+          </div>
+        </Section>
 
-function ShieldCheckIcon() {
-  return (
-    <svg
-      width="18"
-      height="18"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-      <polyline points="9 11 11 13 15 9" />
-    </svg>
-  );
-}
+        <Section icon="1" title="Personal Identity">
+          <div className="flex flex-col gap-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <Input
+                label="First Name"
+                {...register("firstName")}
+                error={errors.firstName?.message}
+              />
+              <Input
+                label="Last Name"
+                {...register("lastName")}
+                error={errors.lastName?.message}
+              />
+            </div>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <Input
+                label="Age"
+                type="number"
+                {...register("age")}
+                error={errors.age?.message}
+              />
+              <Input
+                label="Weight Class (lbs)"
+                type="number"
+                {...register("weight")}
+                error={errors.weight?.message}
+              />
+            </div>
+            <Select
+              label="Nationality"
+              options={NATIONALITY_OPTIONS}
+              {...register("nationality")}
+              error={errors.nationality?.message}
+            />
+          </div>
+        </Section>
 
-function DocumentUploadIcon() {
-  return (
-    <svg
-      width="24"
-      height="24"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-      <polyline points="14 2 14 8 20 8" />
-      <line x1="12" y1="18" x2="12" y2="12" />
-      <polyline points="9 15 12 12 15 15" />
-    </svg>
-  );
-}
+        <Section icon="2" title="Experience">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <Input
+              label="Years Active"
+              type="number"
+              {...register("yearsActive")}
+              error={errors.yearsActive?.message}
+            />
+            <Select
+              label="Primary Riding Style"
+              options={RIDING_STYLE_OPTIONS}
+              {...register("ridingStyle")}
+              error={errors.ridingStyle?.message}
+            />
+          </div>
+        </Section>
 
-function ShieldPlusIcon() {
-  return (
-    <svg
-      width="24"
-      height="24"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-      <line x1="12" y1="8" x2="12" y2="16" />
-      <line x1="8" y1="12" x2="16" y2="12" />
-    </svg>
+        <Section icon="3" title="Credentials">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <UploadBox label="Jockey License Copy" />
+            <UploadBox label="Current Fitness Certificate" />
+          </div>
+        </Section>
+
+        <div className="flex items-center justify-between">
+          <Link to="/login" className="text-sm text-muted hover:text-ink">
+            ← Back to Login
+          </Link>
+          <Button type="submit" loading={mutation.isPending}>
+            Submit Registration
+            <ArrowRight size={18} />
+          </Button>
+        </div>
+      </form>
+    </AuthSplitLayout>
   );
 }
