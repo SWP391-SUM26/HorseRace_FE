@@ -1,9 +1,9 @@
 const ROLE_LABELS = {
-  ADMIN: "Quản trị viên",
-  HORSE_OWNER: "Chủ ngựa",
-  JOCKEY: "Nài ngựa",
-  RACE_REFEREE: "Trọng tài",
-  SPECTATOR: "Khán giả"
+  ADMIN: "Admin",
+  HORSE_OWNER: "Horse Owner",
+  JOCKEY: "Jockey",
+  RACE_REFEREE: "Referee",
+  SPECTATOR: "Spectator"
 };
 
 const ROLE_HOME = {

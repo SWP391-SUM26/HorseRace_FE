@@ -22,8 +22,6 @@ import AdminDashboard from './pages/Admin/UserManagement';
 import Overview from './pages/Owner/Overview';
 import StableManagement from './pages/Owner/StableManagement';
 import RaceCalendar from './pages/Owner/RaceCalendar';
-import RefereeLayout from './layouts/RefereeLayout';
-
 // --- NEW JOCKEY & OWNER-JOCKEY PAGES ---
 import JockeyMarketPage from '@/features/jockey/pages/JockeyMarketPage';
 import JockeyDetail from './pages/Owner/JockeyDetail';
@@ -34,14 +32,14 @@ import JockeyProfilePage from '@/features/jockey/pages/JockeyProfilePage';
 import PerformancePage from '@/features/jockey/pages/PerformancePage';
 import RaceSchedulePage from '@/features/jockey/pages/RaceSchedulePage';
 // ---------------------------------------
-import RegistrationManagement from './pages/Referee/RegistrationManagement';
-import PreRaceInspection from './pages/Referee/PreRaceInspection';
-import RefereeDashboard from './pages/Referee/RefereeDashboard';
-import LiveRaceMonitor from './pages/Referee/LiveRaceMonitor';
+import RegistrationManagement from '@/features/referee/pages/RegistrationManagementPage';
+import PreRaceInspection from '@/features/referee/pages/PreRaceInspectionPage';
+import RefereeDashboard from '@/features/referee/pages/RefereeDashboardPage';
+import LiveRaceMonitor from '@/features/referee/pages/LiveRaceMonitorPage';
 import NotificationsCenter from './pages/shared/NotificationsCenter';
 import UserProfile from './pages/shared/UserProfile';
-import ViolationManagement from './pages/Referee/ViolationManagement';
-import RaceResultRecording from './pages/Referee/RaceResultRecording';
+import ViolationManagement from '@/features/referee/pages/ViolationsPage';
+import RaceResultRecording from '@/features/referee/pages/RaceResultsPage';
 import OfficialReports from './pages/Referee/OfficialReports';
 import Settings from './pages/Admin/Settings';
 import SpectatorLayout from './layouts/SpectatorLayout';
@@ -115,7 +113,7 @@ export default function App() {
         </Route>
 
         <Route element={<ProtectedRoute roles={['Referee']} />}>
-          <Route element={<RefereeLayout />}>
+          <Route element={<DashboardLayout />}>
             <Route path="/referee/dashboard" element={<RefereeDashboard />} />
             <Route path="/referee/registration" element={<RegistrationManagement />} />
             <Route path="/referee/inspection" element={<PreRaceInspection />} />
