@@ -9,7 +9,7 @@ import { cn } from "@/common/lib/cn";
 function TopNavBar() {
   const { user } = useAuth();
   if (!user) return null;
-  const roleKey = user.apiRole || user.role?.toUpperCase();
+  const roleKey = (user.apiRole || user.role || "").toUpperCase();
   const nav = ROLE_NAV[roleKey];
   return <header className="sticky top-0 z-30 flex h-16 items-center justify-between gap-4 border-b border-border bg-surface px-6">
       <div className="flex items-center gap-8">

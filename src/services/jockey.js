@@ -1,4 +1,6 @@
 import api from "./api";
+import { normalizeBackendImageUrl } from "@/common/lib/imageUrl";
+import { normalizeHorseImageUrl } from "./horse";
 
 const JOCKEY_ENDPOINT = "/api/v1/jockeys";
 const INVITATION_ENDPOINT = "/api/v1/assignments/invitations";
@@ -6,6 +8,10 @@ const DEFAULT_PAGE_SIZE = 4;
 
 function unwrapResponse(response) {
   return response?.data?.data ?? response?.data;
+}
+
+function normalizeOptionalImageUrl(value) {
+  return normalizeBackendImageUrl(value, "") || "";
 }
 
 function normalizeListResponse(data, params, keys = []) {
@@ -59,7 +65,7 @@ function mapJockeyToUI(jockey = {}) {
     name: jockey.fullName || jockey.name || "Unknown Jockey",
     email: jockey.email || "",
     phone: jockey.phone || "",
-    avatar: jockey.avatarUrl || jockey.avatar || "",
+    avatar: normalizeOptionalImageUrl(jockey.avatarUrl),
     status: jockey.status === "ACTIVE" ? "AVAILABLE" : jockey.status || "AVAILABLE",
     ridingStyle: jockey.ridingStyle || "Versatile",
     experience,
@@ -292,7 +298,7 @@ export async function getOwnerUnassignedEntries(ownerUserId) {
     const horse = horseById.get(candidate.horseId);
     return {
       ...candidate,
-      image: horse?.imageUrl || "",
+      image: normalizeHorseImageUrl(horse?.imageUrl),
       breed: horse?.breed || "",
       gender: horse?.gender || "",
       dateOfBirth: horse?.dateOfBirth || null,

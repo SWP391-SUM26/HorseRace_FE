@@ -1,4 +1,5 @@
 import api from "./api";
+import { normalizeBackendImageUrl } from "@/common/lib/imageUrl";
 
 const API_ROLE_TO_APP_ROLE = {
   ADMIN: "Admin",
@@ -8,6 +9,10 @@ const API_ROLE_TO_APP_ROLE = {
   RACE_REFEREE: "Referee",
   SPECTATOR: "Spectator",
 };
+
+function normalizeOptionalImageUrl(value) {
+  return normalizeBackendImageUrl(value, null);
+}
 
 // Normalizes API UserResponse to application-wide user structures
 function normalizeUser(user) {
@@ -29,7 +34,7 @@ function normalizeUser(user) {
     name: user.fullName || user.name || "",
     email: user.email || "",
     phone: user.phone || "",
-    avatarUrl: user.avatarUrl || null,
+    avatarUrl: normalizeOptionalImageUrl(user.avatarUrl),
     avatar: initials,
     role: appRole,
     roleCode: user.roleCode || user.role || "SPECTATOR",

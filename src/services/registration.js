@@ -1,4 +1,9 @@
 import api from "./api";
+import { normalizeHorseImageUrl } from "./horse";
+
+function normalizeOptionalHorseImage(value) {
+  return value ? normalizeHorseImageUrl(value) : "";
+}
 
 const mapRegistration = (item) => ({
   id: item.registrationId || item.id,
@@ -15,7 +20,7 @@ const mapRegistration = (item) => ({
     id: item.horseId || item.horse?.id,
     name: item.horseName || item.horse?.name,
     code: item.horseCode || item.horse?.code,
-    image: item.horseImage || item.horse?.image,
+    image: normalizeOptionalHorseImage(item.horse?.imageUrl || item.horse?.image),
     age: item.horseAge || item.horse?.age || 0,
     stable: item.horseStable || item.horse?.stable,
     breed: item.horseBreed || item.horse?.breed,
@@ -32,7 +37,9 @@ const mapRegistration = (item) => ({
 // List registrations (with filters like status=SUBMITTED)
 export async function getRegistrations(filters = {}) {
   try {
-    const apiFilters = { ...filters };
+    const apiFilters = Object.fromEntries(
+      Object.entries(filters).filter(([, value]) => value !== undefined && value !== null && value !== ""),
+    );
     if (apiFilters.page && apiFilters.page > 0) {
       apiFilters.page = apiFilters.page - 1;
     }
@@ -43,8 +50,7 @@ export async function getRegistrations(filters = {}) {
       delete apiFilters.pageSize;
     }
 
-    const params = new URLSearchParams(apiFilters).toString();
-    const response = await api.get(`/api/v1/registrations?${params}`);
+    const response = await api.get("/api/v1/registrations", { params: apiFilters });
     const data = response.data?.data || response.data || {};
     
     const rawItems = data.content || data.items || [];

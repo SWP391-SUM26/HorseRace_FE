@@ -1,4 +1,5 @@
 import api from "./api";
+import { normalizeBackendImageUrl } from "@/common/lib/imageUrl";
 
 const SESSION_KEY = "equine_elite_session";
 const REFRESH_TOKEN_TTL_SECONDS = 7 * 24 * 60 * 60;
@@ -32,6 +33,10 @@ export const ROLE_PERMISSIONS = {
 
 function normalizeApiRole(roleCode) {
   return API_ROLE_TO_APP_ROLE[roleCode] || roleCode || "Spectator";
+}
+
+function normalizeOptionalImageUrl(value) {
+  return normalizeBackendImageUrl(value, null);
 }
 
 function getApiErrorMessage(error, fallback) {
@@ -85,6 +90,7 @@ async function buildSessionFromAuthData(authData) {
       email: authData.email,
       role,
       apiRole,
+      avatarUrl: normalizeOptionalImageUrl(profile?.avatarUrl),
       avatar: initials || "US",
     },
     accessToken: authData.accessToken,
