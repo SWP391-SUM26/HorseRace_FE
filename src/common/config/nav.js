@@ -21,21 +21,19 @@ const HorseIcon = Rabbit;
 const ROLE_NAV = {
   HORSE_OWNER: {
     sidebar: [
-      { label: "Overview", to: "/owner-dashboard", icon: LayoutDashboard },
-      { label: "Stable Management", to: "/owner-dashboard/stable", icon: HorseIcon },
-      { label: "Jockey Market", to: "/owner-dashboard/jockeys", icon: Users },
-      { label: "Invitations", to: "/owner/invitations", icon: Mail },
-      { label: "Race Calendar", to: "/owner-dashboard/calendar", icon: CalendarDays },
-      { label: "Financials", to: "/owner-dashboard/financials", icon: Wallet },
+      { label: "Overview", to: "/owner/overview", icon: LayoutDashboard },
+      { label: "Stable Management", to: "/owner/stable", icon: HorseIcon },
+      { label: "Jockey Market", to: "/owner/jockey-market", icon: Users },
+      { label: "Race Schedule", to: "/owner/race-schedule", icon: CalendarDays },
       { label: "Profile", to: "/profile", icon: UserCog }
     ],
     topbar: [
-      { label: "Dashboard", to: "/owner-dashboard" },
-      { label: "Stable", to: "/owner-dashboard/stable" },
-      { label: "Marketplace", to: "/owner-dashboard/jockeys" },
-      { label: "Schedule", to: "/owner-dashboard/calendar" }
+      { label: "Dashboard", to: "/owner/overview" },
+      { label: "Stable", to: "/owner/stable" },
+      { label: "Marketplace", to: "/owner/jockey-market" },
+      { label: "Schedule", to: "/owner/race-schedule" }
     ],
-    primaryAction: { label: "Register Horse", to: "/owner-dashboard/stable" }
+    primaryAction: { label: "Register Horse", to: "/owner/stable" }
   },
   JOCKEY: {
     sidebar: [
@@ -85,8 +83,10 @@ const ROLE_NAV = {
   }
 };
 
+ROLE_NAV.OWNER = ROLE_NAV.HORSE_OWNER;
+
 function roleWord(role) {
-  return ROLE_LABELS[role];
+  return ROLE_LABELS[role] || ROLE_LABELS.HORSE_OWNER;
 }
 
 export {

@@ -17,14 +17,15 @@ import VerifyEmailPage from './pages/auth/VerifyEmailPage';
 import { Toaster } from 'react-hot-toast';
 import ProtectedRoute from './components/ProtectedRoute';
 import { DashboardLayout } from '@/common/layouts/DashboardLayout';
+import OwnerLayout from './layouts/OwnerLayout';
 import DashboardHome from './pages/dashboard/DashboardHome';
 import AdminDashboard from './pages/Admin/UserManagement';
 import Overview from './pages/Owner/Overview';
 import StableManagement from './pages/Owner/StableManagement';
-import RaceCalendar from './pages/Owner/RaceCalendar';
-// --- NEW JOCKEY & OWNER-JOCKEY PAGES ---
-import JockeyMarketPage from '@/features/jockey/pages/JockeyMarketPage';
+import JockeyMarket from './pages/Owner/JockeyMarket';
 import JockeyDetail from './pages/Owner/JockeyDetail';
+import OwnerRegistrations from './pages/Owner/OwnerRegistrations';
+import OwnerRaceSchedule from './pages/Owner/RaceSchedule';
 import MyInvitationsPage from '@/features/jockey/pages/MyInvitationsPage'; // For Owner
 import JockeyDashboardPage from '@/features/jockey/pages/JockeyDashboardPage';
 import JockeyInvitationsPage from '@/features/jockey/pages/JockeyInvitationsPage';
@@ -76,16 +77,21 @@ export default function App() {
 
         {/* DASHBOARDS */}
         <Route element={<ProtectedRoute roles={['Owner']} />}>
-          <Route element={<DashboardLayout />}>
+          <Route element={<OwnerLayout />}>
             <Route path="/owner/overview" element={<Overview />} />
+            <Route path="/owner/stable" element={<StableManagement />} />
+            <Route path="/owner/jockey-market" element={<JockeyMarket />} />
+            <Route path="/owner/jockey-market/:jockeyId" element={<JockeyDetail />} />
+            <Route path="/owner/registrations" element={<OwnerRegistrations />} />
+            <Route path="/owner/race-schedule" element={<OwnerRaceSchedule />} />
+
+            {/* Backward-compatible owner routes */}
             <Route path="/owner-dashboard" element={<Overview />} />
             <Route path="/owner-dashboard/stable" element={<StableManagement />} />
             <Route path="/owner-dashboard/notifications" element={<NotificationsCenter />} />
-            <Route path="/owner/jockey-market" element={<JockeyMarketPage />} />
-            <Route path="/owner/jockey-market/:jockeyId" element={<JockeyDetail />} />
-            <Route path="/owner-dashboard/jockeys" element={<JockeyMarketPage />} />
+            <Route path="/owner-dashboard/jockeys" element={<JockeyMarket />} />
             <Route path="/owner/invitations" element={<MyInvitationsPage />} />
-            <Route path="/owner-dashboard/calendar" element={<RaceCalendar />} />
+            <Route path="/owner-dashboard/calendar" element={<OwnerRaceSchedule />} />
             <Route path="/owner-dashboard/financials" element={<OwnerPlaceholder title="💵 Financials" />} />
           </Route>
         </Route>

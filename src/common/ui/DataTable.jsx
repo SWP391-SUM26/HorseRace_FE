@@ -8,8 +8,8 @@ function DataTable({ rows, columns, rowKey, loading, emptyLabel = "Kh\xF4ng c\xF
       </div>;
   }
   if (rows.length === 0) return <EmptyState title={emptyLabel} />;
-  return <div className={cn("overflow-x-auto bg-surface", !flush && "rounded-2xl border border-border")}>
-      <table className="w-full text-left text-sm">
+  return <div className={cn("w-full max-w-full overflow-x-auto bg-surface", !flush && "rounded-2xl border border-border")}>
+      <table className="min-w-[760px] w-full text-left text-sm">
         <thead className="border-b border-border bg-subtle/50">
           <tr>{columns.map((c) => <th key={c.key} className={cn("px-4 py-3 font-medium text-muted", c.className)}>{c.header}</th>)}</tr>
         </thead>
@@ -19,7 +19,7 @@ function DataTable({ rows, columns, rowKey, loading, emptyLabel = "Kh\xF4ng c\xF
     onClick={() => onRowClick?.(row)}
     className={cn("border-b border-border last:border-0", onRowClick && "cursor-pointer hover:bg-subtle/40", rowClassName?.(row))}
   >
-              {columns.map((c) => <td key={c.key} className={cn("px-4 py-3 text-ink", c.className)}>{c.render(row)}</td>)}
+              {columns.map((c) => <td key={c.key} className={cn("px-4 py-3 align-middle text-ink", c.className)}>{c.render(row)}</td>)}
             </tr>)}
         </tbody>
       </table>

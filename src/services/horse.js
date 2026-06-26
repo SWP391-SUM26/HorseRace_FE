@@ -1,4 +1,10 @@
 import api from "./api";
+import dashboardMonitor from "@/assets/dashboard_monitor.png";
+import { normalizeBackendImageUrl } from "@/common/lib/imageUrl";
+
+export function normalizeHorseImageUrl(value) {
+  return normalizeBackendImageUrl(value, dashboardMonitor);
+}
 
 // Map Backend HorseResponse to Frontend mock structure
 function mapBackendHorseToFrontend(be) {
@@ -9,7 +15,8 @@ function mapBackendHorseToFrontend(be) {
     age: "3yo", // Placeholder since frontend expects age string
     breed: be.breed || "Unknown",
     status: be.healthStatus === "INJURED" ? "INJURED" : (be.status === "ACTIVE" ? "FIT TO RACE" : "RESTING"),
-    image: be.imageUrl || be.image || "/assets/dashboard_monitor.png",
+    imageUrl: normalizeHorseImageUrl(be.imageUrl),
+    image: normalizeHorseImageUrl(be.imageUrl),
     details: `3yo ${be.breed || "Unknown"}`,
     nextRace: "No upcoming races",
     track: "",
@@ -128,8 +135,8 @@ export async function getHorsePedigree(id) {
 }
 
 export async function getHorseImage(id) {
-  const response = await api.get(`/api/v1/horses/${id}/image`);
-  return response.data?.data || response.data;
+  const response = await api.get(`/api/v1/horses/${id}`);
+  return normalizeHorseImageUrl(response.data?.data?.imageUrl);
 }
 
 export async function uploadHorseImage(id, file) {
@@ -138,5 +145,8 @@ export async function uploadHorseImage(id, file) {
   const response = await api.post(`/api/v1/horses/${id}/image`, formData, {
     headers: { "Content-Type": "multipart/form-data" }
   });
-  return response.data?.data || response.data;
+  if (response.data?.success) {
+    return mapBackendHorseToFrontend(response.data.data);
+  }
+  throw new Error(response.data?.message || "Failed to upload horse image");
 }
