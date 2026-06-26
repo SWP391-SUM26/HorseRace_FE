@@ -1,5 +1,6 @@
 const ROLE_LABELS = {
   ADMIN: "Admin",
+  OWNER: "Horse Owner",
   HORSE_OWNER: "Horse Owner",
   JOCKEY: "Jockey",
   RACE_REFEREE: "Referee",
@@ -8,7 +9,8 @@ const ROLE_LABELS = {
 
 const ROLE_HOME = {
   ADMIN: "/admin",
-  HORSE_OWNER: "/owner-dashboard",
+  OWNER: "/owner/overview",
+  HORSE_OWNER: "/owner/overview",
   JOCKEY: "/jockey-dashboard",
   RACE_REFEREE: "/referee/dashboard",
   SPECTATOR: "/spectator-dashboard"

@@ -1,5 +1,5 @@
 import { NavLink, Link } from "react-router-dom";
-import { HelpCircle, LogOut, PlusCircle } from "lucide-react";
+import { HelpCircle, LogOut } from "lucide-react";
 import { ROLE_NAV, roleWord } from "@/common/config/nav";
 import { ROLE_HOME } from "@/common/config/roles";
 import { useAuth } from "@/common/hooks/useAuth";
@@ -12,7 +12,7 @@ function Sidebar() {
   const { user, logout } = useAuth();
   if (!user) return null;
 
-  const roleKey = user.apiRole || user.role?.toUpperCase();
+  const roleKey = (user.apiRole || user.role || "").toUpperCase();
   const nav = ROLE_NAV[roleKey];
 
   return (
@@ -41,12 +41,6 @@ function Sidebar() {
       </nav>
 
       <div className="mt-auto flex flex-col gap-1 pt-6">
-        {nav?.primaryAction && (
-          <Link to={nav.primaryAction.to} className={cn(itemBase, itemInactive)}>
-            <PlusCircle size={18} />
-            {nav.primaryAction.label}
-          </Link>
-        )}
         <a href="#" className={cn(itemBase, itemInactive)}>
           <HelpCircle size={18} />
           Support
