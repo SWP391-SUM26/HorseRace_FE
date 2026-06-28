@@ -1,5 +1,4 @@
 import { useState, useMemo, useEffect } from "react";
-import { Routes, Route, Navigate } from "react-router-dom";
 import styles from "./UserManagement.module.css";
 import { getStoredSession } from "../../services/auth";
 import {
@@ -20,17 +19,7 @@ import StatCard, { Card } from '../../components/ui/StatCard';
 import PageHeader from '../../components/ui/PageHeader';
 import SearchFilterBar from '../../components/ui/SearchFilterBar';
 import DataTable from '../../components/ui/DataTable';
-import Sidebar from '../../components/layout/Sidebar';
-import Navbar from '../../components/layout/Navbar';
 import { DownloadIcon, UserPlusIcon, TrendingUpIcon, OwnerIcon, JockeyIcon, RefereeIcon, EyeIcon, CameraIcon } from '../../components/ui/Icons';
-import TournamentOrchestration from './TournamentOrchestration';
-import StaffingManagement from './StaffingManagement';
-import RaceManagement from './RaceManagement';
-import RaceApproval from './RaceApproval';
-import RegistrationApproval from './RegistrationApproval';
-import AuditLogs from './AuditLogs';
-import Settings from './Settings';
-import NotificationsCenter from '../shared/NotificationsCenter';
 
 // ==========================================
 // SUB-PAGES VIEW MANAGEMENT
@@ -516,6 +505,7 @@ const UserManagementView = () => {
           searchValue={search}
           onSearchChange={(e) => setSearch(e.target.value)}
           searchPlaceholder="Search by name, site, stable..."
+          showFilter={false}
         />
         <DataTable
           columns={tableColumns}
@@ -703,47 +693,12 @@ const PlaceholderView = ({ title }) => (
   </Card>
 );
 
-// ==========================================
-// MAIN APP ROUTER INTEGRATION
-// ==========================================
-function AdminDashboardLayout() {
-  return (
-    <div className={styles.layoutContainer}>
-      <Sidebar />
-      <div className={styles.mainContent}>
-        <Navbar
-          title="Equine Elite Admin"
-          systemStatus="System Status: Healthy"
-        />
-        <div className={styles.pageBody}>
-          <Routes>
-            <Route path="/" element={<UserManagementView />} />
-            <Route path="/users" element={<UserManagementView />} />
-            <Route path="/approvals" element={<RegistrationApproval />} />
-            <Route path="/tournaments" element={<TournamentOrchestration />} />
-            <Route path="/races" element={<RaceManagement />} />
-            <Route path="/race-approval" element={<RaceApproval />} />
-            <Route path="/staffing" element={<StaffingManagement />} />
-            <Route path="/settings" element={<Settings />} />
-            <Route path="/logs" element={<AuditLogs />} />
-            <Route path="/notifications" element={<NotificationsCenter />} />
-          </Routes>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 export default function UserManagement() {
   const session = getStoredSession();
 
   if (!session || session.user.role !== "Admin") {
-    return <Navigate to="/login" replace />;
+    return null;
   }
 
-  return (
-    <Routes>
-      <Route path="/*" element={<AdminDashboardLayout />} />
-    </Routes>
-  );
+  return <UserManagementView />;
 }

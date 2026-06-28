@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import styles from './TournamentOrchestration.module.css';
 import { getTournaments, createTournament, updateTournament, getTournamentById } from '../../services/tournament';
 import { getRaceList } from '../../services/race';
@@ -6,7 +6,7 @@ import { getRaceList } from '../../services/race';
 import PageHeader from '../../components/ui/PageHeader';
 import Button from '../../components/ui/Button';
 import DataTable from '../../components/ui/DataTable';
-import { FilterIcon, PlusIcon, CalendarIcon, AlertTriangleIcon, MoreHorizontalIcon, XIcon, LayoutIcon } from '../../components/ui/Icons';
+import { PlusIcon, CalendarIcon, AlertTriangleIcon, MoreHorizontalIcon, LayoutIcon } from '../../components/ui/Icons';
 
 export default function TournamentOrchestration() {
   const [tournaments, setTournaments] = useState([]);
@@ -17,6 +17,8 @@ export default function TournamentOrchestration() {
   const [page, setPage] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
   const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
+  const builderRef = useRef(null);
+  const codeInputRef = useRef(null);
 
   const showToast = (message, type = 'success') => {
     setToast({ show: true, message, type });
@@ -91,6 +93,8 @@ export default function TournamentOrchestration() {
       registrationCloseAt: '',
       status: 'DRAFT'
     });
+    builderRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    setTimeout(() => codeInputRef.current?.focus(), 250);
   };
 
   const handleSelect = async (item) => {
@@ -148,10 +152,7 @@ export default function TournamentOrchestration() {
         title="Tournament Orchestration"
         subtitle="Manage global racing circuits, schedule events, and configure track details."
         actions={
-          <>
-            <Button variant="ghost" icon={FilterIcon}>Filter View</Button>
-            <Button icon={PlusIcon} onClick={handleNewTournament}>New Tournament</Button>
-          </>
+          <Button icon={PlusIcon} onClick={handleNewTournament}>New Tournament</Button>
         }
       />
 
@@ -301,7 +302,7 @@ export default function TournamentOrchestration() {
         </div>
 
         {/* Right Column: Tournament Builder */}
-        <div className={styles.sidebar}>
+        <div className={styles.sidebar} ref={builderRef}>
           <div className={styles.builderCard}>
             <div className={styles.builderHeader}>
               <h3 className={styles.builderTitle}>Tournament Builder</h3>
@@ -312,6 +313,7 @@ export default function TournamentOrchestration() {
               <div className={styles.formGroup}>
                 <label className={styles.formLabel}>Tournament Code <span style={{ color: 'red' }}>*</span></label>
                 <input
+                  ref={codeInputRef}
                   type="text"
                   className={styles.formInput}
                   placeholder="e.g. TRN-2026-01"
