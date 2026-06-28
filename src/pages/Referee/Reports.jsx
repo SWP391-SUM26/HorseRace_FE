@@ -12,20 +12,21 @@ export default function Reports() {
   const [newReport, setNewReport] = useState({ reportType: 'GENERAL', summary: '', severityLevel: 'LOW', decision: '' });
   const [raceId, setRaceId] = useState('00000000-0000-0000-0000-000000000000'); // We need a valid raceId in reality
 
-  useEffect(() => {
-    fetchReports();
-  }, [raceId]);
-
   const fetchReports = async () => {
     try {
       const data = await getReports({ raceId });
-      // Filter out violations since they belong to another page
       const filtered = (data?.content || data || []).filter(r => r.reportType !== 'VIOLATION');
       setReports(filtered);
     } catch (e) {
       console.error(e);
     }
   };
+
+  useEffect(() => {
+    fetchReports();
+  }, [raceId]);
+
+  
 
   const handleCreateReport = async () => {
     try {

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Play, BarChart2, Loader2 } from 'lucide-react';
+import { Play, Loader2 } from 'lucide-react';
 import { getTournaments } from '../../services/tournament';
 import { getRaceList } from '../../services/race';
 import { Link } from 'react-router-dom';

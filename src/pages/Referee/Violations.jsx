@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import styles from './Violations.module.css';
 import { getJockeyList } from '../../services/jockey';
 import { getReports, submitReport } from '../../services/referee';
@@ -9,11 +9,6 @@ export default function Violations() {
   const [violations, setViolations] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    fetchJockeys();
-    fetchViolations();
-  }, []);
-
   const fetchViolations = async () => {
     try {
       const data = await getReports({ reportType: 'VIOLATION' });
@@ -23,28 +18,12 @@ export default function Violations() {
     }
   };
 
-  const handleResolveViolation = async (id) => {
-    try {
-      await submitReport(id);
-      alert('Violation resolved and submitted officially!');
-      fetchViolations();
-    } catch (e) {
-      alert('Failed to submit violation');
-    }
-  };
-
-  const handleReportViolation = () => {
-    alert('This feature will open a modal to select jockey, race, and submit a VIOLATION report.');
-  };
-
   const fetchJockeys = async () => {
     try {
       const data = await getJockeyList();
-      // Map API data or use mock if empty
       if (data && data.length > 0) {
         setJockeys(data);
       } else {
-        // Fallback mock data if DB is empty
         setJockeys([
           { id: 1, firstName: "Javier", lastName: "Castellano", age: 46, status: "ACTIVE", ridingStyle: "Hall of Fame", avatarUrl: "https://i.pravatar.cc/150?u=1" },
           { id: 2, firstName: "Irad", lastName: "Ortiz Jr.", age: 31, status: "ACTIVE", ridingStyle: "Pro Grade 1", avatarUrl: "https://i.pravatar.cc/150?u=2" },
@@ -58,6 +37,23 @@ export default function Violations() {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    fetchJockeys();
+    fetchViolations();
+  }, []);
+
+
+  const handleResolveViolation = async (id) => {
+    try {
+      await submitReport(id);
+      alert('Violation resolved and submitted officially!');
+      fetchViolations();
+    } catch (e) {
+      alert('Failed to submit violation');
+    }
+  };
+
 
   return (
     <div className={styles.container}>
