@@ -58,15 +58,13 @@ const ROLE_NAV = {
   },
   ADMIN: {
     sidebar: [
-      { label: "Overview", to: "/admin", icon: LayoutDashboard },
+      { label: "Dashboard", to: "/admin/dashboard", icon: LayoutDashboard },
+      { label: "User Management", to: "/admin/users", icon: Users },
       { label: "Tournaments", to: "/admin/tournaments", icon: Trophy },
-      { label: "Users", to: "/admin/users", icon: Users },
-      { label: "Staffing", to: "/admin/staffing", icon: UserCog },
-      { label: "Races", to: "/admin/races", icon: Flag },
-      { label: "Registrations", to: "/admin/registrations", icon: ClipboardList },
-      { label: "Horses", to: "/admin/horses", icon: HorseIcon },
-      { label: "Jockeys", to: "/admin/jockeys", icon: Users },
-      { label: "Oversight", to: "/admin/oversight", icon: Eye }
+      { label: "Race Management", to: "/admin/races", icon: Flag },
+      { label: "Race Approval", to: "/admin/race-approval", icon: ClipboardList },
+      { label: "Results & Predictions", to: "/admin/results", icon: BarChart3 },
+      { label: "Settings", to: "/admin/settings", icon: UserCog }
     ],
     topbar: []
   },

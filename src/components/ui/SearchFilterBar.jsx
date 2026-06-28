@@ -6,7 +6,8 @@ export default function SearchFilterBar({
   searchPlaceholder = "Search...", 
   searchValue, 
   onSearchChange,
-  onFilterClick 
+  onFilterClick,
+  showFilter = true,
 }) {
   return (
     <div className={styles.tableHeader}>
@@ -19,10 +20,12 @@ export default function SearchFilterBar({
           placeholder={searchPlaceholder} 
         />
       </div>
-      <button className={styles.filterBtn} onClick={onFilterClick}>
-        <FilterIcon className={styles.filterIcon} />
-        Filter
-      </button>
+      {showFilter && (
+        <button className={styles.filterBtn} onClick={onFilterClick}>
+          <FilterIcon className={styles.filterIcon} />
+          Filter
+        </button>
+      )}
     </div>
   );
 }
