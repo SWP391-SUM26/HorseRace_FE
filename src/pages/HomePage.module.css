@@ -1,1263 +1,957 @@
-    /* HomePage.module.css */
-
-    .appContainer {
-        min-height: 100vh;
-        background-color: #f8fafc;
-        color: #0f172a;
-        font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-        display: flex;
-        flex-direction: column;
-    }
-
-    /* NAVBAR */
-    .topbar {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        padding: 20px 48px;
-        background: rgba(3, 44, 35, 0.95);
-        backdrop-filter: blur(10px);
-        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-        position: sticky;
-        top: 0;
-        z-index: 100;
-    }
-
-    .brand {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        font-size: 1.25rem;
-        font-weight: 800;
-        color: #ffffff;
-        letter-spacing: -0.02em;
-    }
-
-    .brandDot {
-        width: 8px;
-        height: 8px;
-        background-color: #10b981;
-        border-radius: 50%;
-        box-shadow: 0 0 8px #10b981;
-    }
-
-    .topbarNav {
-        display: flex;
-        align-items: center;
-        gap: 24px;
-        position: absolute;
-        left: 50%;
-        transform: translateX(-50%);
-    }
-
-    .topbarNavBtn {
-        background: none;
-        border: none;
-        color: rgba(255, 255, 255, 0.7);
-        font-size: 0.95rem;
-        font-weight: 500;
-        cursor: pointer;
-        padding: 8px 12px;
-        border-radius: 6px;
-        transition: all 0.2s ease;
-    }
-
-    .topbarNavBtn:hover {
-        color: #ffffff;
-        background: rgba(255, 255, 255, 0.05);
-    }
-
-    .topbarSpacer {
-        flex-grow: 1;
-    }
-
-    .topbarActions {
-        display: flex;
-        align-items: center;
-        gap: 16px;
-    }
-
-    .loginBtn {
-        background-color: #ffffff;
-         color: #032c23;
-        border: none;
-        border-radius: 8px;
-        padding: 10px 20px;
-        font-size: 0.95rem;
-        font-weight: 600;
-        cursor: pointer;
-        transition: all 0.2s ease;
-    }
-
-    .loginBtn:hover {
-        background-color: #f1f5f9;
-            transform: translateY(-1px);
-    }
-
-   
-    /* HERO SECTION */
-    .hero {
-        position: relative;
-        background: linear-gradient(180deg, #032c23 0%, #064e3b 60%, #0b5d46 100%);
-        padding: 120px 24px 180px 24px;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        text-align: center;
-        overflow: hidden;
-        color: #ffffff;
-    }
-
-    .hero::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background-image: url('https://images.unsplash.com/photo-1553284965-83fd3e82fa5a');
-        background-size: cover;
-        background-position: center 30%;
-        opacity: 0.07;
-        mix-blend-mode: overlay;
-        pointer-events: none;
-    }
-
-    .heroGlow {
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        transform: translate(-55%, -60%);
-        width: 600px;
-        height: 600px;
-        background: radial-gradient(circle, rgba(16, 185, 129, 0.15) 0%, rgba(0, 0, 0, 0) 70%);
-        pointer-events: none;
-        z-index: 1;
-    }
-
-    .heroBadge {
-        background: rgba(16, 185, 129, 0.08);
-        border: 1px solid rgba(16, 185, 129, 0.25);
-        color: #34d399;
-        border-radius: 9999px;
-        padding: 8px 18px;
-        font-size: 0.78rem;
-        font-weight: 700;
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-        margin-bottom: 32px;
-        letter-spacing: 0.05em;
-        text-transform: uppercase;
-        z-index: 2;
-    }
-
-    .heroBadgeDot {
-        width: 6px;
-        height: 6px;
-        background-color: #34d399;
-        border-radius: 50%;
-        box-shadow: 0 0 8px #34d399;
-    }
-
-    .heroTitle {
-        font-size: 3.5rem;
-        font-weight: 900;
-        line-height: 1.15;
-        letter-spacing: -0.03em;
-        margin: 0 0 24px 0;
-        max-width: 900px;
-        z-index: 2;
-    }
-
-    .heroSubtitle {
-        font-size: 1.2rem;
-        color: rgba(255, 255, 255, 0.8);
-        max-width: 680px;
-        line-height: 1.6;
-        margin: 0 0 40px 0;
-        z-index: 2;
-    }
-
-    .heroButtons {
-        display: flex;
-        gap: 16px;
-        z-index: 2;
-    }
-
-    .heroPrimaryBtn {
-        background-color: #34d399;
-        color: #022c22;
-        border: none;
-        border-radius: 8px;
-        padding: 14px 28px;
-        font-size: 0.95rem;
-        font-weight: 700;
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        transition: all 0.2s ease;
-    }
-
-    .heroPrimaryBtn:hover {
-        background-color: #059669;
-        color: #ffffff;
-        transform: translateY(-1px);
-    }
-
-    .arrow {
-        font-size: 1.1rem;
-    }
-
-    .heroSecondaryBtn {
-        background: transparent;
-        border: 1px solid rgba(255, 255, 255, 0.35);
-        color: #ffffff;
-        border-radius: 8px;
-        padding: 14px 28px;
-        font-size: 0.95rem;
-        font-weight: 600;
-        cursor: pointer;
-        transition: all 0.2s ease;
-    }
-
-    .heroSecondaryBtn:hover {
-        background: rgba(255, 255, 255, 0.06);
-        border-color: #ffffff;
-        transform: translateY(-1px);
-    }
-
-    /* MARKET & LEADERBOARD SECTION */
-    .marketSection {
-        max-width: 1200px;
-        width: 100%;
-        margin: -100px auto 0 auto;
-        padding: 0 24px;
-        display: grid;
-        grid-template-columns: 8fr 4fr;
-        gap: 24px;
-        position: relative;
-        z-index: 10;
-        box-sizing: border-box;
-    }
-
-    @media (max-width: 1024px) {
-        .marketSection {
-            grid-template-columns: 1fr;
-            margin-top: -60px;
-        }
-    }
-
-    .marketCard {
-        background: #ffffff;
-        border: 1px solid #e2e8f0;
-        border-radius: 20px;
-        padding: 36px;
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.04), 0 1px 3px rgba(0, 0, 0, 0.02);
-    }
-
-    .marketHeader {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        border-bottom: 1px solid #f1f5f9;
-        padding-bottom: 24px;
-        margin-bottom: 24px;
-    }
-
-    .marketLive {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        color: #ef4444;
-        font-weight: 700;
-        font-size: 0.95rem;
-    }
-
-    .livePulseDot {
-        width: 8px;
-        height: 8px;
-        background-color: #ef4444;
-        border-radius: 50%;
-        animation: pulse 1.5s infinite;
-    }
-
-    .marketMeta {
-        font-size: 0.85rem;
-        color: #64748b;
-        margin-top: 4px;
-    }
-
-    .postTime {
-        text-align: right;
-    }
-
-    .postTime span {
-        font-size: 0.72rem;
-        font-weight: 800;
-        color: #64748b;
-        letter-spacing: 0.05em;
-    }
-
-    .postTime h2 {
-        font-size: 1.8rem;
-        font-weight: 800;
-        color: #047857;
-        margin: 4px 0 0 0;
-        font-variant-numeric: tabular-nums;
-    }
-
-    .marketTitle {
-        font-size: 0.85rem;
-        font-weight: 800;
-        color: #64748b;
-        letter-spacing: 0.05em;
-        margin: 0 0 20px 0;
-    }
-
-    .marketContent {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 32px;
-    }
-
-    @media (max-width: 768px) {
-        .marketContent {
-            grid-template-columns: 1fr;
-            gap: 24px;
-        }
-    }
-
-    .runners {
-        display: flex;
-        flex-direction: column;
-        gap: 12px;
-    }
-
-    .runnerCard {
-        display: flex;
-        align-items: center;
-        padding: 12px 16px;
-        background-color: #f8fafc;
-        border: 1px solid #f1f5f9;
-        border-radius: 10px;
-        transition: all 0.2s ease;
-    }
-
-    .runnerCard:hover {
-        background-color: #f1f5f9;
-        border-color: #e2e8f0;
-    }
-
-    .runnerIndex {
-        width: 24px;
-        font-weight: 700;
-        color: #64748b;
-        font-size: 0.9rem;
-    }
-
-    .runnerInfo {
-        flex-grow: 1;
-        display: flex;
-        flex-direction: column;
-    }
-
-    .runnerInfo strong {
-        font-size: 0.95rem;
-        color: #0f172a;
-    }
-
-    .runnerInfo span {
-        font-size: 0.78rem;
-        color: #64748b;
-        margin-top: 2px;
-    }
-
-    .oddsBox {
-        background-color: #e2e8f0;
-        color: #334155;
-        font-size: 0.82rem;
-        font-weight: 700;
-        padding: 6px 12px;
-        border-radius: 6px;
-        min-width: 40px;
-        text-align: center;
-    }
-
-    .aiCard {
-        background-color: #f0fdf4;
-        border: 1px solid #d1fae5;
-        border-radius: 12px;
-        padding: 24px;
-        display: flex;
-        flex-direction: column;
-    }
-
-    .aiCardTitle {
-        font-size: 0.95rem;
-        font-weight: 800;
-        color: #065f46;
-        margin: 0 0 12px 0;
-        display: flex;
-        align-items: center;
-        gap: 6px;
-    }
-
-    .aiBrainIcon {
-        font-size: 1.1rem;
-    }
-
-    .aiCardText {
-        font-size: 0.88rem;
-        color: #065f46;
-        line-height: 1.5;
-        margin: 0 0 20px 0;
-    }
-
-    .aiConfidenceHeader {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        font-size: 0.75rem;
-        font-weight: 800;
-        color: #065f46;
-        margin-bottom: 8px;
-    }
-
-    .confidenceValue {
-        color: #059669;
-    }
-
-    .aiProgressBar {
-        width: 100%;
-        height: 6px;
-        background-color: #d1fae5;
-        border-radius: 3px;
-        overflow: hidden;
-    }
-
-    .aiProgressBarFill {
-        height: 100%;
-        background-color: #059669;
-        border-radius: 3px;
-    }
-
-    /* Leaderboard Card */
-    .leaderboardCard {
-        background: #0f172a;
-        border-radius: 20px;
-        padding: 36px;
-        color: #ffffff;
-        display: flex;
-        flex-direction: column;
-        justify-content: space-between;
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
-    }
-
-    .leaderboardTitle {
-        font-size: 0.85rem;
-        font-weight: 800;
-        color: #94a3b8;
-        letter-spacing: 0.08em;
-        margin: 0 0 24px 0;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-    }
-
-    .trophyIcon {
-        font-size: 1.1rem;
-    }
-
-    .leaderboardList {
-        display: flex;
-        flex-direction: column;
-        gap: 16px;
-        margin-bottom: 24px;
-    }
-
-    .rankItem {
-        display: flex;
-        align-items: center;
-        padding: 12px 0;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-    }
-
-    .rankItem:last-child {
-        border-bottom: none;
-    }
-
-    .rankNum {
-        font-size: 1.1rem;
-        font-weight: 800;
-        color: #64748b;
-        margin-right: 16px;
-    }
-
-    .rankDetails {
-        flex-grow: 1;
-        display: flex;
-        flex-direction: column;
-    }
-
-    .rankDetails strong {
-        font-size: 0.95rem;
-        color: #ffffff;
-    }
-
-    .rankDetails small {
-        font-size: 0.78rem;
-        color: #64748b;
-        margin-top: 2px;
-    }
-
-    .roleBadge {
-        font-size: 0.72rem;
-        font-weight: 700;
-        padding: 4px 10px;
-        border-radius: 4px;
-    }
-
-    .badgeHorse {
-        background-color: rgba(16, 185, 129, 0.12);
-        color: #34d399;
-    }
-
-    .badgeJockey {
-        background-color: rgba(56, 189, 248, 0.12);
-        color: #38bdf8;
-    }
-
-    .viewRankingsBtn {
-        background: none;
-        border: none;
-        color: #94a3b8;
-        font-size: 0.88rem;
-        font-weight: 600;
-        cursor: pointer;
-        text-align: center;
-        padding: 8px;
-        transition: color 0.2s ease;
-        width: 100%;
-    }
-
-    .viewRankingsBtn:hover {
-        color: #ffffff;
-    }
-
-    /* THE ELITE ECOSYSTEM */
-    .section {
-        padding: 80px 24px;
-        background-color: #f8fafc;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-    }
-
-    .sectionHeader {
-        text-align: center;
-        max-width: 680px;
-        margin-bottom: 56px;
-    }
-
-    .sectionTitle {
-        font-size: 2.25rem;
-        font-weight: 800;
-        color: #0f172a;
-        margin: 0 0 12px 0;
-        letter-spacing: -0.025em;
-    }
-
-    .sectionSubtitle {
-        font-size: 1.05rem;
-        color: #64748b;
-        line-height: 1.6;
-        margin: 0;
-    }
-
-    .portalGrid {
-        display: grid;
-        grid-template-columns: repeat(3, minmax(0, 1fr));
-        gap: 32px;
-        max-width: 1200px;
-        width: 100%;
-    }
-
-    @media (max-width: 1024px) {
-        .portalGrid {
-            grid-template-columns: repeat(2, minmax(0, 1fr));
-            gap: 24px;
-        }
-    }
-
-    @media (max-width: 768px) {
-        .portalGrid {
-            grid-template-columns: 1fr;
-            gap: 24px;
-        }
-    }
-
-    .portalCard {
-        background: #ffffff;
-        border: 1px solid #e2e8f0;
-        border-radius: 20px;
-        padding: 36px 32px;
-        display: flex;
-        flex-direction: column;
-        justify-content: space-between;
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02), 0 2px 4px -1px rgba(0, 0, 0, 0.01);
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    }
-
-    .portalCard:hover {
-        transform: translateY(-4px);
-        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.04), 0 10px 10px -5px rgba(0, 0, 0, 0.02);
-    }
-
-    .portalCardTop {
-        display: flex;
-        flex-direction: column;
-        margin-bottom: 20px;
-    }
-
-    .portalIcon {
-        width: 44px;
-        height: 44px;
-        border-radius: 12px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        margin-bottom: 24px;
-        border: 1px solid transparent;
-    }
-
-    .ownerIcon {
-        background-color: #ecfdf5;
-        color: #047857;
-        border-color: #d1fae5;
-    }
-
-    .jockeyIcon {
-        background-color: #f0f9ff;
-        color: #0284c7;
-        border-color: #e0f2fe;
-    }
-
-    .spectatorIcon {
-        background-color: #f8fafc;
-        color: #475569;
-        border-color: #e2e8f0;
-    }
-
-    .portalCardTitle {
-        font-size: 1.45rem;
-        font-weight: 800;
-        color: #0f172a;
-        margin: 0 0 10px 0;
-        letter-spacing: -0.01em;
-    }
-
-    .portalCardDesc {
-        font-size: 0.95rem;
-        color: #64748b;
-        line-height: 1.55;
-        margin: 0;
-    }
-
-    .portalCardBody {
-        flex-grow: 1;
-        display: flex;
-        flex-direction: column;
-    }
-
-    .cardWidget {
-        background-color: #f8fafc;
-        border: 1px solid #f1f5f9;
-        border-radius: 10px;
-        padding: 16px;
-        margin: 20px 0 24px 0;
-    }
-
-    .widgetHeader {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 12px;
-    }
-
-    .widgetLabel {
-        font-size: 0.72rem;
-        font-weight: 800;
-        color: #64748b;
-        letter-spacing: 0.05em;
-    }
-
-    .roiValue {
-        font-size: 0.85rem;
-        font-weight: 700;
-        color: #059669;
-    }
-
-    .progressBarBg {
-        width: 100%;
-        height: 6px;
-        background-color: #e2e8f0;
-        border-radius: 3px;
-        overflow: hidden;
-    }
-
-    .progressBarFill {
-        height: 100%;
-        background-color: #047857;
-        border-radius: 3px;
-    }
-
-    .statusBadge {
-        font-size: 0.72rem;
-        font-weight: 700;
-        background-color: #dbeafe;
-        color: #1d4ed8;
-        padding: 3px 8px;
-        border-radius: 4px;
-    }
-
-    .bookingDetails {
-        display: flex;
-        flex-direction: column;
-        gap: 2px;
-    }
-
-    .bookingTitle {
-        font-size: 0.95rem;
-        font-weight: 700;
-        color: #0f172a;
-    }
-
-    .bookingTime {
-        font-size: 0.8rem;
-        color: #64748b;
-    }
-
-    .liveIndicator {
-        display: flex;
-        align-items: center;
-    }
-
-    .liveDot {
-        width: 6px;
-        height: 6px;
-        background-color: #ef4444;
-        border-radius: 50%;
-        display: inline-block;
-        animation: pulse 1.5s infinite;
-    }
-
-    .videoPlayer {
-        width: 100%;
-        height: 105px;
-        background-color: #1e293b;
-        border-radius: 8px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        cursor: pointer;
-        transition: background-color 0.2s ease;
-    }
-
-    .videoPlayer:hover {
-        background-color: #0f172a;
-    }
-
-    .playButton {
-        width: 36px;
-        height: 36px;
-        background: rgba(255, 255, 255, 0.08);
-        border: 1.5px solid rgba(255, 255, 255, 0.25);
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: #ffffff;
-        transition: all 0.2s ease;
-    }
-
-    .playButton svg {
-        margin-left: 2px;
-    }
-
-    .videoPlayer:hover .playButton {
-        transform: scale(1.1);
-        background: rgba(255, 255, 255, 0.18);
-        border-color: #ffffff;
-    }
-
-    .portalFeatures {
-        list-style: none;
-        padding: 0;
-        margin: 0 0 32px 0;
-    }
-
-    .portalFeature {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        font-size: 0.92rem;
-        color: #334155;
-        margin-bottom: 12px;
-        font-weight: 500;
-    }
-
-    .portalFeature:last-child {
-        margin-bottom: 0;
-    }
-
-    .checkIcon {
-        flex-shrink: 0;
-    }
-
-    .ownerCheck {
-        color: #059669;
-    }
-
-    .jockeyCheck {
-        color: #475569;
-    }
-
-    .spectatorCheck {
-        color: #1e293b;
-    }
-
-    .portalCardFooter {
-        margin-top: auto;
-    }
-
-    .portalLaunchBtn {
-        width: 100%;
-        padding: 14px;
-        border: none;
-        border-radius: 10px;
-        font-size: 0.95rem;
-        font-weight: 600;
-        cursor: pointer;
-        transition: all 0.2s ease;
-    }
-
-    .portalLaunchBtn:hover {
-        transform: translateY(-1px);
-    }
-
-    .ownerBtn {
-        background-color: #022c22;
-        color: #ffffff;
-    }
-
-    .ownerBtn:hover {
-        background-color: #064e3b;
-        box-shadow: 0 4px 12px rgba(2, 44, 34, 0.15);
-    }
-
-    .jockeyBtn {
-        background-color: #475569;
-        color: #ffffff;
-    }
-
-    .jockeyBtn:hover {
-        background-color: #334155;
-        box-shadow: 0 4px 12px rgba(71, 85, 105, 0.15);
-    }
-
-    .spectatorBtn {
-        background-color: #1e293b;
-        color: #ffffff;
-    }
-
-    .spectatorBtn:hover {
-        background-color: #0f172a;
-        box-shadow: 0 4px 12px rgba(30, 41, 59, 0.15);
-    }
-
-    /* SPECIAL FEATURE: VIRTUAL PADDOCK */
-    .virtualPaddock {
-        padding: 80px 24px;
-        background-color: #eff6ff;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-    }
-
-    .sectionLabel {
-        font-size: 0.72rem;
-        font-weight: 800;
-        color: #1d4ed8;
-        letter-spacing: 0.12em;
-        margin-bottom: 12px;
-        text-transform: uppercase;
-    }
-
-    .paddockContainer {
-        max-width: 1200px;
-        width: 100%;
-        display: grid;
-        grid-template-columns: 7fr 5fr;
-        gap: 32px;
-        margin-top: 40px;
-    }
-
-    @media (max-width: 1024px) {
-        .paddockContainer {
-            grid-template-columns: 1fr;
-            gap: 24px;
-        }
-    }
-
-    .paddockHorse {
-        position: relative;
-        border-radius: 20px;
-        overflow: hidden;
-        aspect-ratio: 16 / 9;
-        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
-    }
-
-    .horseImg {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-    }
-
-    .paddockOverlay {
-        position: absolute;
-        bottom: 0;
-        left: 0;
-        right: 0;
-        padding: 40px;
-        background: linear-gradient(180deg, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 0.85) 100%);
-        color: #ffffff;
-        display: flex;
-        flex-direction: column;
-    }
-
-    .horseBadge {
-        background: rgba(245, 158, 11, 0.18);
-        border: 1px solid rgba(245, 158, 11, 0.35);
-        color: #f59e0b;
-        border-radius: 9999px;
-        padding: 4px 12px;
-        font-size: 0.7rem;
-        font-weight: 800;
-        width: fit-content;
-        margin-bottom: 12px;
-        letter-spacing: 0.05em;
-    }
-
-    .horseName {
-        font-size: 2.25rem;
-        font-weight: 900;
-        margin: 0 0 20px 0;
-        letter-spacing: -0.01em;
-    }
-
-    .horseStats {
-        display: flex;
-        gap: 32px;
-    }
-
-    .statBox {
-        display: flex;
-        flex-direction: column;
-    }
-
-    .statBox strong {
-        font-size: 1.5rem;
-        font-weight: 800;
-        line-height: 1;
-    }
-
-    .statBox span {
-        font-size: 0.7rem;
-        color: #94a3b8;
-        font-weight: 700;
-        margin-top: 4px;
-        letter-spacing: 0.05em;
-    }
-
-    .metricsPanel {
-        background-color: #1e293b;
-        border-radius: 20px;
-        padding: 36px;
-        color: #ffffff;
-        display: flex;
-        flex-direction: column;
-        justify-content: space-between;
-        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
-    }
-
-    .metricsTitle {
-        font-size: 1.15rem;
-        font-weight: 800;
-        margin: 0 0 28px 0;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-    }
-
-    .metricsSliderIcon {
-        font-size: 1.25rem;
-        color: #38bdf8;
-    }
-
-    .metricItem {
-        margin-bottom: 24px;
-    }
-
-    .metricHeader {
-        display: flex;
-        justify-content: space-between;
-        margin-bottom: 8px;
-        font-size: 0.95rem;
-        font-weight: 600;
-    }
-
-    .metricHeader span {
-        color: #94a3b8;
-    }
-
-    .metricBar {
-        width: 100%;
-        height: 6px;
-        background-color: rgba(255, 255, 255, 0.1);
-        border-radius: 3px;
-        overflow: hidden;
-    }
-
-    .metricFill {
-        height: 100%;
-        background-color: #34d399;
-        border-radius: 3px;
-    }
-
-    .pedigreeBtn {
-        background-color: #047857;
-        color: #ffffff;
-        border: none;
-        border-radius: 10px;
-        padding: 14px 20px;
-        font-size: 0.95rem;
-        font-weight: 700;
-        cursor: pointer;
-        transition: all 0.2s ease;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 8px;
-        margin-top: 12px;
-    }
-
-    .pedigreeBtn:hover {
-        background-color: #059669;
-        transform: translateY(-1px);
-    }
-
-    .btnArrow {
-        font-size: 1rem;
-    }
-
-    /* THE BACKBONE */
-    .backboneSection {
-        padding: 100px 24px;
-        background-color: #ffffff;
-        display: flex;
-        justify-content: center;
-    }
-
-    .backboneContainer {
-        max-width: 1200px;
-        width: 100%;
-        display: grid;
-        grid-template-columns: 6fr 6fr;
-        gap: 64px;
-        align-items: center;
-    }
-
-    @media (max-width: 1024px) {
-        .backboneContainer {
-            grid-template-columns: 1fr;
-            gap: 40px;
-        }
-    }
-
-    .backboneLeft {
-        display: flex;
-        flex-direction: column;
-    }
-
-    .backboneLabel {
-        font-size: 0.72rem;
-        font-weight: 800;
-        color: #047857;
-        letter-spacing: 0.12em;
-        margin-bottom: 12px;
-        text-transform: uppercase;
-    }
-
-    .backboneTitle {
-        font-size: 2.5rem;
-        font-weight: 800;
-        color: #0f172a;
-        margin: 0 0 20px 0;
-        line-height: 1.15;
-        letter-spacing: -0.02em;
-    }
-
-    .backboneDesc {
-        font-size: 1.05rem;
-        color: #64748b;
-        line-height: 1.6;
-        margin: 0 0 36px 0;
-    }
-
-    .backboneFeaturesGrid {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 24px;
-        margin-bottom: 40px;
-    }
-
-    @media (max-width: 576px) {
-        .backboneFeaturesGrid {
-            grid-template-columns: 1fr;
-        }
-    }
-
-    .backboneFeatureCard {
-        display: flex;
-        gap: 16px;
-        padding: 20px;
-        background-color: #f8fafc;
-        border: 1px solid #f1f5f9;
-        border-radius: 12px;
-    }
-
-    .featureCardIcon {
-        font-size: 1.5rem;
-    }
-
-    .featureCardContent h4 {
-        font-size: 1rem;
-        font-weight: 700;
-        color: #0f172a;
-        margin: 0 0 4px 0;
-    }
-
-    .featureCardContent p {
-        font-size: 0.85rem;
-        color: #64748b;
-        margin: 0;
-    }
-
-    .adminDashboardBtn {
-        background-color: #022c22;
-        color: #ffffff;
-        border: none;
-        border-radius: 10px;
-        padding: 14px 28px;
-        font-size: 0.95rem;
-        font-weight: 700;
-        cursor: pointer;
-        width: fit-content;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        transition: all 0.2s ease;
-    }
-
-    .adminDashboardBtn:hover {
-        background-color: #064e3b;
-        transform: translateY(-1px);
-    }
-
-    .backboneRight {
-        display: flex;
-        justify-content: center;
-    }
-
-    .monitorImg {
-        max-width: 100%;
-        height: auto;
-        border-radius: 16px;
-        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.06);
-    }
-
-    /* FOOTER */
-    .footer {
-        background-color: #0f172a;
-        color: #94a3b8;
-        padding: 80px 48px;
-        border-top: 1px solid rgba(255, 255, 255, 0.05);
-    }
-
-    .footerGrid {
-        max-width: 1200px;
-        margin: 0 auto;
-        display: grid;
-        grid-template-columns: 4fr 2fr 2fr 2fr;
-        gap: 48px;
-    }
-
-    @media (max-width: 768px) {
-        .footerGrid {
-            grid-template-columns: 1fr;
-            gap: 32px;
-        }
-    }
-
-    .footerBrandCol {
-        display: flex;
-        flex-direction: column;
-    }
-
-    .footerBrand {
-        font-size: 1.5rem;
-        font-weight: 800;
-        color: #ffffff;
-        margin-bottom: 16px;
-        letter-spacing: -0.01em;
-    }
-
-    .footerTagline {
-        font-size: 0.92rem;
-        line-height: 1.6;
-        margin: 0;
-        max-width: 280px;
-    }
-
-    .footerCol {
-        display: flex;
-        flex-direction: column;
-        gap: 12px;
-    }
-
-    .footerColTitle {
-        font-size: 0.9rem;
-        font-weight: 800;
-        color: #ffffff;
-        margin: 0 0 8px 0;
-        letter-spacing: 0.05em;
-        text-transform: uppercase;
-    }
-
-    .footerLink {
-        background: none;
-        border: none;
-        color: #94a3b8;
-        font-size: 0.92rem;
-        text-align: left;
-        cursor: pointer;
-        padding: 0;
-        transition: color 0.2s ease;
-        width: fit-content;
-    }
-
-    .footerLink:hover {
-        color: #ffffff;
-    }
+.page {
+  min-height: 100vh;
+  background: #f8fafc;
+  color: #0f172a;
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+.hero {
+  position: relative;
+  overflow: hidden;
+  background: #022c22;
+}
+
+.heroImage {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center;
+  opacity: 0.22;
+}
+
+.heroOverlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(2, 44, 34, 0.72), rgba(2, 44, 34, 0.88) 52%, #022c22);
+}
+
+.heroContent {
+  position: relative;
+  z-index: 1;
+}
+
+.navbar {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 22px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.logoLink {
+  color: #ffffff;
+  text-decoration: none;
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.navLinks {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  gap: 30px;
+}
+
+.navLinks a {
+  color: rgba(255, 255, 255, 0.78);
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.navLinks a:hover {
+  color: #ffffff;
+}
+
+.navButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 38px;
+  padding: 0 18px;
+  border-radius: 10px;
+  background: #10b981;
+  color: #022c22;
+  text-decoration: none;
+  font-weight: 800;
+}
+
+.heroCopy {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 92px 24px 134px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.heroBadge {
+  display: inline-flex;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 999px;
+  color: rgba(255, 255, 255, 0.74);
+  padding: 8px 16px;
+  text-transform: uppercase;
+  font-size: 12px;
+  letter-spacing: 0.18em;
+  font-weight: 800;
+}
+
+.heroCopy h1 {
+  color: #ffffff;
+  margin: 28px 0 0;
+  font-size: clamp(48px, 8vw, 76px);
+  line-height: 1.04;
+  text-transform: uppercase;
+  letter-spacing: -0.04em;
+}
+
+.heroCopy h1 span {
+  color: rgba(236, 253, 245, 0.9);
+}
+
+.heroCopy p {
+  max-width: 680px;
+  margin: 24px 0 0;
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 18px;
+  line-height: 1.75;
+}
+
+.heroActions {
+  margin-top: 38px;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 14px;
+}
+
+.primaryCta,
+.secondaryCta,
+.portalButton,
+.adminButton,
+.metricsButton {
+  text-decoration: none;
+  border: 0;
+  cursor: pointer;
+  font-weight: 800;
+  transition: 0.2s ease;
+}
+
+.primaryCta {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 48px;
+  padding: 0 22px;
+  border-radius: 12px;
+  background: #10b981;
+  color: #022c22;
+}
+
+.primaryCta:hover {
+  background: #34d399;
+  transform: translateY(-1px);
+}
+
+.secondaryCta {
+  display: inline-flex;
+  align-items: center;
+  min-height: 48px;
+  padding: 0 22px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.32);
+  color: #ffffff;
+}
+
+.secondaryCta:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.liveSection {
+  background: #f8fafc;
+}
+
+.liveGrid {
+  position: relative;
+  z-index: 2;
+  max-width: 1180px;
+  margin: -64px auto 0;
+  padding: 0 24px;
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 24px;
+}
+
+.card {
+  border: 1px solid #e2e8f0;
+  background: #ffffff;
+  border-radius: 22px;
+  box-shadow: 0 18px 48px rgba(15, 23, 42, 0.08);
+}
+
+.marketCard {
+  padding: 28px;
+}
+
+.liveHeader {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  align-items: flex-start;
+}
+
+.liveTitleGroup {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.pulseDot {
+  position: relative;
+  margin-top: 8px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #ef4444;
+  flex: none;
+}
+
+.pulseDot span {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: #ef4444;
+  opacity: 0.45;
+  animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+  from {
+    transform: scale(1);
+    opacity: 0.55;
+  }
+
+  to {
+    transform: scale(2.4);
+    opacity: 0;
+  }
+}
+
+.liveTitle {
+  margin: 0;
+  color: #0f172a;
+  font-weight: 800;
+}
+
+.mutedText {
+  margin: 4px 0 0;
+  color: #64748b;
+  font-size: 14px;
+}
+
+.postTime {
+  text-align: right;
+}
+
+.postTime span,
+.kicker {
+  display: block;
+  color: #64748b;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: 800;
+}
+
+.postTime strong {
+  display: block;
+  margin-top: 6px;
+  color: #0f172a;
+  font-size: 28px;
+  font-variant-numeric: tabular-nums;
+}
+
+.divider {
+  height: 1px;
+  background: #e2e8f0;
+  margin: 24px 0;
+}
+
+.marketList,
+.leaderboardList,
+.bulletList,
+.footerColumn ul {
+  list-style: none;
+  padding: 0;
+}
+
+.marketList {
+  margin: 14px 0 0;
+  display: grid;
+  gap: 12px;
+}
+
+.marketList li {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.rankBox {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #f1f5f9;
+  font-weight: 800;
+}
+
+.marketList strong {
+  display: block;
+  color: #0f172a;
+}
+
+.marketList small {
+  display: block;
+  color: #64748b;
+}
+
+.odds {
+  margin-left: auto;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: #f1f5f9;
+  color: #334155;
+  font-weight: 800;
+}
+
+.aiCallout {
+  margin-top: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  background: #ecfdf5;
+  border-radius: 16px;
+  padding: 18px;
+}
+
+.aiCallout div {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.aiCallout p {
+  margin: 0;
+  color: #064e3b;
+  font-size: 14px;
+}
+
+.aiCallout strong {
+  flex: none;
+  border-radius: 999px;
+  background: #047857;
+  color: #ffffff;
+  padding: 7px 12px;
+  font-size: 12px;
+}
+
+.aiBadge {
+  background: #bbf7d0;
+  color: #047857;
+  padding: 5px 9px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.leaderboardCard {
+  padding: 28px;
+  background: #064e3b;
+  border-color: #047857;
+  color: #ffffff;
+  display: flex;
+  flex-direction: column;
+}
+
+.leaderboardTitle {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.9);
+  font-weight: 900;
+}
+
+.leaderboardList {
+  margin: 24px 0;
+  display: grid;
+  gap: 18px;
+  flex: 1;
+}
+
+.leaderboardList li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.leaderboardList li > span {
+  color: rgba(255, 255, 255, 0.5);
+  font-family: monospace;
+}
+
+.leaderboardList strong {
+  display: block;
+  color: #ffffff;
+}
+
+.leaderboardList small {
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.leaderboardList svg {
+  margin-left: auto;
+  color: #a7f3d0;
+}
+
+.leaderboardCard a {
+  color: rgba(255, 255, 255, 0.75);
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.ecosystemSection,
+.paddockSection,
+.backboneSection {
+  padding: 86px 24px;
+}
+
+.sectionHeader {
+  max-width: 650px;
+  margin: 0 auto 46px;
+  text-align: center;
+}
+
+.sectionHeader span,
+.sectionKicker {
+  color: #047857;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.sectionHeader h2,
+.backboneGrid h2 {
+  margin: 10px 0 0;
+  color: #0f172a;
+  font-size: 38px;
+  line-height: 1.12;
+  letter-spacing: -0.03em;
+}
+
+.sectionHeader p,
+.backboneGrid p {
+  color: #64748b;
+  line-height: 1.7;
+}
+
+.ecosystemGrid {
+  max-width: 1180px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+}
+
+.ecosystemCard {
+  padding: 28px;
+  display: flex;
+  flex-direction: column;
+}
+
+.portalIcon {
+  width: 54px;
+  height: 54px;
+  border-radius: 16px;
+  background: #ecfdf5;
+  color: #047857;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ecosystemCard h3 {
+  margin: 18px 0 0;
+  color: #0f172a;
+  font-size: 22px;
+}
+
+.ecosystemCard p {
+  color: #64748b;
+  line-height: 1.6;
+}
+
+.cardHighlight {
+  margin: 20px 0;
+}
+
+.highlightRow {
+  display: flex;
+  justify-content: space-between;
+  color: #64748b;
+  font-size: 14px;
+}
+
+.highlightRow strong {
+  color: #16a34a;
+}
+
+.progressTrack,
+.metricTrack {
+  height: 7px;
+  background: #e2e8f0;
+  border-radius: 999px;
+  overflow: hidden;
+  margin-top: 10px;
+}
+
+.progressTrack div {
+  height: 100%;
+  background: #047857;
+  border-radius: inherit;
+}
+
+.bookingBox {
+  background: #f1f5f9;
+  border-radius: 16px;
+  padding: 18px;
+}
+
+.bookingBox span,
+.streamBox span {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #64748b;
+  font-weight: 900;
+}
+
+.bookingBox div {
+  margin-top: 8px;
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+}
+
+.bookingBox em {
+  font-style: normal;
+  background: #dcfce7;
+  color: #166534;
+  border-radius: 999px;
+  padding: 5px 9px;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.streamBox {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  border-radius: 14px;
+  background: #022c22;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.streamBox span {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  color: rgba(255, 255, 255, 0.65);
+}
+
+.streamBox div {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.18);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.bulletArea {
+  flex: 1;
+}
+
+.bulletList {
+  margin: 0;
+  display: grid;
+  gap: 11px;
+}
+
+.bulletList li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #0f172a;
+  font-size: 14px;
+}
+
+.bulletList svg {
+  color: #047857;
+  flex: none;
+}
+
+.portalButton {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-top: 24px;
+  border-radius: 12px;
+  min-height: 44px;
+  background: #022c22;
+  color: #ffffff;
+}
+
+.portalButtonSecondary {
+  background: #475569;
+}
+
+.registerStrip {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 24px;
+  border-radius: 22px;
+  background: #022c22;
+  color: #ffffff;
+  display: flex;
+  justify-content: space-between;
+  gap: 18px;
+  align-items: center;
+}
+
+.registerStrip span {
+  display: block;
+  color: #a7f3d0;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.registerStrip strong {
+  display: block;
+  margin-top: 6px;
+  font-size: 22px;
+}
+
+.registerStrip div:last-child {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.registerStrip button {
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.08);
+  color: #ffffff;
+  border-radius: 999px;
+  padding: 10px 16px;
+  cursor: pointer;
+  font-weight: 800;
+}
+
+.registerStrip button:hover {
+  background: #10b981;
+  color: #022c22;
+}
+
+.paddockSection {
+  background: #f1f5f9;
+}
+
+.paddockCard {
+  max-width: 1000px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  overflow: hidden;
+}
+
+.paddockImage {
+  position: relative;
+  min-height: 360px;
+}
+
+.paddockImage img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.paddockImage > div {
+  position: absolute;
+  inset: auto 0 0;
+  padding: 32px;
+  background: linear-gradient(0deg, rgba(2, 44, 34, 0.92), rgba(2, 44, 34, 0.1));
+  color: #ffffff;
+}
+
+.paddockImage p {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.paddockImage strong {
+  display: block;
+  margin-top: 6px;
+  font-size: 30px;
+  text-transform: uppercase;
+}
+
+.paddockImage span {
+  display: block;
+  margin-top: 6px;
+  color: rgba(255, 255, 255, 0.82);
+}
+
+.metricsPanel {
+  background: #064e3b;
+  padding: 36px;
+  color: #ffffff;
+}
+
+.metricsTitle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.metricsTitle h3 {
+  margin: 0;
+}
+
+.metricsList {
+  margin-top: 30px;
+  display: grid;
+  gap: 24px;
+}
+
+.metricItem > div:first-child {
+  display: flex;
+  justify-content: space-between;
+  color: rgba(255, 255, 255, 0.82);
+}
+
+.metricTrack {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.metricTrack div {
+  height: 100%;
+  background: #34d399;
+  border-radius: inherit;
+}
+
+.metricsButton {
+  margin-top: 32px;
+  min-height: 44px;
+  border-radius: 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 18px;
+  background: #10b981;
+  color: #022c22;
+}
+
+.backboneGrid {
+  max-width: 1180px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 52px;
+  align-items: center;
+}
+
+.featureRows {
+  margin-top: 32px;
+  display: grid;
+  gap: 22px;
+}
+
+.featureRow {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.featureRow > div {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: #ecfdf5;
+  color: #047857;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+}
+
+.featureRow p {
+  margin: 0;
+  color: #0f172a;
+  font-weight: 800;
+}
+
+.featureRow span {
+  color: #64748b;
+  font-size: 14px;
+}
+
+.adminButton {
+  margin-top: 34px;
+  min-height: 46px;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  border-radius: 12px;
+  background: #022c22;
+  color: #ffffff;
+  padding: 0 18px;
+}
+
+.monitorImage {
+  width: 100%;
+  border-radius: 18px;
+  box-shadow: 0 24px 60px rgba(15, 23, 42, 0.16);
+}
+
+.footer {
+  background: #022c22;
+  color: rgba(255, 255, 255, 0.72);
+  padding: 54px 24px 28px;
+}
+
+.footerGrid {
+  max-width: 1180px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 2fr repeat(3, 1fr);
+  gap: 34px;
+}
+
+.footerBrand p,
+.footerColumn p {
+  margin: 0;
+  color: #ffffff;
+  font-weight: 900;
+  font-size: 18px;
+}
+
+.footerBrand span {
+  display: block;
+  margin-top: 12px;
+  max-width: 340px;
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.footerColumn ul {
+  margin: 18px 0 0;
+  display: grid;
+  gap: 10px;
+}
+
+.footerColumn a {
+  color: rgba(255, 255, 255, 0.58);
+  text-decoration: none;
+}
+
+.footerColumn a:hover {
+  color: #ffffff;
+}
+
+.footerBottom {
+  max-width: 1180px;
+  margin: 36px auto 0;
+  padding-top: 22px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.45);
+}
+
+@media (max-width: 900px) {
+  .navLinks {
+    display: none;
+  }
+
+  .liveGrid,
+  .ecosystemGrid,
+  .paddockCard,
+  .backboneGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .registerStrip {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .paddockImage {
+    min-height: 300px;
+  }
+
+  .footerGrid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .navbar {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .heroCopy {
+    padding-top: 64px;
+  }
+
+  .heroActions {
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .primaryCta,
+  .secondaryCta {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .liveHeader,
+  .aiCallout {
+    flex-direction: column;
+  }
+
+  .postTime {
+    text-align: left;
+  }
+
+  .footerGrid {
+    grid-template-columns: 1fr;
+  }
+}
