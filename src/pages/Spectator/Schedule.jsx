@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Calendar, MapPin, Flag, Trophy, Loader2 } from 'lucide-react';
+import { Calendar, MapPin, Trophy, Loader2 } from 'lucide-react';
 import { getTournaments } from '../../services/tournament';
 import { getRaceList } from '../../services/race';
 import { Link } from 'react-router-dom';
