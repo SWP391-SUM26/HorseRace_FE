@@ -8,7 +8,7 @@ const ROLE_LABELS = {
 };
 
 const ROLE_HOME = {
-  ADMIN: "/admin",
+  ADMIN: "/admin/dashboard",
   OWNER: "/owner/overview",
   HORSE_OWNER: "/owner/overview",
   JOCKEY: "/jockey-dashboard",

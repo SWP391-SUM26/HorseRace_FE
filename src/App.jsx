@@ -18,8 +18,14 @@ import { Toaster } from 'react-hot-toast';
 import ProtectedRoute from './components/ProtectedRoute';
 import { DashboardLayout } from '@/common/layouts/DashboardLayout';
 import OwnerLayout from './layouts/OwnerLayout';
+import AdminLayout from './layouts/AdminLayout';
 import DashboardHome from './pages/dashboard/DashboardHome';
-import AdminDashboard from './pages/Admin/UserManagement';
+import AdminDashboard from './pages/Admin/AdminDashboard';
+import UserManagement from './pages/Admin/UserManagement';
+import TournamentManagement from './pages/Admin/TournamentManagement';
+import RaceManagement from './pages/Admin/RaceManagement';
+import RaceApproval from './pages/Admin/RaceApproval';
+import ResultsPredictions from './pages/Admin/ResultsPredictions';
 import Overview from './pages/Owner/Overview';
 import StableManagement from './pages/Owner/StableManagement';
 import JockeyMarket from './pages/Owner/JockeyMarket';
@@ -48,6 +54,7 @@ import LiveRaces from './pages/Spectator/LiveRaces';
 import Schedule from './pages/Spectator/Schedule';
 import Predictions from './pages/Spectator/Predictions';
 import Rewards from './pages/Spectator/Rewards';
+import StaffingManagement from './pages/Admin/StaffingManagement';
 
 const OwnerPlaceholder = ({ title }) => (
   <div style={{ padding: '40px', textAlign: 'center', backgroundColor: '#ffffff', borderRadius: '12px', border: '1px solid #e2e8f0', boxShadow: '0 1px 3px rgba(0,0,0,0.02)' }}>
@@ -134,7 +141,19 @@ export default function App() {
         </Route>
 
         {/* ADMIN */}
-        <Route path="/admin/*" element={<AdminDashboard />} />
+        <Route element={<ProtectedRoute roles={['Admin']} />}>
+          <Route element={<AdminLayout />}>
+            <Route path="/admin" element={<AdminDashboard />} />
+            <Route path="/admin/dashboard" element={<AdminDashboard />} />
+            <Route path="/admin/users" element={<UserManagement />} />
+            <Route path="/admin/tournaments" element={<TournamentManagement />} />
+            <Route path="/admin/races" element={<RaceManagement />} />
+            <Route path="/admin/race-approval" element={<RaceApproval />} />
+            <Route path="/admin/results" element={<ResultsPredictions />} />
+            <Route path="/admin/staffing" element={<StaffingManagement />} />
+            <Route path="/admin/settings" element={<Settings />} />
+          </Route>
+        </Route>
       </Routes>
     </BrowserRouter>
   );
