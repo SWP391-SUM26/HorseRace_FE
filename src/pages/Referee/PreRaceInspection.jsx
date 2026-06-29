@@ -1,4 +1,4 @@
-﻿import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import Badge from "../../components/ui/Badge";
 import Button from "../../components/ui/Button";
 import PageHeader from "../../components/ui/PageHeader";
@@ -45,7 +45,7 @@ function formatDateTime(value) {
 
 function raceSubtitle(race) {
   if (!race) return "Select an available race to inspect its roster.";
-  return `${race.tournamentName || "Tournament"} ┬╖ ${race.name} ┬╖ ${formatDateTime(
+  return `${race.tournamentName || "Tournament"} · ${race.name} · ${formatDateTime(
     race.scheduledStartAt,
   )}`;
 }
