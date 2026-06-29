@@ -254,7 +254,6 @@ export const submitReport = async (id) => {
 // ==========================================
 // Appended from develop (Missing functions)
 // ==========================================
-
 export async function getLiveRaceMonitor(params = {}) {
   const races = await getRaceCatalog({
     status: "RUNNING",
@@ -453,3 +452,4 @@ export async function submitOfficialReport(payload) {
     await api.patch(`${REFEREE_ENDPOINT}/reports/${reportId}/submit`),
   );
 }
+
