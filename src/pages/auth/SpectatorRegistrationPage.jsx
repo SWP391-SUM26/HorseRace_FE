@@ -1,361 +1,173 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { Link, useNavigate } from "react-router-dom";
+import toast from "react-hot-toast";
+
+import { Button, Card, Input, Checkbox } from "@/common/ui";
 import { loginWithCredentials } from "../../services/auth";
-import api from "../../services/api";
-import styles from "./SpectatorRegistrationPage.module.css";
+import { useRegisterSpectator, useRequestEmailVerification } from "./hooks";
+import { emailField, passwordField, phoneFieldOptional } from "./validation";
+import { AuthShell } from "./components/AuthShell";
 
-export default function SpectatorRegistrationPage() {
-  const navigate = useNavigate();
-
-  const [form, setForm] = useState({
-    fullName: "",
-    email: "",
-    phone: "",
-    password: "",
-    confirmPassword: "",
-    agreeTerms: false,
+const schema = z
+  .object({
+    fullName: z.string().min(1, "Vui lòng nhập họ tên"),
+    email: emailField,
+    phone: phoneFieldOptional,
+    password: passwordField,
+    confirmPassword: z.string(),
+    agreedToTerms: z.literal(true, {
+      errorMap: () => ({ message: "Bạn cần đồng ý điều khoản" }),
+    }),
+  })
+  .refine((d) => d.password === d.confirmPassword, {
+    path: ["confirmPassword"],
+    message: "Mật khẩu không khớp",
   });
 
-  const [loading, setLoading] = useState(false);
+export default function SpectatorRegistrationPage() {
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm({
+    resolver: zodResolver(schema),
+  });
 
-  const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
+  const mutation = useRegisterSpectator();
+  const requestVerification = useRequestEmailVerification();
+  const navigate = useNavigate();
 
-  const handleRegister = async (e) => {
-    e.preventDefault();
-    if (!form.fullName.trim() || !form.email.trim() || !form.password) {
-      alert("Please fill in your full name, email, and password");
-      return;
-    }
-    if (form.password !== form.confirmPassword) {
-      alert("Passwords do not match");
-      return;
-    }
-    if (!form.agreeTerms) {
-      alert("You must agree to the Terms of Service and Privacy Policy");
-      return;
-    }
-
-    setLoading(true);
-    try {
-      const payload = {
-        fullName: form.fullName.trim(),
-        email: form.email.trim().toLowerCase(),
-        phone: form.phone.trim(),
-        password: form.password,
-        confirmPassword: form.confirmPassword,
-        agreedToTerms: form.agreeTerms,
-      };
-
-      await api.post("/api/v1/auth/register/spectator", payload);
-      await loginWithCredentials(form.email, form.password);
-      navigate("/spectator-dashboard");
-    } catch (err) {
-      console.error(err);
-      alert(
-        err.response?.data?.message || err.message || "Registration failed",
-      );
-    } finally {
-      setLoading(false);
-    }
+  const onSubmit = (data) => {
+    mutation.mutate(
+      {
+        fullName: data.fullName,
+        email: data.email,
+        phone: data.phone || undefined,
+        password: data.password,
+        confirmPassword: data.confirmPassword,
+        agreedToTerms: data.agreedToTerms,
+      },
+      {
+        onSuccess: async () => {
+          // Send verification code
+          requestVerification.mutate({ email: data.email });
+          toast.success("Đã gửi mã xác thực tới email của bạn");
+          
+          // Login and navigate
+          await loginWithCredentials(data.email, data.password);
+          navigate(`/verify-email?email=${encodeURIComponent(data.email)}`);
+        },
+        onError: (err) => {
+          toast.error(
+            err.response?.data?.message || err.message || "Đăng ký thất bại"
+          );
+        },
+      }
+    );
   };
 
   return (
-    <div className={styles.page}>
-      {/* NAVBAR */}
-      <header className={styles.navbar}>
-        <button
-          className={styles.navBrand}
-          type="button"
-          onClick={() => navigate("/")}
-        >
-          Equine Elite
-        </button>
-        <div className={styles.navActions}>
-          <button className={styles.navLink} type="button">
-            Support
-          </button>
-          <button
-            className={styles.navLoginBtn}
-            type="button"
-            onClick={() => navigate("/login")}
+    <AuthShell>
+      <div className="w-full max-w-5xl">
+        <Card className="grid overflow-hidden md:grid-cols-2">
+          <div
+            className="relative hidden flex-col justify-end bg-cover bg-center p-10 text-white md:flex"
+            style={{
+              backgroundImage: `url(https://images.unsplash.com/photo-1553284965-83fd3e82fa5a)`,
+            }}
           >
-            Login
-          </button>
-        </div>
-      </header>
-
-      {/* MAIN CONTENT */}
-      <main className={styles.main}>
-        {/* LEFT VISUAL PANEL */}
-        <aside className={styles.leftPanel}>
-          <div className={styles.leftOverlay}></div>
-          <img
-            src="https://images.unsplash.com/photo-1553284965-83fd3e82fa5a"
-            alt="Horse racing"
-            className={styles.leftImage}
-          />
-          <div className={styles.leftContent}>
-            <h2 className={styles.leftTitle}>
-              Join the Elite. Predict the Winners.
-            </h2>
-            <p className={styles.leftDesc}>
-              Experience the thrill of the race with unparalleled data,
-              insights, and exclusive spectator access.
-            </p>
-          </div>
-        </aside>
-
-        {/* RIGHT FORM PANEL */}
-        <section className={styles.rightPanel}>
-          <div className={styles.formWrap}>
-            <h1 className={styles.formTitle}>Create Spectator Account</h1>
-            <p className={styles.formSubtitle}>
-              Enter your details to access the Elite Turf paddock.
-            </p>
-
-            <form onSubmit={handleRegister}>
-                  {/* Full Name */}
-                  <div className={styles.fieldGroup}>
-                    <label className={styles.fieldLabel}>Full Name</label>
-                    <div className={styles.inputShell}>
-                      <UserIcon />
-                      <input
-                        className={styles.input}
-                        placeholder="e.g. John Doe"
-                        value={form.fullName}
-                        onChange={(e) => set("fullName", e.target.value)}
-                      />
-                    </div>
-                  </div>
-
-                  {/* Email Address */}
-                  <div className={styles.fieldGroup}>
-                    <label className={styles.fieldLabel}>Email Address</label>
-                    <div className={styles.inputShell}>
-                      <MailIcon />
-                      <input
-                        className={styles.input}
-                        type="email"
-                        placeholder="you@example.com"
-                        value={form.email}
-                        onChange={(e) => set("email", e.target.value)}
-                      />
-                    </div>
-                  </div>
-
-                  {/* Phone Number */}
-                  <div className={styles.fieldGroup}>
-                    <label className={styles.fieldLabel}>Phone Number</label>
-                    <div className={styles.inputShell}>
-                      <PhoneIcon />
-                      <input
-                        className={styles.input}
-                        type="tel"
-                        placeholder="+1 (555) 000-0000"
-                        value={form.phone}
-                        onChange={(e) => set("phone", e.target.value)}
-                      />
-                    </div>
-                  </div>
-
-                  {/* Password */}
-                  <div className={styles.fieldGroup}>
-                    <label className={styles.fieldLabel}>Password</label>
-                    <div className={styles.inputShell}>
-                      <LockIcon />
-                      <input
-                        className={styles.input}
-                        type="password"
-                        placeholder="••••••••"
-                        value={form.password}
-                        onChange={(e) => set("password", e.target.value)}
-                      />
-                    </div>
-                  </div>
-
-                  {/* Confirm Password */}
-                  <div className={styles.fieldGroup}>
-                    <label className={styles.fieldLabel}>
-                      Confirm Password
-                    </label>
-                    <div className={styles.inputShell}>
-                      <ShieldCheckIcon />
-                      <input
-                        className={styles.input}
-                        type="password"
-                        placeholder="••••••••"
-                        value={form.confirmPassword}
-                        onChange={(e) => set("confirmPassword", e.target.value)}
-                      />
-                    </div>
-                  </div>
-
-                  {/* Terms Checkbox */}
-                  <label className={styles.termsLabel}>
-                    <input
-                      type="checkbox"
-                      checked={form.agreeTerms}
-                      onChange={(e) => set("agreeTerms", e.target.checked)}
-                      className={styles.termsCheckbox}
-                    />
-                    <span className={styles.termsText}>
-                      I agree to the{" "}
-                      <button type="button" className={styles.termsLink}>
-                        Terms of Service
-                      </button>{" "}
-                      and{" "}
-                      <button type="button" className={styles.termsLink}>
-                        Privacy Policy
-                      </button>
-                      .
-                    </span>
-                  </label>
-
-                  {/* Submit Button */}
-                  <button
-                    className={styles.submitBtn}
-                    type="submit"
-                    disabled={loading || !form.agreeTerms}
-                  >
-                    {loading
-                      ? "Creating Account..."
-                      : "Create Spectator Account"}
-                  </button>
-            </form>
-
-            {/* Sign In Link */}
-            <div className={styles.signinPrompt}>
-              Already have an account?{" "}
-              <button
-                type="button"
-                className={styles.signinLink}
-                onClick={() => navigate("/login")}
-              >
-                Sign In
-              </button>
+            <div className="absolute inset-0 bg-gradient-to-t from-brand-900/80 to-brand-900/50" />
+            <div className="relative z-10">
+              <h2 className="text-3xl font-bold">
+                Join the Elite. Predict the Winners.
+              </h2>
+              <p className="mt-3 text-white/70">
+                Experience the thrill of the race with unparalleled data,
+                insights, and exclusive spectator access.
+              </p>
             </div>
           </div>
-        </section>
-      </main>
 
-      {/* FOOTER */}
-      <footer className={styles.footer}>
-        <div className={styles.footerInner}>
-          <div className={styles.footerBrand}>Equine Elite</div>
-          <div className={styles.footerLinks}>
-            <button type="button" className={styles.footerLink}>
-              Terms of Service
-            </button>
-            <button type="button" className={styles.footerLink}>
-              Privacy Policy
-            </button>
-            <button type="button" className={styles.footerLink}>
-              Betting Integrity
-            </button>
-            <button type="button" className={styles.footerLink}>
-              Platform Status
-            </button>
-          </div>
-          <div className={styles.footerCopy}>
-            © 2024 Equine Elite Racing. All Rights Reserved.
-          </div>
-        </div>
-      </footer>
-    </div>
-  );
-}
+          <form
+            onSubmit={handleSubmit(onSubmit)}
+            className="flex flex-col gap-4 bg-surface p-8"
+          >
+            <div>
+              <h1 className="text-2xl font-semibold text-ink">
+                Create Spectator Account
+              </h1>
+              <p className="mt-1 text-sm text-muted">
+                Enter your details to access the Elite Turf paddock.
+              </p>
+            </div>
 
-/* ========== SVG ICON COMPONENTS ========== */
-function UserIcon() {
-  return (
-    <svg
-      className="field-icon"
-      width="18"
-      height="18"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-      <circle cx="12" cy="7" r="4" />
-    </svg>
-  );
-}
+            <Input
+              label="Full Name"
+              {...register("fullName")}
+              error={errors.fullName?.message}
+            />
+            <Input
+              label="Email Address"
+              type="email"
+              autoComplete="email"
+              {...register("email")}
+              error={errors.email?.message}
+            />
+            <Input
+              label="Phone Number"
+              {...register("phone")}
+              error={errors.phone?.message}
+            />
+            <Input
+              label="Password"
+              type="password"
+              autoComplete="new-password"
+              {...register("password")}
+              error={errors.password?.message}
+            />
+            <Input
+              label="Confirm Password"
+              type="password"
+              autoComplete="new-password"
+              {...register("confirmPassword")}
+              error={errors.confirmPassword?.message}
+            />
 
-function MailIcon() {
-  return (
-    <svg
-      className="field-icon"
-      width="18"
-      height="18"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <rect x="3" y="5" width="18" height="14" rx="2" />
-      <path d="m3 7 9 7 9-7" />
-    </svg>
-  );
-}
+            <div className="flex flex-col gap-1">
+              <Checkbox
+                label="I agree to the Terms of Service and Privacy Policy."
+                {...register("agreedToTerms")}
+              />
+              {errors.agreedToTerms && (
+                <span className="text-xs text-danger">
+                  {errors.agreedToTerms.message}
+                </span>
+              )}
+            </div>
 
-function PhoneIcon() {
-  return (
-    <svg
-      className="field-icon"
-      width="18"
-      height="18"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
-    </svg>
-  );
-}
+            <Button
+              type="submit"
+              size="lg"
+              className="w-full"
+              loading={mutation.isPending}
+            >
+              Create Spectator Account
+            </Button>
+          </form>
+        </Card>
 
-function LockIcon() {
-  return (
-    <svg
-      className="field-icon"
-      width="18"
-      height="18"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <rect x="5" y="10" width="14" height="10" rx="2" />
-      <path d="M8 10V7a4 4 0 0 1 8 0v3" />
-    </svg>
-  );
-}
-
-function ShieldCheckIcon() {
-  return (
-    <svg
-      className="field-icon"
-      width="18"
-      height="18"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-      <polyline points="9 11 11 13 15 9" />
-    </svg>
+        <p className="mt-6 text-center text-sm text-muted">
+          Already have an account?{" "}
+          <Link
+            to="/login"
+            className="font-medium text-brand-700 hover:underline"
+          >
+            Sign In
+          </Link>
+        </p>
+      </div>
+    </AuthShell>
   );
 }

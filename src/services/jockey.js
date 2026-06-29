@@ -1,4 +1,6 @@
 import api from "./api";
+import { normalizeBackendImageUrl } from "@/common/lib/imageUrl";
+import { normalizeHorseImageUrl } from "./horse";
 
 const JOCKEY_ENDPOINT = "/api/v1/jockeys";
 const INVITATION_ENDPOINT = "/api/v1/assignments/invitations";
@@ -6,6 +8,10 @@ const DEFAULT_PAGE_SIZE = 4;
 
 function unwrapResponse(response) {
   return response?.data?.data ?? response?.data;
+}
+
+function normalizeOptionalImageUrl(value) {
+  return normalizeBackendImageUrl(value, "") || "";
 }
 
 function normalizeListResponse(data, params, keys = []) {
@@ -59,7 +65,7 @@ function mapJockeyToUI(jockey = {}) {
     name: jockey.fullName || jockey.name || "Unknown Jockey",
     email: jockey.email || "",
     phone: jockey.phone || "",
-    avatar: jockey.avatarUrl || jockey.avatar || "",
+    avatar: normalizeOptionalImageUrl(jockey.avatarUrl),
     status: jockey.status === "ACTIVE" ? "AVAILABLE" : jockey.status || "AVAILABLE",
     ridingStyle: jockey.ridingStyle || "Versatile",
     experience,
@@ -167,6 +173,137 @@ export async function getJockeyDetail(jockeyId) {
   const data = unwrapResponse(await api.get(`${JOCKEY_ENDPOINT}/${jockeyId}`));
   if (!data || typeof data !== "object") throw new Error("Invalid jockey response");
   return mapJockeyToUI(data);
+}
+
+export async function getOwnerUnassignedEntries(ownerUserId) {
+  if (!ownerUserId) return [];
+
+  const [registrationResponse, raceResponse, invitationResult] = await Promise.all([
+    api.get("/api/v1/registrations", {
+      params: {
+        ownerUserId,
+        status: "APPROVED",
+        page: 0,
+        size: 100,
+        sortBy: "createdAt",
+        sortDir: "desc",
+      },
+    }),
+    api.get("/api/v1/races", {
+      params: {
+        page: 0,
+        size: 100,
+        sortBy: "scheduledStartAt",
+        sortDir: "asc",
+      },
+    }),
+    getInvitationList({
+      ownerId: ownerUserId,
+      page: 1,
+      pageSize: 100,
+      sortBy: "invitedAt",
+      sortOrder: "desc",
+    }),
+  ]);
+
+  const registrationData = unwrapResponse(registrationResponse);
+  const registrations = Array.isArray(registrationData)
+    ? registrationData
+    : registrationData?.content ?? registrationData?.items ?? [];
+  const raceData = unwrapResponse(raceResponse);
+  const races = (
+    Array.isArray(raceData)
+      ? raceData
+      : raceData?.content ?? raceData?.items ?? []
+  ).filter((race) => ["SCHEDULED", "OPEN"].includes(race.status));
+  const activeEntryIds = new Set(
+    invitationResult.items
+      .filter((invitation) =>
+        ["INVITED", "ACCEPTED"].includes(invitation.status),
+      )
+      .map((invitation) => invitation.entryId),
+  );
+
+  const raceBundles = await Promise.all(
+    races.map(async (race) => {
+      const entriesResponse = await api.get(
+        `/api/v1/races/${race.raceId}/entries`,
+      );
+      return {
+        race,
+        entries: unwrapResponse(entriesResponse) || [],
+      };
+    }),
+  );
+  const raceById = new Map(
+    raceBundles.map((bundle) => [bundle.race.raceId, bundle.race]),
+  );
+  const entryByRegistrationId = new Map(
+    raceBundles.flatMap((bundle) =>
+      bundle.entries.map((entry) => [entry.registrationId, entry]),
+    ),
+  );
+  const raceIdByRegistrationId = new Map(
+    raceBundles.flatMap((bundle) =>
+      bundle.entries.map((entry) => [
+        entry.registrationId,
+        bundle.race.raceId,
+      ]),
+    ),
+  );
+
+  const candidates = registrations
+    .map((registration) => {
+      const entry = entryByRegistrationId.get(registration.registrationId);
+      const raceId =
+        registration.raceId ||
+        raceIdByRegistrationId.get(registration.registrationId);
+      const race = raceById.get(raceId);
+      if (!entry || !race || activeEntryIds.has(entry.entryId)) return null;
+
+      return {
+        id: registration.horseId,
+        horseId: registration.horseId,
+        name: registration.horseName,
+        code: registration.horseCode,
+        registrationId: registration.registrationId,
+        entryId: entry.entryId,
+        entryCode: entry.entryCode,
+        entryStatus: entry.status,
+        raceId: race.raceId,
+        raceCode: race.raceCode,
+        raceName: race.name,
+        tournamentName: race.tournamentName,
+        scheduledStartAt: race.scheduledStartAt,
+        raceType: race.raceType,
+        distanceMeter: race.distanceMeter,
+        trackCondition: race.trackCondition,
+        weatherCondition: race.weatherCondition,
+      };
+    })
+    .filter(Boolean);
+
+  const horseIds = [...new Set(candidates.map((candidate) => candidate.horseId))];
+  const horseResponses = await Promise.all(
+    horseIds.map((horseId) => api.get(`/api/v1/horses/${horseId}`)),
+  );
+  const horseById = new Map(
+    horseResponses.map((response) => {
+      const horse = unwrapResponse(response);
+      return [horse.horseId, horse];
+    }),
+  );
+
+  return candidates.map((candidate) => {
+    const horse = horseById.get(candidate.horseId);
+    return {
+      ...candidate,
+      image: normalizeHorseImageUrl(horse?.imageUrl),
+      breed: horse?.breed || "",
+      gender: horse?.gender || "",
+      dateOfBirth: horse?.dateOfBirth || null,
+    };
+  });
 }
 
 export async function sendInvitation(payload) {

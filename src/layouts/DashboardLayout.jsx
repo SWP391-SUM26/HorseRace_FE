@@ -9,7 +9,7 @@ import {
   TrophyIcon,
   BellIcon,
 } from "../components/ui/Icons";
-import { getUserPermissions, logout } from "../services/auth";
+import { getUserPermissions } from "../services/auth";
 import styles from "./DashboardLayout.module.css";
 
 const roleNavItems = {
@@ -41,16 +41,8 @@ export default function DashboardLayout() {
   const { session } = useOutletContext();
   const permissions = session.permissions || getUserPermissions(session.user);
 
-  function handleLogout() {
-    logout();
-    navigate("/login", { replace: true });
-  }
-
-  const navItems = [
-    ...(roleNavItems[session.user.role] || [])
-      .filter((item) => !item.permission || permissions.includes(item.permission)),
-    { label: "Logout", icon: CheckSquareIcon, onClick: handleLogout, bottom: true },
-  ];
+  const navItems = (roleNavItems[session.user.role] || [])
+    .filter((item) => !item.permission || permissions.includes(item.permission));
 
   return (
     <div className={styles.dashboardShell}>
@@ -67,8 +59,23 @@ export default function DashboardLayout() {
             <span className={styles.eyebrow}>{session.user.role} Dashboard</span>
             <h1>{session.user.stable || "Equine Elite Workspace"}</h1>
           </div>
-          <div className={styles.permissionSummary}>
-            {permissions.length} permissions active
+          <div className={styles.topbarActions}>
+            <div className={styles.permissionSummary}>
+              {permissions.length} permissions active
+            </div>
+            <button
+              type="button"
+              className={styles.profileAvatar}
+              onClick={() => navigate("/profile")}
+              title="View profile"
+              aria-label="View user profile"
+            >
+              {session.user.avatarUrl ? (
+                <img src={session.user.avatarUrl} alt="" />
+              ) : (
+                session.user.avatar || "US"
+              )}
+            </button>
           </div>
         </header>
 

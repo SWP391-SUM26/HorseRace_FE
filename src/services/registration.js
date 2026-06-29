@@ -1,123 +1,111 @@
-import api from './api';
+import api from "./api";
+import { normalizeHorseImageUrl } from "./horse";
 
-const ENDPOINT = '/api/v1/registrations';
-
-function unwrap(response) {
-  return response?.data?.data ?? response?.data;
+function normalizeOptionalHorseImage(value) {
+  return value ? normalizeHorseImageUrl(value) : "";
 }
 
-function ensureApiData(data) {
-  if (typeof data === 'string' || data === null || data === undefined) {
-    throw new Error('Registration API returned an invalid response.');
-  }
-  return data;
-}
+const mapRegistration = (item) => ({
+  id: item.registrationId || item.id,
+  code: item.registrationCode || item.code,
+  status: item.status,
+  submittedAt: item.submittedAt,
+  rejectionReason: item.rejectionReason,
+  refereeNotes: item.refereeNotes,
+  tournament: {
+    id: item.tournamentId || item.tournament?.id,
+    name: item.tournamentName || item.tournament?.name
+  },
+  horse: {
+    id: item.horseId || item.horse?.id,
+    name: item.horseName || item.horse?.name,
+    code: item.horseCode || item.horse?.code,
+    image: normalizeOptionalHorseImage(item.horse?.imageUrl || item.horse?.image),
+    age: item.horseAge || item.horse?.age || 0,
+    stable: item.horseStable || item.horse?.stable,
+    breed: item.horseBreed || item.horse?.breed,
+    sire: item.horseSire || item.horse?.sire,
+    dam: item.horseDam || item.horse?.dam
+  },
+  owner: {
+    id: item.ownerUserId || item.owner?.id,
+    name: item.ownerName || item.owner?.name
+  },
+  eligibility: item.eligibility || {}
+});
 
-function mapRegistrationToUI(item) {
-  if (!item) return null;
-  return {
-    ...item,
-    id: item.registrationId || item.id,
-    status: item.status,
-    submittedAt: item.submittedAt,
-    reviewedAt: item.reviewedAt,
-    rejectionReason: item.rejectionReason,
-    refereeNotes: item.refereeNotes || '',
-    horse: item.horse || {
-      id: item.horseId || 'N/A',
-      name: item.horseName || 'Unknown',
-      code: item.horseCode || 'N/A',
-      image: item.horseImage || '/src/assets/silver_streak.png',
-      age: item.horseAge || 0,
-      stable: 'N/A',
-      breed: 'Thoroughbred',
-      sire: 'N/A',
-      dam: 'N/A',
-    },
-    owner: item.owner || {
-      id: item.ownerUserId || 'N/A',
-      name: item.ownerName || 'Unknown',
-    },
-    tournament: item.tournament || {
-      id: item.tournamentId || 'N/A',
-      name: item.tournamentName || 'Unknown',
-    },
-    race: item.race || {
-      id: item.raceId || 'N/A',
-      name: item.raceName || 'N/A',
-    },
-    eligibility: item.eligibility || {
-      vaccinationRecords: 'VALID',
-      fitnessCertification: 'VALID',
-      passportScan: 'VALID',
-      weightVerification: 'VALID',
-      medicalExamination: 'VALID',
-    },
-  };
-}
-
-function normalizeList(data, params) {
-  const items = Array.isArray(data)
-    ? data
-    : data?.items ?? data?.content ?? data?.registrations ?? [];
-  const pageSize = Number(data?.pageSize ?? data?.size ?? params.pageSize) || 5;
-  const totalItems =
-    Number(data?.totalItems ?? data?.totalElements ?? data?.total) || items.length;
-  const page =
-    Number(data?.page ?? (data?.number !== undefined ? data.number + 1 : params.page)) ||
-    1;
-
-  return {
-    items: items.map(mapRegistrationToUI),
-    page,
-    pageSize,
-    totalItems,
-    totalPages: Number(data?.totalPages) || Math.max(1, Math.ceil(totalItems / pageSize)),
-  };
-}
-
-export function submitRegistration(payload) {
-  return api.post(ENDPOINT, payload).then((response) => ensureApiData(unwrap(response)));
-}
-
-export function getRegistrationList(params = {}) {
-  const apiParams = { ...params };
-  if (apiParams.page) {
-    apiParams.page = Math.max(0, apiParams.page - 1);
-  }
-  if (apiParams.pageSize) {
-    apiParams.size = apiParams.pageSize;
-    delete apiParams.pageSize;
-  }
-  if (apiParams.search !== undefined) {
-    apiParams.q = apiParams.search;
-    delete apiParams.search;
-  }
-  Object.keys(apiParams).forEach((key) => {
-    if (apiParams[key] === '' || apiParams[key] === null) {
-      delete apiParams[key];
+// List registrations (with filters like status=SUBMITTED)
+export async function getRegistrations(filters = {}) {
+  try {
+    const apiFilters = Object.fromEntries(
+      Object.entries(filters).filter(([, value]) => value !== undefined && value !== null && value !== ""),
+    );
+    if (apiFilters.page && apiFilters.page > 0) {
+      apiFilters.page = apiFilters.page - 1;
     }
-  });
+    
+    // Map pageSize to size for Spring Boot pagination
+    if (apiFilters.pageSize) {
+      apiFilters.size = apiFilters.pageSize;
+      delete apiFilters.pageSize;
+    }
 
-  return api.get(ENDPOINT, { params: apiParams }).then((response) =>
-    normalizeList(ensureApiData(unwrap(response)), params),
-  );
+    const response = await api.get("/api/v1/registrations", { params: apiFilters });
+    const data = response.data?.data || response.data || {};
+    
+    const rawItems = data.content || data.items || [];
+    
+    return {
+      items: rawItems.map(mapRegistration),
+      totalItems: data.totalElements || data.totalItems || 0,
+      totalPages: data.totalPages || 0
+    };
+  } catch (err) {
+    console.error("API getRegistrations failed:", err.message);
+    throw err;
+  }
 }
 
-export function getRegistrationDetail(id) {
-  return api.get(`${ENDPOINT}/${id}`).then((response) =>
-    mapRegistrationToUI(ensureApiData(unwrap(response))),
-  );
+// Approve a registration
+export async function approveRegistration(id) {
+  try {
+    const response = await api.patch(`/api/v1/registrations/${id}/approve`);
+    return response.data;
+  } catch (err) {
+    console.error(`API approveRegistration for ${id} failed:`, err.message);
+    throw err;
+  }
 }
 
-export function approveRegistration(id) {
-  return api.patch(`${ENDPOINT}/${id}/approve`).then((response) =>
-    ensureApiData(unwrap(response)),
-  );
+// Reject a registration
+export async function rejectRegistration(id, reason) {
+  try {
+    const response = await api.patch(`/api/v1/registrations/${id}/reject`, { reason });
+    return response.data;
+  } catch (err) {
+    console.error(`API rejectRegistration for ${id} failed:`, err.message);
+    throw err;
+  }
 }
 
-export function rejectRegistration(id, payload) {
-  return api.patch(`${ENDPOINT}/${id}/reject`, { reason: payload.reason }).then(
-    (response) => ensureApiData(unwrap(response)),
-  );
+export async function getRegistrationList(filters = {}) { return getRegistrations(filters); }
+export async function getRegistrationDetail(id) {
+  try {
+    const res = await api.get(`/api/v1/registrations/${id}`);
+    const rawData = res.data?.data || res.data;
+    return mapRegistration(rawData);
+  } catch (e) {
+    throw e;
+  } 
+}
+export async function submitRegistration(data) { try { const res = await api.post('/api/v1/registrations', data); return res.data; } catch(e){ throw e; } }
+
+export async function withdrawRegistration(id) {
+  try {
+    const response = await api.patch(`/api/v1/registrations/${id}/withdraw`);
+    return response.data;
+  } catch (err) {
+    console.error(`API withdrawRegistration for ${id} failed:`, err.message);
+    throw err;
+  }
 }

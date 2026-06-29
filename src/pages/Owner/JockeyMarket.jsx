@@ -1,23 +1,43 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { useLocation, useNavigate, useOutletContext } from "react-router-dom";
+import { useEffect, useMemo, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
+import { Mail, Search, Send } from "lucide-react";
+import { PageHeader } from "@/common/components/PageHeader";
+import { Badge, Button, Card, CardBody, CardHeader, EmptyState, Modal, Skeleton } from "@/common/ui";
+import { useAuth } from "@/common/hooks/useAuth";
 import {
   cancelInvitation,
   getInvitationList,
   getJockeyList,
+  getOwnerUnassignedEntries,
   sendInvitation,
-} from "../../services/jockey";
-import styles from "./JockeyMarket.module.css";
+} from "@/services/jockey";
 
 const PAGE_SIZE = 4;
 
-const SORT_OPTIONS = {
-  bestMatch: { sortBy: "compatibility", sortOrder: "desc" },
-  winRate: { sortBy: "winRate", sortOrder: "desc" },
-  experience: { sortBy: "experience", sortOrder: "desc" },
-  baseFee: { sortBy: "baseFee", sortOrder: "asc" },
-};
+function getUserId(user) {
+  return user?.id || user?.userId || user?.user_id || "";
+}
 
-function getInitials(name = "") {
+function formatCurrency(value) {
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+    maximumFractionDigits: 0,
+  }).format(Number(value) || 0);
+}
+
+function formatDate(value) {
+  if (!value) return "TBA";
+  return new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    day: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(new Date(value));
+}
+
+function initials(name = "") {
   return name
     .split(" ")
     .map((part) => part[0])
@@ -26,671 +46,385 @@ function getInitials(name = "") {
     .toUpperCase();
 }
 
-function formatCurrency(value) {
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-    maximumFractionDigits: 0,
-  }).format(value);
-}
-
-function getErrorMessage(error, fallback) {
-  return error?.response?.data?.message || error?.message || fallback;
-}
-
 export default function JockeyMarket() {
-  const navigate = useNavigate();
+  const { user } = useAuth();
+  const ownerId = getUserId(user);
   const location = useLocation();
-  const { session } = useOutletContext();
+  const navigate = useNavigate();
+
+  const [entries, setEntries] = useState([]);
+  const [selectedEntryId, setSelectedEntryId] = useState(location.state?.selectedHorseId || "");
   const [jockeys, setJockeys] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [loadError, setLoadError] = useState("");
-  const [search, setSearch] = useState("");
-  const [debouncedSearch, setDebouncedSearch] = useState("");
-  const [status, setStatus] = useState("");
-  const [ridingStyle, setRidingStyle] = useState("");
-  const [minWinRate, setMinWinRate] = useState("");
-  const [sortOption, setSortOption] = useState("bestMatch");
-  const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const [totalItems, setTotalItems] = useState(0);
-  const [selectedHorseId] = useState(location.state?.selectedHorseId || "");
-  const [selectedJockey, setSelectedJockey] = useState(null);
-  const [message, setMessage] = useState("");
-  const [sending, setSending] = useState(false);
-  const [notice, setNotice] = useState(null);
   const [sentInvitations, setSentInvitations] = useState([]);
-  const [invitationLoading, setInvitationLoading] = useState(true);
-  const [cancellingId, setCancellingId] = useState("");
+  const [pagination, setPagination] = useState({ page: 1, totalPages: 1, totalItems: 0 });
+  const [filters, setFilters] = useState({
+    search: "",
+    status: "",
+    ridingStyle: "",
+    minWinRate: "",
+    sortBy: "compatibility",
+    sortOrder: "desc",
+    page: 1,
+    pageSize: PAGE_SIZE,
+  });
+  const [loading, setLoading] = useState(true);
+  const [jockeyLoading, setJockeyLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+  const [inviteTarget, setInviteTarget] = useState(null);
+  const [message, setMessage] = useState("");
 
-  const selectedHorse = useMemo(
-    () => location.state?.selectedEntry || null,
-    [location.state?.selectedEntry],
-  );
-  const requestedJockey = useMemo(
-    () =>
-      jockeys.find((jockey) => jockey.id === location.state?.inviteJockeyId) ||
-      null,
-    [jockeys, location.state?.inviteJockeyId],
-  );
-  const invitationJockey =
-    selectedJockey || (selectedHorse?.entryId ? requestedJockey : null);
+  const selectedEntry = useMemo(() => {
+    if (entries.length === 0) return null;
+    return entries.find((entry) => entry.id === selectedEntryId || entry.entryId === selectedEntryId) || entries[0];
+  }, [entries, selectedEntryId]);
 
-  const loadSentInvitations = useCallback(async () => {
-    setInvitationLoading(true);
+  useEffect(() => {
+    if (selectedEntry && !selectedEntryId) {
+      setSelectedEntryId(selectedEntry.id || selectedEntry.entryId);
+    }
+  }, [selectedEntry, selectedEntryId]);
+
+  async function loadOwnerData() {
+    if (!ownerId) return;
+    setLoading(true);
+    setError("");
     try {
-      const result = await getInvitationList({
-        ownerId: session.user.id,
-        page: 1,
-        pageSize: 5,
-        sortBy: "invitedAt",
-        sortOrder: "desc",
-      });
-      setSentInvitations(result.items);
-    } catch {
-      setSentInvitations([]);
+      const [entryData, invitationData] = await Promise.all([
+        getOwnerUnassignedEntries(ownerId),
+        getInvitationList({ ownerId, page: 1, pageSize: 20 }),
+      ]);
+      setEntries(entryData || []);
+      setSentInvitations(invitationData?.items || []);
+    } catch (requestError) {
+      setError(requestError?.response?.data?.message || requestError.message || "Unable to load owner invitation data.");
     } finally {
-      setInvitationLoading(false);
+      setLoading(false);
     }
-  }, [session.user.id]);
-
-  useEffect(() => {
-    const timer = window.setTimeout(() => {
-      setDebouncedSearch(search.trim());
-      setCurrentPage(1);
-    }, 400);
-
-    return () => window.clearTimeout(timer);
-  }, [search]);
-
-  useEffect(() => {
-    let active = true;
-
-    async function loadJockeys() {
-      setLoading(true);
-      setLoadError("");
-      const sorting = SORT_OPTIONS[sortOption];
-
-      try {
-        const result = await getJockeyList({
-          search: debouncedSearch,
-          status,
-          ridingStyle,
-          minWinRate,
-          sortBy: sorting.sortBy,
-          sortOrder: sorting.sortOrder,
-          page: currentPage,
-          pageSize: PAGE_SIZE,
-        });
-
-        if (!active) return;
-        setJockeys(result.items);
-        setTotalPages(result.totalPages);
-        setTotalItems(result.totalItems);
-        if (result.page !== currentPage) setCurrentPage(result.page);
-      } catch (error) {
-        if (!active) return;
-        setJockeys([]);
-        setLoadError(getErrorMessage(error, "Unable to load jockeys."));
-      } finally {
-        if (active) setLoading(false);
-      }
-    }
-
-    loadJockeys();
-    return () => {
-      active = false;
-    };
-  }, [
-    currentPage,
-    debouncedSearch,
-    minWinRate,
-    ridingStyle,
-    sortOption,
-    status,
-  ]);
-
-  useEffect(() => {
-    const timer = window.setTimeout(loadSentInvitations, 0);
-    return () => window.clearTimeout(timer);
-  }, [loadSentInvitations]);
-
-  function resetPageAndSet(setter, value) {
-    setter(value);
-    setCurrentPage(1);
   }
 
-  function openInvitation(jockey) {
-    setNotice(null);
-    if (!selectedHorse?.entryId) {
-      setNotice({
-        type: "error",
-        text: "Please select a real race entry before sending an invitation.",
+  async function loadJockeys() {
+    setJockeyLoading(true);
+    setError("");
+    try {
+      const result = await getJockeyList(filters);
+      setJockeys(result.items || []);
+      setPagination({
+        page: result.page || filters.page,
+        totalPages: result.totalPages || 1,
+        totalItems: result.totalItems || 0,
       });
+    } catch (requestError) {
+      setError(requestError?.response?.data?.message || requestError.message || "Unable to load jockeys.");
+    } finally {
+      setJockeyLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    loadOwnerData();
+  }, [ownerId]);
+
+  useEffect(() => {
+    const timeoutId = window.setTimeout(loadJockeys, 400);
+    return () => window.clearTimeout(timeoutId);
+  }, [filters]);
+
+  function updateFilter(key, value) {
+    setFilters((current) => ({ ...current, [key]: value, page: key === "page" ? value : 1 }));
+  }
+
+  function openInvite(jockey) {
+    if (!selectedEntry?.entryId) {
+      setError("Please select a horse with a valid race entry first.");
       return;
     }
-    if (jockey.status === "UNAVAILABLE") {
-      setNotice({
-        type: "error",
-        text: `${jockey.name} is currently unavailable.`,
-      });
-      return;
-    }
-    setSelectedJockey(jockey);
+    setInviteTarget(jockey);
     setMessage("");
   }
 
-  function closeInvitation() {
-    if (sending) return;
-    setSelectedJockey(null);
-    setMessage("");
-    if (location.state?.inviteJockeyId) {
-      navigate(location.pathname, {
-        replace: true,
-        state: { selectedHorseId },
-      });
-    }
-  }
-
-  async function handleSendInvitation(event) {
-    event.preventDefault();
-    if (!selectedHorse || !invitationJockey) return;
-
-    setSending(true);
+  async function handleInvite() {
+    if (!inviteTarget || !selectedEntry?.entryId) return;
+    setSubmitting(true);
+    setError("");
+    setSuccess("");
     try {
       await sendInvitation({
-        entryId: selectedHorse.entryId,
-        horseId: selectedHorse.id,
-        raceId: selectedHorse.raceId,
-        jockeyId: invitationJockey.id,
-        ownerId: session.user.id,
-        message: message.trim(),
+        entryId: selectedEntry.entryId,
+        jockeyUserId: inviteTarget.userId || inviteTarget.id,
+        message,
       });
-      setNotice({
-        type: "success",
-        text: `Invitation sent to ${invitationJockey.name} for ${selectedHorse.name}.`,
-      });
-      setSelectedJockey(null);
-      setMessage("");
-      if (location.state?.inviteJockeyId) {
-        navigate(location.pathname, {
-          replace: true,
-          state: { selectedHorseId },
-        });
-      }
-      await loadSentInvitations();
-    } catch (error) {
-      setNotice({
-        type: "error",
-        text: getErrorMessage(error, "Unable to send the invitation."),
-      });
+      setSuccess(`Invitation sent to ${inviteTarget.name} for ${selectedEntry.name}.`);
+      setInviteTarget(null);
+      await loadOwnerData();
+    } catch (requestError) {
+      setError(requestError?.response?.data?.message || requestError.message || "Unable to send invitation.");
     } finally {
-      setSending(false);
+      setSubmitting(false);
     }
   }
 
-  async function handleCancelInvitation(invitation) {
-    if (!window.confirm(`Cancel invitation for ${invitation.horseName}?`))
-      return;
-    const invitationId = invitation.assignmentId || invitation.id;
-    setCancellingId(invitationId);
+  async function handleCancelInvitation(invitationId) {
+    setSubmitting(true);
+    setError("");
     try {
       await cancelInvitation(invitationId);
-      setNotice({
-        type: "success",
-        text: "Invitation cancelled successfully.",
-      });
-      await loadSentInvitations();
-    } catch (error) {
-      setNotice({
-        type: "error",
-        text: getErrorMessage(error, "Unable to cancel the invitation."),
-      });
+      setSuccess("Invitation cancelled.");
+      await loadOwnerData();
+    } catch (requestError) {
+      setError(requestError?.response?.data?.message || requestError.message || "Unable to cancel invitation.");
     } finally {
-      setCancellingId("");
+      setSubmitting(false);
     }
   }
 
   return (
-    <div className={styles.marketPage}>
-      <header className={styles.pageHeader}>
-        <div>
-          <span className={styles.eyebrow}>Marketplace / Assign Jockey</span>
-          <h2>Jockey Selection</h2>
-          <p>
-            Review available jockeys and invite elite jockeys to ride your
-            stable&apos;s champions.
-          </p>
-        </div>
-      </header>
+    <div className="space-y-6">
+      <PageHeader
+        title="Jockey Selection"
+        subtitle="Review available jockeys and invite elite jockeys to ride your stable's champions."
+      />
 
-      {notice && (
-        <div
-          className={`${styles.notice} ${
-            notice.type === "success"
-              ? styles.noticeSuccess
-              : styles.noticeError
-          }`}
-          role="alert"
-        >
-          <span>{notice.text}</span>
-          <button
-            type="button"
-            onClick={() => setNotice(null)}
-            aria-label="Dismiss"
-          >
-            x
-          </button>
+      {error && <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-danger">{error}</div>}
+      {success && (
+        <div className="flex items-center justify-between rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm font-medium text-success">
+          <span>{success}</span>
+          <button type="button" onClick={() => setSuccess("")}>x</button>
         </div>
       )}
 
-      <div className={styles.marketGrid}>
-        <aside className={styles.leftColumn}>
-          <section className={styles.panel}>
-            <div className={styles.panelHeader}>
-              <h3>Unassigned Horses</h3>
-              <span>0</span>
-            </div>
-            <div className={styles.horseList}>
-              <p className={styles.emptySelection}>
-                No real race entry API is connected yet. Open this page with a
-                selected entry containing entryId to send invitations.
-              </p>
-            </div>
-          </section>
-
-          <section className={styles.panel}>
-            <div className={styles.panelHeader}>
-              <h3>Selected Race Details</h3>
-            </div>
-            {selectedHorse ? (
-              <dl className={styles.raceDetails}>
-                <div>
-                  <dt>Race</dt>
-                  <dd>{selectedHorse.raceName || "Not available"}</dd>
-                </div>
-                <div>
-                  <dt>Venue</dt>
-                  <dd>{selectedHorse.raceVenue || "Not available"}</dd>
-                </div>
-                <div>
-                  <dt>Date</dt>
-                  <dd>{selectedHorse.raceDate || "Not available"}</dd>
-                </div>
-                <div>
-                  <dt>Distance</dt>
-                  <dd>
-                    {selectedHorse.raceDistance || "Not available"}
-                    {selectedHorse.raceSurface
-                      ? ` (${selectedHorse.raceSurface})`
-                      : ""}
-                  </dd>
-                </div>
-                <div>
-                  <dt>Grade</dt>
-                  <dd>{selectedHorse.raceGrade || "Not available"}</dd>
-                </div>
-                <div>
-                  <dt>Purse</dt>
-                  <dd>
-                    {selectedHorse.racePurse
-                      ? formatCurrency(selectedHorse.racePurse)
-                      : "Not available"}
-                  </dd>
-                </div>
-              </dl>
-            ) : (
-              <p className={styles.emptySelection}>
-                Select a horse to review its upcoming race.
-              </p>
-            )}
-          </section>
-
-          <section className={styles.panel}>
-            <div className={styles.panelHeader}>
-              <h3>Sent Invitations</h3>
-              <span>{sentInvitations.length}</span>
-            </div>
-            <div className={styles.sentInvitationList}>
-              {invitationLoading ? (
-                <p className={styles.emptySelection}>Loading invitations...</p>
-              ) : sentInvitations.length === 0 ? (
-                <p className={styles.emptySelection}>
-                  No invitations sent yet.
-                </p>
+      <div className="grid min-w-0 gap-6 xl:grid-cols-[380px_minmax(0,1fr)]">
+        <div className="min-w-0 space-y-6">
+          <Card>
+            <CardHeader className="flex items-center justify-between">
+              <h2 className="font-semibold uppercase tracking-wide text-ink">Unassigned Horses</h2>
+              <Badge tone="success">{entries.length}</Badge>
+            </CardHeader>
+            <CardBody>
+              {loading ? (
+                <Skeleton className="h-52 rounded-xl" />
+              ) : entries.length === 0 ? (
+                <EmptyState title="No approved race entries are waiting for a jockey." />
               ) : (
-                sentInvitations.map((invitation) => {
-                  const invitationId = invitation.assignmentId || invitation.id;
-                  return (
-                    <article
-                      className={styles.sentInvitation}
-                      key={invitationId}
-                    >
-                      <div>
-                        <strong>{invitation.jockeyName}</strong>
-                        <span>
-                          {invitation.horseName} / {invitation.raceName}
-                        </span>
-                      </div>
-                      <div className={styles.invitationStatusRow}>
-                        <span
-                          className={`${styles.invitationStatus} ${
-                            styles[`invitation${invitation.status}`]
-                          }`}
-                        >
-                          {invitation.status}
-                        </span>
-                        {invitation.status === "INVITED" && (
-                          <button
-                            type="button"
-                            disabled={cancellingId === invitationId}
-                            onClick={() => handleCancelInvitation(invitation)}
-                          >
-                            {cancellingId === invitationId
-                              ? "Cancelling..."
-                              : "Cancel"}
-                          </button>
-                        )}
-                      </div>
-                    </article>
-                  );
-                })
+                <div className="space-y-3">
+                  {entries.map((entry) => {
+                    const entryKey = entry.id || entry.entryId;
+                    const active = entryKey === (selectedEntry?.id || selectedEntry?.entryId);
+                    return (
+                      <button
+                        key={entryKey}
+                        type="button"
+                        onClick={() => setSelectedEntryId(entryKey)}
+                        className={`flex w-full items-center gap-3 rounded-xl border p-3 text-left transition ${
+                          active ? "border-brand-700 bg-brand-50" : "border-border bg-surface hover:bg-subtle/50"
+                        }`}
+                      >
+                        <div className="h-14 w-14 overflow-hidden rounded-xl bg-brand-900">
+                          {entry.image ? <img src={entry.image} alt="" className="h-full w-full object-cover" /> : null}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate font-semibold text-ink">{entry.name}</p>
+                          <p className="truncate text-sm text-muted">{entry.breed || entry.gender || "Horse"}</p>
+                          <p className="truncate text-xs text-muted">{entry.raceName}</p>
+                        </div>
+                        <span className="text-sm font-semibold text-success">{active ? "Selected" : "Select"}</span>
+                      </button>
+                    );
+                  })}
+                </div>
               )}
-            </div>
-          </section>
-        </aside>
+            </CardBody>
+          </Card>
 
-        <section className={styles.jockeySection}>
-          <div className={styles.controls}>
-            <label className={styles.searchField}>
-              <span>Search</span>
-              <input
-                type="search"
-                value={search}
-                onChange={(event) => setSearch(event.target.value)}
-                placeholder="Search jockey or riding style..."
-              />
-            </label>
+          <Card>
+            <CardHeader>
+              <h2 className="font-semibold uppercase tracking-wide text-ink">Selected Race Details</h2>
+            </CardHeader>
+            <CardBody>
+              {selectedEntry ? (
+                <dl className="space-y-3 text-sm">
+                  <div className="flex justify-between gap-4"><dt className="text-muted">Race</dt><dd className="font-semibold text-ink">{selectedEntry.raceName}</dd></div>
+                  <div className="flex justify-between gap-4"><dt className="text-muted">Tournament</dt><dd className="font-semibold text-ink">{selectedEntry.tournamentName || "N/A"}</dd></div>
+                  <div className="flex justify-between gap-4"><dt className="text-muted">Date</dt><dd className="font-semibold text-ink">{formatDate(selectedEntry.scheduledStartAt)}</dd></div>
+                  <div className="flex justify-between gap-4"><dt className="text-muted">Race Type</dt><dd className="font-semibold text-ink">{selectedEntry.raceType || "N/A"}</dd></div>
+                  <div className="flex justify-between gap-4"><dt className="text-muted">Distance</dt><dd className="font-semibold text-ink">{selectedEntry.distanceMeter ? `${selectedEntry.distanceMeter}m` : "N/A"}</dd></div>
+                </dl>
+              ) : (
+                <p className="text-sm text-muted">Select a horse to review its upcoming race.</p>
+              )}
+            </CardBody>
+          </Card>
 
-            <label>
-              <span>Sort</span>
-              <select
-                value={sortOption}
-                onChange={(event) =>
-                  resetPageAndSet(setSortOption, event.target.value)
-                }
-              >
-                <option value="bestMatch">Best Match</option>
+          <Card>
+            <CardHeader className="flex items-center justify-between">
+              <h2 className="font-semibold uppercase tracking-wide text-ink">Sent Invitations</h2>
+              <Badge tone="success">{sentInvitations.length}</Badge>
+            </CardHeader>
+            <CardBody>
+              {sentInvitations.length === 0 ? (
+                <EmptyState title="No invitations sent yet" />
+              ) : (
+                <div className="space-y-3">
+                  {sentInvitations.slice(0, 5).map((invitation) => (
+                    <div key={invitation.assignmentId || invitation.invitationId || invitation.id} className="rounded-xl border border-border p-3">
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <p className="font-semibold text-ink">{invitation.jockeyName || invitation.jockeyFullName || "Jockey"}</p>
+                          <p className="text-sm text-muted">{invitation.horseName} / {invitation.raceName}</p>
+                        </div>
+                        <Badge tone={invitation.status === "ACCEPTED" ? "success" : invitation.status === "REJECTED" ? "danger" : "warning"}>{invitation.status}</Badge>
+                      </div>
+                      {invitation.status === "INVITED" && (
+                        <button
+                          type="button"
+                          className="mt-2 text-sm font-semibold text-danger"
+                          disabled={submitting}
+                          onClick={() => handleCancelInvitation(invitation.assignmentId || invitation.invitationId || invitation.id)}
+                        >
+                          Cancel
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardBody>
+          </Card>
+        </div>
+
+        <Card className="min-w-0 overflow-hidden">
+          <CardHeader>
+            <div className="grid gap-3 lg:grid-cols-[1fr_180px_180px_180px]">
+              <label className="relative">
+                <Search className="absolute left-3 top-3 text-muted" size={16} />
+                <input
+                  className="h-11 w-full rounded-lg border border-border bg-surface pl-10 pr-3 text-sm outline-none focus:ring-2 focus:ring-brand-500"
+                  value={filters.search}
+                  onChange={(event) => updateFilter("search", event.target.value)}
+                  placeholder="Search jockey or riding style..."
+                />
+              </label>
+              <select className="h-11 rounded-lg border border-border bg-surface px-3 text-sm outline-none focus:ring-2 focus:ring-brand-500" value={filters.sortBy} onChange={(event) => updateFilter("sortBy", event.target.value)}>
+                <option value="compatibility">Best Match</option>
                 <option value="winRate">Highest Win Rate</option>
                 <option value="experience">Most Experienced</option>
                 <option value="baseFee">Lowest Base Fee</option>
               </select>
-            </label>
-
-            <label>
-              <span>Status</span>
-              <select
-                value={status}
-                onChange={(event) =>
-                  resetPageAndSet(setStatus, event.target.value)
-                }
-              >
+              <select className="h-11 rounded-lg border border-border bg-surface px-3 text-sm outline-none focus:ring-2 focus:ring-brand-500" value={filters.status} onChange={(event) => updateFilter("status", event.target.value)}>
                 <option value="">All statuses</option>
                 <option value="AVAILABLE">Available</option>
-                <option value="LIMITED">Limited</option>
-                <option value="UNAVAILABLE">Unavailable</option>
+                <option value="ACTIVE">Active</option>
               </select>
-            </label>
-
-            <label>
-              <span>Riding Style</span>
-              <select
-                value={ridingStyle}
-                onChange={(event) =>
-                  resetPageAndSet(setRidingStyle, event.target.value)
-                }
-              >
-                <option value="">All styles</option>
-                <option value="Closer">Closer</option>
-                <option value="Front Runner">Front Runner</option>
-                <option value="Stalker">Stalker</option>
-                <option value="Versatile">Versatile</option>
-              </select>
-            </label>
-
-            <label>
-              <span>Minimum Win Rate</span>
-              <select
-                value={minWinRate}
-                onChange={(event) =>
-                  resetPageAndSet(setMinWinRate, event.target.value)
-                }
-              >
+              <select className="h-11 rounded-lg border border-border bg-surface px-3 text-sm outline-none focus:ring-2 focus:ring-brand-500" value={filters.minWinRate} onChange={(event) => updateFilter("minWinRate", event.target.value)}>
                 <option value="">Any win rate</option>
-                <option value="15">15%+</option>
+                <option value="10">10%+</option>
                 <option value="20">20%+</option>
-                <option value="25">25%+</option>
+                <option value="30">30%+</option>
               </select>
-            </label>
-          </div>
-
-          <div className={styles.resultsHeader}>
-            <strong>Available Jockeys</strong>
-            <span>{totalItems} results</span>
-          </div>
-
-          <div className={styles.jockeyListViewport}>
-            {loading ? (
-              <div className={styles.stateCard}>Loading jockeys...</div>
-            ) : loadError ? (
-              <div className={`${styles.stateCard} ${styles.stateError}`}>
-                {loadError}
-              </div>
-            ) : jockeys.length === 0 ? (
-              <div className={styles.stateCard}>
-                No jockeys match the selected criteria.
-              </div>
-            ) : (
-              <div className={styles.jockeyList}>
-                {jockeys.map((jockey) => (
-                  <article className={styles.jockeyCard} key={jockey.id}>
-                    <div className={styles.jockeyIdentity}>
-                      <button
-                        type="button"
-                        className={styles.avatarButton}
-                        onClick={() =>
-                          navigate(`/owner/jockey-market/${jockey.id}`, {
-                            state: { selectedHorseId },
-                          })
-                        }
-                        aria-label={`View ${jockey.name} profile`}
-                      >
-                        {jockey.avatar ? (
-                          <img src={jockey.avatar} alt="" />
-                        ) : (
-                          getInitials(jockey.name)
-                        )}
-                      </button>
-                      <div>
-                        <button
-                          type="button"
-                          className={styles.nameButton}
-                          onClick={() =>
-                            navigate(`/owner/jockey-market/${jockey.id}`, {
-                              state: { selectedHorseId },
-                            })
-                          }
-                        >
-                          {jockey.name}
-                        </button>
-                        <div className={styles.rating}>
-                          <span>Rating {jockey.rating}</span>
-                          <span>{jockey.careerWins} career wins</span>
-                        </div>
-                        <span
-                          className={`${styles.statusBadge} ${
-                            styles[`status${jockey.status}`]
-                          }`}
-                        >
-                          {jockey.status}
-                        </span>
-                      </div>
-                    </div>
-
-                    <div className={styles.winRate}>
-                      <span>Win Rate</span>
-                      <strong>{jockey.winRate}%</strong>
-                      <small>{jockey.compatibility}% compatibility</small>
-                    </div>
-
-                    <dl className={styles.jockeyStats}>
-                      <div>
-                        <dt>Riding Style</dt>
-                        <dd>{jockey.ridingStyle}</dd>
-                      </div>
-                      <div>
-                        <dt>Min Weight</dt>
-                        <dd>{jockey.minWeight}</dd>
-                      </div>
-                      <div>
-                        <dt>Stable Status</dt>
-                        <dd>{jockey.stableStatus}</dd>
-                      </div>
-                      <div>
-                        <dt>Base Riding Fee</dt>
-                        <dd>{formatCurrency(jockey.baseFee)}</dd>
-                      </div>
-                      <div>
-                        <dt>Prize Percentage</dt>
-                        <dd>{jockey.prizePercentage}% of purse</dd>
-                      </div>
-                      <div>
-                        <dt>Trophy Cabinet</dt>
-                        <dd>{jockey.trophies.join(", ")}</dd>
-                      </div>
-                    </dl>
-
-                    <div className={styles.cardActions}>
-                      <button
-                        type="button"
-                        className={styles.secondaryButton}
-                        onClick={() =>
-                          navigate(`/owner/jockey-market/${jockey.id}`, {
-                            state: { selectedHorseId },
-                          })
-                        }
-                      >
-                        View Profile
-                      </button>
-                      <button
-                        type="button"
-                        className={styles.primaryButton}
-                        onClick={() => openInvitation(jockey)}
-                        disabled={jockey.status === "UNAVAILABLE"}
-                      >
-                        Invite to Ride
-                      </button>
-                    </div>
-                  </article>
-                ))}
-              </div>
-            )}
-          </div>
-
-          <div className={styles.pagination}>
-            <button
-              type="button"
-              disabled={currentPage === 1 || loading}
-              onClick={() => setCurrentPage((page) => page - 1)}
-            >
-              Previous
-            </button>
-            <span>
-              Page <strong>{currentPage}</strong> of{" "}
-              <strong>{totalPages}</strong>
-            </span>
-            <button
-              type="button"
-              disabled={currentPage === totalPages || loading}
-              onClick={() => setCurrentPage((page) => page + 1)}
-            >
-              Next
-            </button>
-          </div>
-        </section>
-      </div>
-
-      {invitationJockey && selectedHorse && (
-        <div className={styles.modalOverlay} role="presentation">
-          <div
-            className={styles.modal}
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="invitation-title"
-          >
-            <div className={styles.modalHeader}>
-              <div>
-                <span>Confirm assignment request</span>
-                <h3 id="invitation-title">Invite to Ride</h3>
-              </div>
-              <button
-                type="button"
-                onClick={closeInvitation}
-                disabled={sending}
-              >
-                x
-              </button>
+            </div>
+          </CardHeader>
+          <CardBody className="p-0">
+            <div className="flex items-center justify-between border-b border-border px-6 py-4">
+              <h2 className="font-semibold text-ink">Available Jockeys</h2>
+              <p className="text-sm text-muted">{pagination.totalItems} results</p>
             </div>
 
-            <form onSubmit={handleSendInvitation}>
-              <dl className={styles.invitationSummary}>
-                <div>
-                  <dt>Horse</dt>
-                  <dd>{selectedHorse.name}</dd>
-                </div>
-                <div>
-                  <dt>Race</dt>
-                  <dd>{selectedHorse.raceName || "Not available"}</dd>
-                </div>
-                <div>
-                  <dt>Jockey</dt>
-                  <dd>{invitationJockey.name}</dd>
-                </div>
-              </dl>
+            {jockeyLoading ? (
+              <div className="p-6"><Skeleton className="h-96 rounded-xl" /></div>
+            ) : jockeys.length === 0 ? (
+              <div className="p-6"><EmptyState title="No jockeys match your filters" /></div>
+            ) : (
+              <div className="w-full max-w-full overflow-x-auto">
+                <div className="min-w-[980px] divide-y divide-border">
+                {jockeys.map((jockey) => (
+                  <div key={jockey.id} className="grid grid-cols-[280px_180px_1fr_180px] gap-6 px-6 py-6">
+                    <div className="flex items-center gap-4">
+                      <div className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-xl bg-brand-700 text-lg font-bold text-white">
+                        {jockey.avatar ? <img src={jockey.avatar} alt="" className="h-full w-full object-cover" /> : initials(jockey.name)}
+                      </div>
+                      <div>
+                        <p className="text-lg font-semibold text-ink">{jockey.name}</p>
+                        <p className="text-sm text-muted">Rating {jockey.rating} · {jockey.careerWins} career wins</p>
+                        <Badge tone="success">{jockey.status}</Badge>
+                      </div>
+                    </div>
 
-              <label className={styles.messageField}>
-                <span>Message (optional)</span>
-                <textarea
-                  rows="4"
-                  value={message}
-                  onChange={(event) => setMessage(event.target.value)}
-                  placeholder="Add race strategy, schedule, or contract notes..."
-                  maxLength="500"
-                />
-                <small>{message.length}/500</small>
-              </label>
+                    <div className="rounded-xl bg-brand-50 p-4 text-center">
+                      <p className="text-xs font-semibold uppercase text-muted">Win Rate</p>
+                      <strong className="block text-3xl text-success">{jockey.winRate}%</strong>
+                      <p className="text-xs font-semibold text-muted">{jockey.compatibility}% compatibility</p>
+                    </div>
 
-              <div className={styles.modalActions}>
-                <button
-                  type="button"
-                  className={styles.secondaryButton}
-                  onClick={closeInvitation}
-                  disabled={sending}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className={styles.primaryButton}
-                  disabled={sending}
-                >
-                  {sending ? "Sending..." : "Send Invitation"}
-                </button>
+                    <div className="grid grid-cols-3 gap-4 text-sm">
+                      <Info label="Riding Style" value={jockey.ridingStyle} />
+                      <Info label="Min Weight" value={jockey.minWeight} />
+                      <Info label="Stable Status" value={jockey.stableStatus} />
+                      <Info label="Base Riding Fee" value={formatCurrency(jockey.baseFee)} />
+                      <Info label="Prize Percentage" value={`${jockey.prizePercentage}% of purse`} />
+                      <Info label="Trophy Cabinet" value={jockey.trophies?.join(", ") || "Not listed"} />
+                    </div>
+
+                    <div className="flex flex-col justify-center gap-3">
+                      <Button type="button" variant="secondary" onClick={() => navigate(`/owner/jockey-market/${jockey.id}`, { state: { selectedHorseId: selectedEntry?.id || selectedEntry?.entryId } })}>
+                        View Profile
+                      </Button>
+                      <Button type="button" onClick={() => openInvite(jockey)} leftIcon={<Send size={15} />}>
+                        Invite to Ride
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+                </div>
               </div>
-            </form>
+            )}
+
+            <div className="flex items-center justify-end gap-3 border-t border-border px-6 py-4">
+              <Button type="button" variant="secondary" disabled={pagination.page <= 1} onClick={() => updateFilter("page", pagination.page - 1)}>Previous</Button>
+              <span className="text-sm text-muted">Page {pagination.page} of {pagination.totalPages}</span>
+              <Button type="button" variant="secondary" disabled={pagination.page >= pagination.totalPages} onClick={() => updateFilter("page", pagination.page + 1)}>Next</Button>
+            </div>
+          </CardBody>
+        </Card>
+      </div>
+
+      <Modal
+        open={!!inviteTarget}
+        onClose={() => setInviteTarget(null)}
+        title="Confirm Invitation"
+        footer={
+          <>
+            <Button type="button" variant="ghost" onClick={() => setInviteTarget(null)}>Cancel</Button>
+            <Button type="button" loading={submitting} onClick={handleInvite} leftIcon={<Mail size={15} />}>Send Invitation</Button>
+          </>
+        }
+      >
+        <div className="space-y-4">
+          <div className="rounded-xl bg-subtle p-4 text-sm">
+            <p><strong>Horse:</strong> {selectedEntry?.name}</p>
+            <p><strong>Race:</strong> {selectedEntry?.raceName}</p>
+            <p><strong>Jockey:</strong> {inviteTarget?.name}</p>
           </div>
+          <label className="block text-sm font-semibold text-ink">
+            Optional Message
+            <textarea
+              className="mt-2 min-h-28 w-full rounded-lg border border-border p-3 outline-none focus:ring-2 focus:ring-brand-500"
+              value={message}
+              onChange={(event) => setMessage(event.target.value)}
+              placeholder="Add a note for the jockey..."
+            />
+          </label>
         </div>
-      )}
+      </Modal>
+    </div>
+  );
+}
+
+function Info({ label, value }) {
+  return (
+    <div>
+      <p className="text-xs font-semibold uppercase text-muted">{label}</p>
+      <p className="mt-1 truncate font-semibold text-ink" title={String(value || "")}>{value || "N/A"}</p>
     </div>
   );
 }

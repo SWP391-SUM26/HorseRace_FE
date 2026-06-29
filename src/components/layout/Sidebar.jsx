@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { NavLink, useLocation } from 'react-router-dom';
+import { NavLink, useLocation, useNavigate } from 'react-router-dom';
+import { logout } from '../../services/auth';
 import styles from './Sidebar.module.css';
 import {
   BarChartIcon,
@@ -17,7 +18,7 @@ import {
 
 const defaultMenuItems = [
   { path: '/admin/users', icon: UsersIcon, label: 'User Management' },
-  { path: '/admin/approvals', icon: ClipboardIcon, label: 'Registration Approval' },
+  { path: '/admin/approvals', icon: ClipboardIcon, label: 'Tournament Approval' },
   { path: '/admin/tournaments', icon: TrophyIcon, label: 'Tournaments' },
   { path: '/admin/races', icon: CheckSquareIcon, label: 'Race Management' },
   { path: '/admin/race-approval', icon: FileTextIcon, label: 'Race Approval' },
@@ -34,11 +35,17 @@ export default function Sidebar({
   footerAction,
 }) {
   const location = useLocation();
+  const navigate = useNavigate();
   const [collapsed, setCollapsed] = useState(
     () => localStorage.getItem('equine_elite_sidebar_collapsed') === 'true',
   );
   const primaryItems = menuItems.filter((item) => !item.bottom);
   const bottomItems = menuItems.filter((item) => item.bottom);
+
+  function handleLogout() {
+    logout();
+    navigate('/login', { replace: true });
+  }
 
   function toggleSidebar() {
     setCollapsed((current) => {
@@ -121,6 +128,13 @@ export default function Sidebar({
             <span className={styles.itemLabel}>System Report</span>
           </button>
         ) : footerAction}
+        <button
+          type="button"
+          className={styles.logoutButton}
+          onClick={handleLogout}
+        >
+          <span className={styles.itemLabel}>Log out</span>
+        </button>
         <button
           type="button"
           className={styles.toggleButton}

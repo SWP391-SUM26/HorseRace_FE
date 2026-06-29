@@ -1,0 +1,162 @@
+.profilePage,
+.statePage {
+  min-height: 100vh;
+  padding: 40px;
+  color: #172235;
+  background: #f5f8fb;
+}
+
+.pageToolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  max-width: 960px;
+  margin: 0 auto 18px;
+}
+
+.pageToolbar button,
+.statePage button {
+  padding: 9px 16px;
+  color: #064e3b;
+  background: #fff;
+  border: 1px solid #cfd9e6;
+  border-radius: 8px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.pageToolbar span {
+  color: #64748b;
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.profileCard {
+  max-width: 960px;
+  margin: 0 auto;
+  overflow: hidden;
+  background: #fff;
+  border: 1px solid #dbe3ee;
+  border-radius: 18px;
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.07);
+}
+
+.profileHeader {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  padding: 38px;
+  color: #fff;
+  background: linear-gradient(135deg, #023c2e, #087a57);
+}
+
+.avatar {
+  display: grid;
+  flex: 0 0 auto;
+  width: 104px;
+  height: 104px;
+  place-items: center;
+  overflow: hidden;
+  color: #064e3b;
+  background: #d1fae5;
+  border: 4px solid rgba(255, 255, 255, 0.75);
+  border-radius: 50%;
+  font-size: 30px;
+  font-weight: 900;
+}
+
+.avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.profileHeader h1 {
+  margin: 8px 0 5px;
+  font-size: 30px;
+}
+
+.profileHeader p {
+  margin: 0;
+  color: #d1fae5;
+}
+
+.roleBadge {
+  display: inline-flex;
+  padding: 4px 9px;
+  color: #064e3b;
+  background: #d1fae5;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.detailsGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0;
+  padding: 12px 38px 38px;
+}
+
+.detailsGrid > div {
+  display: grid;
+  gap: 6px;
+  padding: 22px 0;
+  border-bottom: 1px solid #e6ecf3;
+}
+
+.detailsGrid > div:nth-child(odd) {
+  padding-right: 28px;
+}
+
+.detailsGrid > div:nth-child(even) {
+  padding-left: 28px;
+  border-left: 1px solid #e6ecf3;
+}
+
+.detailsGrid span {
+  color: #718096;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.detailsGrid strong {
+  overflow-wrap: anywhere;
+  font-size: 15px;
+}
+
+.statePage {
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  gap: 14px;
+  text-align: center;
+}
+
+@media (max-width: 700px) {
+  .profilePage,
+  .statePage {
+    padding: 20px;
+  }
+
+  .profileHeader {
+    align-items: flex-start;
+    flex-direction: column;
+    padding: 28px;
+  }
+
+  .detailsGrid {
+    grid-template-columns: 1fr;
+    padding: 8px 28px 28px;
+  }
+
+  .detailsGrid > div:nth-child(odd),
+  .detailsGrid > div:nth-child(even) {
+    padding-right: 0;
+    padding-left: 0;
+    border-left: 0;
+  }
+}

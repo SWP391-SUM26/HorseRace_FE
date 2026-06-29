@@ -136,6 +136,7 @@
   display: flex;
   gap: 16px;
   align-items: flex-end;
+  flex-wrap: wrap;
 }
 
 .filterGroup {
@@ -164,4 +165,86 @@
 
 .filterSelect:focus {
   border-color: #022c22;
+}
+
+/* Modal Styles */
+.modalOverlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 1000; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(2px); }
+.modalContent { background: white; padding: 24px; border-radius: 12px; width: 400px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
+.modalHeader { font-size: 18px; font-weight: bold; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center; }
+.closeButton { background: none; border: none; font-size: 24px; cursor: pointer; color: #64748b; line-height: 1; }
+.formGroup { margin-bottom: 16px; }
+.formLabel { display: block; font-size: 14px; font-weight: 500; margin-bottom: 8px; color: #334155; }
+.formSelect { width: 100%; padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 6px; }
+.modalFooter { display: flex; justify-content: flex-end; gap: 12px; margin-top: 24px; }
+
+/* Toast Modal */
+.toastOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(4px);
+  z-index: 9999;
+  animation: fadeIn 0.2s ease-out forwards;
+}
+
+.toastModal {
+  background: white;
+  padding: 32px 48px;
+  border-radius: 16px;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  transform: scale(0.95);
+  animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+.toastIcon {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 8px;
+}
+
+.toastIcon.success {
+  background-color: #dcfce7;
+  color: #16a34a;
+}
+
+.toastIcon.error {
+  background-color: #fee2e2;
+  color: #dc2626;
+}
+
+.toastMessage {
+  font-size: 18px;
+  font-weight: 600;
+  color: #1e293b;
+  text-align: center;
+}
+
+@keyframes popIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }

@@ -167,9 +167,9 @@ export function cancelRace(id) {
 
 export function getRaceEntries(id) {
   return api.get(`${ENDPOINT}/${id}/entries`).then((response) => unwrap(response));
-}
+} 
 
-export function assignParticipants(id, payload = {}) {
+export async function assignParticipants(id, payload = {}) {
   const registrationIds = payload.registrationIds || payload.participantIds || [];
   const requests = registrationIds.map((registrationId, index) =>
     api.post(`${ENDPOINT}/${id}/entries`, {
@@ -180,4 +180,12 @@ export function assignParticipants(id, payload = {}) {
   );
 
   return Promise.all(requests).then((responses) => responses.map(unwrap));
+}
+
+export function getMyEntry(raceId) {
+  return api.get(`${ENDPOINT}/${raceId}/my-entry`).then((response) => unwrap(response));
+}
+
+export function getJockeySuggestions(raceId, horseId) {
+  return api.get(`${ENDPOINT}/${raceId}/jockey-suggestions?horseId=${horseId}`).then((response) => unwrap(response));
 }

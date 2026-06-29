@@ -1,157 +1,152 @@
 import api from "./api";
-import initialHorses from "../data/horseMock.json";
+import dashboardMonitor from "@/assets/dashboard_monitor.png";
+import { normalizeBackendImageUrl } from "@/common/lib/imageUrl";
 
-const STORAGE_KEY = "equine_elite_horses";
-
-// Initialize localStorage if not set
-if (!localStorage.getItem(STORAGE_KEY)) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(initialHorses));
+export function normalizeHorseImageUrl(value) {
+  return normalizeBackendImageUrl(value, dashboardMonitor);
 }
 
-function getLocalHorses() {
-  return JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
-}
-
-function saveLocalHorses(horses) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(horses));
-}
-
-export async function getHorses() {
-  try {
-    const response = await api.get("/v1/horses");
-    if (response.data?.success) {
-      return response.data.data;
-    }
-  } catch (err) {
-    console.warn("API getHorses failed, falling back to mock data:", err.message);
-  }
-  return getLocalHorses();
-}
-
-export async function getHorseDetail(id) {
-  try {
-    const response = await api.get(`/v1/horses/${id}`);
-    if (response.data?.success) {
-      return response.data.data;
-    }
-  } catch (err) {
-    console.warn(`API getHorseDetail for ${id} failed, falling back to mock data:`, err.message);
-  }
-  const horses = getLocalHorses();
-  return horses.find(h => h.id === id) || null;
-}
-
-export async function createHorse(horseData) {
-  try {
-    const response = await api.post("/v1/horses", horseData);
-    if (response.data?.success) {
-      return response.data.data;
-    }
-  } catch (err) {
-    console.warn("API createHorse failed, falling back to mock data:", err.message);
-  }
-  const horses = getLocalHorses();
-  const newHorse = {
-    id: `hr_${Date.now()}`,
+// Map Backend HorseResponse to Frontend mock structure
+function mapBackendHorseToFrontend(be) {
+  if (!be) return null;
+  return {
+    ...be,
+    id: be.horseId || be.id,
+    age: "3yo", // Placeholder since frontend expects age string
+    breed: be.breed || "Unknown",
+    status: be.healthStatus === "INJURED" ? "INJURED" : (be.status === "ACTIVE" ? "FIT TO RACE" : "RESTING"),
+    imageUrl: normalizeHorseImageUrl(be.imageUrl),
+    image: normalizeHorseImageUrl(be.imageUrl),
+    details: `3yo ${be.breed || "Unknown"}`,
     nextRace: "No upcoming races",
     track: "",
     cogginsTest: "Up to date",
     vaccines: "Current",
-    raceHistory: [
-      { date: "May 10, 2026", race: "Preakness Stakes", jockey: "J. Ortiz", place: "2nd", prize: "$150,000" }
-    ],
-    ...horseData,
-    details: `${horseData.age} ${horseData.breed}`,
-    medicalStatus: horseData.status === "FIT TO RACE" ? "Fit for Racing" : "Resting/Unfit"
+    medicalStatus: be.healthStatus === "INJURED" ? "Resting/Unfit" : "Fit for Racing"
   };
-  saveLocalHorses([newHorse, ...horses]);
-  return newHorse;
+}
+
+// Map Frontend form data to Backend HorseRequest payload
+function mapFrontendHorseToBackend(fe) {
+  return {
+    name: fe.name,
+    microchipNo: "MC-" + Math.floor(Math.random() * 10000000),
+    gender: "MALE",
+    breed: fe.breed || "Thoroughbred",
+    color: "Bay",
+    dateOfBirth: "2023-01-01",
+    weight: 500.0,
+    originCountry: "USA",
+    healthStatus: fe.status === "INJURED" ? "INJURED" : "HEALTHY",
+    registrationStatus: "VERIFIED",
+    status: fe.status === "RESTING" ? "INACTIVE" : "ACTIVE"
+  };
+}
+
+export async function getHorses() {
+  const response = await api.get("/api/v1/horses");
+  if (response.data?.success) {
+    const data = response.data.data;
+    const horses = Array.isArray(data) ? data : (data?.content || []);
+    return horses.map(mapBackendHorseToFrontend);
+  }
+  throw new Error(response.data?.message || "Failed to fetch horses");
+}
+
+export async function getHorseDetail(id) {
+  const response = await api.get(`/api/v1/horses/${id}`);
+  if (response.data?.success) {
+    return mapBackendHorseToFrontend(response.data.data);
+  }
+  throw new Error(response.data?.message || "Failed to fetch horse details");
+}
+
+export async function createHorse(horseData) {
+  const payload = mapFrontendHorseToBackend(horseData);
+  const response = await api.post("/api/v1/horses", payload);
+  if (response.data?.success) {
+    return mapBackendHorseToFrontend(response.data.data);
+  }
+  throw new Error(response.data?.message || "Failed to create horse");
 }
 
 export async function updateHorse(id, horseData) {
-  try {
-    const response = await api.put(`/v1/horses/${id}`, horseData);
-    if (response.data?.success) {
-      return response.data.data;
-    }
-  } catch (err) {
-    console.warn(`API updateHorse for ${id} failed, falling back to mock data:`, err.message);
+  const payload = mapFrontendHorseToBackend(horseData);
+  const response = await api.put(`/api/v1/horses/${id}`, payload);
+  if (response.data?.success) {
+    return mapBackendHorseToFrontend(response.data.data);
   }
-  const horses = getLocalHorses();
-  let updatedHorse = null;
-  const updatedList = horses.map(h => {
-    if (h.id === id) {
-      updatedHorse = {
-        ...h,
-        ...horseData,
-        details: `${horseData.age || h.age} ${horseData.breed || h.breed}`,
-        medicalStatus: horseData.status ? (horseData.status === "FIT TO RACE" ? "Fit for Racing" : "Resting/Unfit") : h.medicalStatus
-      };
-      return updatedHorse;
-    }
-    return h;
-  });
-  saveLocalHorses(updatedList);
-  return updatedHorse;
+  throw new Error(response.data?.message || "Failed to update horse");
 }
 
 export async function deleteHorse(id) {
-  try {
-    const response = await api.delete(`/v1/horses/${id}`);
-    if (response.data?.success) {
-      return true;
-    }
-  } catch (err) {
-    console.warn(`API deleteHorse for ${id} failed, falling back to mock data:`, err.message);
+  const response = await api.delete(`/api/v1/horses/${id}`);
+  if (response.data?.success) {
+    return true;
   }
-  const horses = getLocalHorses();
-  const filtered = horses.filter(h => h.id !== id);
-  saveLocalHorses(filtered);
-  return true;
+  throw new Error(response.data?.message || "Failed to delete horse");
 }
 
 export async function assignHorseToRace(id, race) {
-  try {
-    const response = await api.post(`/v1/horses/${id}/assign`, { raceId: race.id });
-    if (response.data?.success) {
-      return response.data.data;
-    }
-  } catch (err) {
-    console.warn(`API assignHorseToRace for ${id} failed, falling back to mock data:`, err.message);
+  const response = await api.post(`/api/v1/horses/${id}/assign-to-race`, { raceId: race.id });
+  if (response.data?.success) {
+    return response.data.data;
   }
-  const horses = getLocalHorses();
-  let updatedHorse = null;
-  const updatedList = horses.map(h => {
-    if (h.id === id) {
-      updatedHorse = {
-        ...h,
-        nextRace: race.date,
-        track: race.track
-      };
-      return updatedHorse;
-    }
-    return h;
-  });
-  saveLocalHorses(updatedList);
-  return updatedHorse;
+  throw new Error(response.data?.message || "Failed to assign horse to race");
+}
+
+export async function updateMedicalStatus(id, statusData) {
+  try {
+    const response = await api.patch(`/api/v1/horses/${id}/medical-status`, statusData);
+    return response.data?.data || response.data;
+  } catch (err) {
+    console.error(`API updateMedicalStatus for ${id} failed:`, err.message);
+    throw err;
+  }
 }
 
 export async function toggleMedicalStatus(id) {
-  const horses = getLocalHorses();
-  let updatedHorse = null;
-  const updatedList = horses.map(h => {
-    if (h.id === id) {
-      const nextStatus = h.status === 'FIT TO RACE' ? 'RESTING' : 'FIT TO RACE';
-      updatedHorse = {
-        ...h,
-        status: nextStatus,
-        medicalStatus: nextStatus === 'FIT TO RACE' ? "Fit for Racing" : "Resting/Unfit",
-        cogginsTest: nextStatus === 'FIT TO RACE' ? "Up to date" : "Expiring Soon"
-      };
-      return updatedHorse;
-    }
-    return h;
+  throw new Error("Medical status toggle via this API is not supported yet");
+}
+
+export async function getHorseMedicalStatus(id) {
+  try {
+    const response = await api.get(`/api/v1/horses/${id}/medical-status`);
+    return response.data?.data || response.data;
+  } catch (err) {
+    console.error('API getHorseMedicalStatus for ' + id + ' failed:', err.message);
+    throw err;
+  }
+}
+
+export async function getHorseStats(id) {
+  const response = await api.get(`/api/v1/horses/${id}/stats`);
+  return response.data?.data || response.data;
+}
+
+export async function getHorseRaceHistory(id) {
+  const response = await api.get(`/api/v1/horses/${id}/race-history`);
+  return response.data?.data || response.data;
+}
+
+export async function getHorsePedigree(id) {
+  const response = await api.get(`/api/v1/horses/${id}/pedigree`);
+  return response.data?.data || response.data;
+}
+
+export async function getHorseImage(id) {
+  const response = await api.get(`/api/v1/horses/${id}`);
+  return normalizeHorseImageUrl(response.data?.data?.imageUrl);
+}
+
+export async function uploadHorseImage(id, file) {
+  const formData = new FormData();
+  formData.append("file", file);
+  const response = await api.post(`/api/v1/horses/${id}/image`, formData, {
+    headers: { "Content-Type": "multipart/form-data" }
   });
-  saveLocalHorses(updatedList);
-  return updatedHorse;
+  if (response.data?.success) {
+    return mapBackendHorseToFrontend(response.data.data);
+  }
+  throw new Error(response.data?.message || "Failed to upload horse image");
 }

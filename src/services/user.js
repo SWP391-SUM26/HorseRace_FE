@@ -1,4 +1,5 @@
 import api from "./api";
+import { normalizeBackendImageUrl } from "@/common/lib/imageUrl";
 
 const API_ROLE_TO_APP_ROLE = {
   ADMIN: "Admin",
@@ -8,6 +9,10 @@ const API_ROLE_TO_APP_ROLE = {
   RACE_REFEREE: "Referee",
   SPECTATOR: "Spectator",
 };
+
+function normalizeOptionalImageUrl(value) {
+  return normalizeBackendImageUrl(value, null);
+}
 
 // Normalizes API UserResponse to application-wide user structures
 function normalizeUser(user) {
@@ -25,19 +30,33 @@ function normalizeUser(user) {
   return {
     id: user.userId || user.id,
     userId: user.userId || user.id,
+    userCode: user.userCode || "",
     name: user.fullName || user.name || "",
     email: user.email || "",
     phone: user.phone || "",
-    avatarUrl: user.avatarUrl || null,
+    avatarUrl: normalizeOptionalImageUrl(user.avatarUrl),
     avatar: initials,
     role: appRole,
     roleCode: user.roleCode || user.role || "SPECTATOR",
     roleName: user.roleName || appRole,
     status: user.status || "ACTIVE",
     kycStatus: user.kycStatus || "PENDING",
+    emailVerified: Boolean(user.emailVerified),
+    createdAt: user.createdAt || null,
     stable: user.stable || (appRole === "Owner" ? "Hartwell Racing Syndicate" : "Flemington Pro Circuit"),
     provider: user.provider || "credentials"
   };
+}
+
+export async function getMyProfile() {
+  try {
+    const response = await api.get("/api/v1/users/me");
+    const data = response.data?.data || response.data;
+    return normalizeUser(data);
+  } catch (err) {
+    console.error("API getMyProfile failed:", err.message);
+    throw err;
+  }
 }
 
 // Fetch all users
@@ -76,6 +95,7 @@ export async function updateMyProfile(profileData) {
     const response = await api.put("/api/v1/users/me", {
       fullName: profileData.fullName,
       phone: profileData.phone,
+
       avatarUrl: profileData.avatarUrl
     });
     const data = response.data?.data || response.data;
@@ -91,12 +111,10 @@ export async function updateMyProfile(profileData) {
 // Update profile of any user by ID (admin call)
 export async function updateUserProfile(id, profileData) {
   try {
-    // Assuming the backend has a PUT endpoint for admin to update user profiles
     const response = await api.put(`/api/v1/users/${id}`, {
       fullName: profileData.name,
-      email: profileData.email,
-      stable: profileData.stable,
-      phone: profileData.phone
+      phone: profileData.phone,
+      avatarUrl: profileData.avatarUrl
     });
     const data = response.data?.data || response.data;
     if (data) {
@@ -108,3 +126,72 @@ export async function updateUserProfile(id, profileData) {
   }
 }
 
+// Get user permissions
+export async function getUserPermissions(id) {
+  try {
+    const response = await api.get(`/api/v1/users/${id}/permissions`);
+    return response.data?.data || response.data || [];
+  } catch (err) {
+    console.error(`API getUserPermissions for ${id} failed:`, err.message);
+    return [];
+  }
+}
+
+export async function uploadAvatar(file) {
+  try {
+    const formData = new FormData();
+    formData.append("file", file);
+    const response = await api.post("/api/v1/users/me/avatar", formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    });
+    const data = response.data?.data || response.data;
+    if (data) {
+      return normalizeUser(data);
+    }
+  } catch (err) {
+    console.error("API uploadAvatar failed:", err.message);
+    throw err;
+  }
+}
+
+export async function deleteUser(id) {
+  try {
+    const response = await api.delete(`/api/v1/users/${id}`);
+    return response.data;
+  } catch (error) {
+    console.error('Error deleting user:', error);
+    throw error;
+  } 
+}
+
+export async function requestEmailChange(newEmail) {
+  try {
+    const response = await api.post("/api/v1/users/me/email/change-request", { newEmail });
+    return response.data;
+  } catch (err) {
+    console.error("API requestEmailChange failed:", err.message);
+    throw err;
+  }
+}
+
+export async function verifyEmailChange(code) {
+  try {
+    const response = await api.post("/api/v1/users/me/email/verify", { code });
+    return response.data;
+  } catch (err) {
+    console.error("API verifyEmailChange failed:", err.message);
+    throw err;
+  }
+}
+
+export async function getMyPermissions() {
+  try {
+    const response = await api.get("/api/v1/users/me/permissions");
+    return response.data?.data || response.data || [];
+  } catch (err) {
+    console.error("API getMyPermissions failed:", err.message);
+    return [];
+  }
+}

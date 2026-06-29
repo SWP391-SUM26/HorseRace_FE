@@ -1,5 +1,4 @@
 import { useState, useMemo, useEffect } from "react";
-import { Routes, Route, Navigate } from "react-router-dom";
 import styles from "./UserManagement.module.css";
 import { getStoredSession } from "../../services/auth";
 import {
@@ -7,7 +6,11 @@ import {
   getUserById,
   updateMyProfile,
   updateUserProfile,
+  uploadAvatar,
+  deleteUser,
+  getUserPermissions,
 } from "../../services/user";
+import { MoreVertical, Edit2, Trash2, Ban } from 'lucide-react';
 
 // Import newly extracted components
 import Badge from '../../components/ui/Badge';
@@ -16,17 +19,7 @@ import StatCard, { Card } from '../../components/ui/StatCard';
 import PageHeader from '../../components/ui/PageHeader';
 import SearchFilterBar from '../../components/ui/SearchFilterBar';
 import DataTable from '../../components/ui/DataTable';
-import Sidebar from '../../components/layout/Sidebar';
-import Navbar from '../../components/layout/Navbar';
 import { DownloadIcon, UserPlusIcon, TrendingUpIcon, OwnerIcon, JockeyIcon, RefereeIcon, EyeIcon, CameraIcon } from '../../components/ui/Icons';
-import TournamentOrchestration from './TournamentOrchestration';
-import StaffingManagement from './StaffingManagement';
-import RaceManagement from './RaceManagement';
-import RaceApproval from './RaceApproval';
-import RegistrationApproval from './RegistrationApproval';
-import AuditLogs from './AuditLogs';
-import Settings from './Settings';
-import NotificationsCenter from '../shared/NotificationsCenter';
 
 // ==========================================
 // SUB-PAGES VIEW MANAGEMENT
@@ -48,6 +41,54 @@ const UserManagementView = () => {
     message: "",
     type: "success",
   });
+
+  const [actionMenuOpenId, setActionMenuOpenId] = useState(null);
+  const [deleteModalUser, setDeleteModalUser] = useState(null);
+  const [suspendModalUser, setSuspendModalUser] = useState(null);
+
+  useEffect(() => {
+    if (!actionMenuOpenId) return;
+    const closeMenu = (e) => {
+      if (!e.target.closest('[data-user-actions]')) {
+        setActionMenuOpenId(null);
+      }
+    };
+    document.addEventListener("click", closeMenu);
+    return () => document.removeEventListener("click", closeMenu);
+  }, [actionMenuOpenId]);
+
+  const handleDeleteUser = async () => {
+    if (!deleteModalUser) return;
+    try {
+      await deleteUser(deleteModalUser.id);
+      setUsers(users.filter(u => u.id !== deleteModalUser.id));
+      showToast("User has been deleted successfully", "success");
+      if (selectedUser?.id === deleteModalUser.id) {
+        setSelectedUser(null);
+      }
+    } catch (err) {
+      showToast("Failed to delete user", "error");
+    } finally {
+      setDeleteModalUser(null);
+    }
+  };
+
+  const handleSuspendUser = async () => {
+    if (!suspendModalUser) return;
+    try {
+      // Mocked suspend action
+      const updatedStatus = suspendModalUser.status === "ACTIVE" ? "SUSPENDED" : "ACTIVE";
+      setUsers(users.map(u => u.id === suspendModalUser.id ? { ...u, status: updatedStatus } : u));
+      if (selectedUser?.id === suspendModalUser.id) {
+        setSelectedUser({ ...selectedUser, status: updatedStatus });
+      }
+      showToast(`User has been ${updatedStatus === "SUSPENDED" ? "suspended" : "activated"}`, "success");
+    } catch (err) {
+      showToast("Failed to change user status", "error");
+    } finally {
+      setSuspendModalUser(null);
+    }
+  };
 
   const showToast = (message, type = "success") => {
     setToast({ show: true, message, type });
@@ -114,11 +155,15 @@ const UserManagementView = () => {
 
   const handleSelectUser = async (user) => {
     // Load fresh details from API
-    const freshUser = await getUserById(user.id);
+    const [freshUser, permissions] = await Promise.all([
+      getUserById(user.id),
+      getUserPermissions(user.id).catch(() => [])
+    ]);
     if (!freshUser) return;
 
     const processed = {
       ...freshUser,
+      permissions: permissions,
       roleIcon:
         freshUser.role === "Owner"
           ? OwnerIcon
@@ -205,16 +250,29 @@ const UserManagementView = () => {
     }
   };
 
-  const handleAvatarUpload = (e) => {
+  const handleAvatarUpload = async (e) => {
     const file = e.target.files[0];
     if (!file || !selectedUser) return;
-    const localAvatarUrl = URL.createObjectURL(file);
-    setUsers(
-      users.map((u) =>
-        u.id === selectedUser.id ? { ...u, avatarUrl: localAvatarUrl } : u,
-      ),
-    );
-    setSelectedUser((prev) => ({ ...prev, avatarUrl: localAvatarUrl }));
+    
+    // Check if the user is uploading their own avatar
+    const currentSession = getStoredSession();
+    if (currentSession?.user && currentSession.user.id === selectedUser.id) {
+      try {
+        const updatedSelf = await uploadAvatar(file);
+        const processedSelf = {
+          ...updatedSelf,
+          roleIcon: selectedUser.roleIcon,
+          lastAuth: selectedUser.lastAuth,
+        };
+        setUsers(users.map((u) => (u.id === selectedUser.id ? processedSelf : u)));
+        setSelectedUser(processedSelf);
+        showToast("Avatar đã được tải lên thành công!", "success");
+      } catch (err) {
+        showToast("Lỗi upload avatar: " + (err.response?.data?.message || err.message), "error");
+      }
+    } else {
+      showToast("Chỉ có thể thay đổi avatar của chính bạn!", "warning");
+    }
   };
 
   const tableColumns = [
@@ -222,6 +280,7 @@ const UserManagementView = () => {
     "SYSTEM ROLE",
     "CLEARANCE STATUS",
     "LAST AUTHENTICATION",
+    "ACTIONS"
   ];
 
   return (
@@ -234,7 +293,7 @@ const UserManagementView = () => {
             <Button variant="ghost" icon={DownloadIcon}>
               Export CSV
             </Button>
-            <Button icon={UserPlusIcon}>Provision User</Button>
+            <Button icon={UserPlusIcon} onClick={() => showToast("Tính năng thêm người dùng mới đang được phát triển!", "success")}>Provision User</Button>
           </>
         }
       />
@@ -355,6 +414,20 @@ const UserManagementView = () => {
                   {selectedUser.status}
                 </Badge>
               </div>
+              <div style={{ marginTop: '24px', textAlign: 'left', width: '100%' }}>
+                <h4 style={{ fontSize: '11px', fontWeight: 'bold', color: '#64748b', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>SYSTEM CLEARANCE / PERMISSIONS</h4>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                  {selectedUser.permissions?.length > 0 ? (
+                    selectedUser.permissions.map((perm, idx) => (
+                      <span key={idx} style={{ background: '#f1f5f9', color: '#334155', padding: '3px 8px', borderRadius: '4px', fontSize: '11px', fontWeight: '600' }}>
+                        {perm}
+                      </span>
+                    ))
+                  ) : (
+                    <span style={{ fontSize: '12px', color: '#94a3b8' }}>No specific permissions assigned</span>
+                  )}
+                </div>
+              </div>
             </div>
             <div className={styles.profileRightBox}>
               <form onSubmit={handleUpdateProfile}>
@@ -432,6 +505,7 @@ const UserManagementView = () => {
           searchValue={search}
           onSearchChange={(e) => setSearch(e.target.value)}
           searchPlaceholder="Search by name, site, stable..."
+          showFilter={false}
         />
         <DataTable
           columns={tableColumns}
@@ -487,6 +561,53 @@ const UserManagementView = () => {
                 >
                   {u.lastAuth}
                 </td>
+                <td className={styles.td} style={{ width: '80px', textAlign: 'center' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }} data-user-actions>
+                    <button 
+                      onClick={(e) => { e.stopPropagation(); handleSelectUser(u); }}
+                      style={{ padding: '4px', color: '#64748b', cursor: 'pointer', background: 'transparent', border: 'none' }}
+                      title="Edit Identity"
+                    >
+                      <Edit2 size={16} />
+                    </button>
+                    <div style={{ position: 'relative' }}>
+                      <button 
+                        onClick={(e) => { 
+                          e.stopPropagation(); 
+                          setActionMenuOpenId(actionMenuOpenId === u.id ? null : u.id);
+                        }}
+                        style={{ padding: '4px', color: '#64748b', cursor: 'pointer', background: 'transparent', border: 'none' }}
+                        title="More Actions"
+                      >
+                        <MoreVertical size={16} />
+                      </button>
+                      {actionMenuOpenId === u.id && (
+                        <div style={{
+                          position: 'absolute', right: '0', top: '100%', zIndex: 50,
+                          background: 'white', border: '1px solid #e2e8f0', borderRadius: '6px',
+                          boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)', padding: '4px', minWidth: '150px'
+                        }}>
+                          <button
+                            onClick={(e) => { e.stopPropagation(); setActionMenuOpenId(null); setSuspendModalUser(u); }}
+                            style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', padding: '8px 12px', fontSize: '13px', textAlign: 'left', background: 'transparent', border: 'none', cursor: 'pointer', color: '#334155' }}
+                            onMouseOver={(e) => e.currentTarget.style.background = '#f1f5f9'}
+                            onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}
+                          >
+                            <Ban size={14} /> {u.status === "ACTIVE" ? "Suspend User" : "Activate User"}
+                          </button>
+                          <button
+                            onClick={(e) => { e.stopPropagation(); setActionMenuOpenId(null); setDeleteModalUser(u); }}
+                            style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', padding: '8px 12px', fontSize: '13px', textAlign: 'left', background: 'transparent', border: 'none', cursor: 'pointer', color: '#ef4444' }}
+                            onMouseOver={(e) => e.currentTarget.style.background = '#fef2f2'}
+                            onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}
+                          >
+                            <Trash2 size={14} /> Delete Record
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </td>
               </tr>
             );
           }}
@@ -517,6 +638,46 @@ const UserManagementView = () => {
           </div>
         </div>
       )}
+
+      {deleteModalUser && (
+        <div className={styles.modalOverlay}>
+          <div className={styles.modalBox}>
+            <div className={styles.modalContent}>
+              <span className={styles.modalIcon} style={{ background: '#fee2e2', color: '#ef4444' }}>
+                <Trash2 size={24} />
+              </span>
+              <div className={styles.modalText}>
+                <h3 className={styles.modalTitle}>Delete User Record</h3>
+                <p className={styles.modalMessage}>Are you sure you want to permanently delete {deleteModalUser.name}? This action cannot be undone.</p>
+              </div>
+            </div>
+            <div className={styles.modalActions}>
+              <Button variant="ghost" onClick={() => setDeleteModalUser(null)}>Cancel</Button>
+              <Button style={{ background: '#ef4444', color: 'white', borderColor: '#ef4444' }} onClick={handleDeleteUser}>Delete User</Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {suspendModalUser && (
+        <div className={styles.modalOverlay}>
+          <div className={styles.modalBox}>
+            <div className={styles.modalContent}>
+              <span className={styles.modalIcon} style={{ background: '#fef3c7', color: '#d97706' }}>
+                <Ban size={24} />
+              </span>
+              <div className={styles.modalText}>
+                <h3 className={styles.modalTitle}>{suspendModalUser.status === "ACTIVE" ? "Suspend" : "Activate"} User</h3>
+                <p className={styles.modalMessage}>Are you sure you want to {suspendModalUser.status === "ACTIVE" ? "suspend" : "activate"} access for {suspendModalUser.name}?</p>
+              </div>
+            </div>
+            <div className={styles.modalActions}>
+              <Button variant="ghost" onClick={() => setSuspendModalUser(null)}>Cancel</Button>
+              <Button style={{ background: '#d97706', color: 'white', borderColor: '#d97706' }} onClick={handleSuspendUser}>Confirm</Button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 };
@@ -532,47 +693,12 @@ const PlaceholderView = ({ title }) => (
   </Card>
 );
 
-// ==========================================
-// MAIN APP ROUTER INTEGRATION
-// ==========================================
-function AdminDashboardLayout() {
-  return (
-    <div className={styles.layoutContainer}>
-      <Sidebar />
-      <div className={styles.mainContent}>
-        <Navbar
-          title="Equine Elite Admin"
-          systemStatus="System Status: Healthy"
-        />
-        <div className={styles.pageBody}>
-          <Routes>
-            <Route path="/" element={<UserManagementView />} />
-            <Route path="/users" element={<UserManagementView />} />
-            <Route path="/approvals" element={<RegistrationApproval />} />
-            <Route path="/tournaments" element={<TournamentOrchestration />} />
-            <Route path="/races" element={<RaceManagement />} />
-            <Route path="/race-approval" element={<RaceApproval />} />
-            <Route path="/staffing" element={<StaffingManagement />} />
-            <Route path="/settings" element={<Settings />} />
-            <Route path="/logs" element={<AuditLogs />} />
-            <Route path="/notifications" element={<NotificationsCenter />} />
-          </Routes>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 export default function UserManagement() {
   const session = getStoredSession();
 
   if (!session || session.user.role !== "Admin") {
-    return <Navigate to="/login" replace />;
+    return null;
   }
 
-  return (
-    <Routes>
-      <Route path="/*" element={<AdminDashboardLayout />} />
-    </Routes>
-  );
+  return <UserManagementView />;
 }

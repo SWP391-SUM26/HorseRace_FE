@@ -1,4 +1,5 @@
 import api from "./api";
+import { normalizeBackendImageUrl } from "@/common/lib/imageUrl";
 
 const SESSION_KEY = "equine_elite_session";
 const REFRESH_TOKEN_TTL_SECONDS = 7 * 24 * 60 * 60;
@@ -32,6 +33,10 @@ export const ROLE_PERMISSIONS = {
 
 function normalizeApiRole(roleCode) {
   return API_ROLE_TO_APP_ROLE[roleCode] || roleCode || "Spectator";
+}
+
+function normalizeOptionalImageUrl(value) {
+  return normalizeBackendImageUrl(value, null);
 }
 
 function getApiErrorMessage(error, fallback) {
@@ -85,6 +90,7 @@ async function buildSessionFromAuthData(authData) {
       email: authData.email,
       role,
       apiRole,
+      avatarUrl: normalizeOptionalImageUrl(profile?.avatarUrl),
       avatar: initials || "US",
     },
     accessToken: authData.accessToken,
@@ -247,4 +253,57 @@ export function logout() {
   if (refreshToken) {
     api.post("/api/v1/auth/logout", { refreshToken }).catch(() => {});
   }
+}
+
+// ==========================================
+// REGISTRATION & VERIFICATION
+// ==========================================
+
+export async function registerSpectator(data) {
+  const response = await api.post("/api/v1/auth/register/spectator", data);
+  return response.data;
+}
+
+export async function registerOwner(data) {
+  const response = await api.post("/api/v1/auth/register/owner", data);
+  return response.data;
+}
+
+export async function registerJockey(data) {
+  const response = await api.post("/api/v1/auth/register/jockey", data);
+  return response.data;
+}
+
+export async function requestEmailVerification(email) {
+  const response = await api.post("/api/v1/auth/verify-email/request", { email });
+  return response.data;
+}
+
+export async function verifyCode(email, code) {
+  const response = await api.post("/api/v1/auth/verify-code", { email, code });
+  return response.data;
+}
+
+export async function verifyEmail(email, code) {
+  const response = await api.post("/api/v1/auth/verify-email", { email, code });
+  return response.data; 
+}
+
+export async function resendAuthCode(email) {
+  const response = await api.post("/api/v1/auth/resend-code", { email });
+  return response.data;
+}
+
+// ==========================================
+// PASSWORD RECOVERY
+// ==========================================
+
+export async function forgotPassword(email) {
+  const response = await api.post("/api/v1/auth/forgot-password", { email });
+  return response.data;
+}
+
+export async function resetPassword(email, code, newPassword) {
+  const response = await api.post("/api/v1/auth/reset-password", { email, code, newPassword });
+  return response.data;
 }

@@ -1,23 +1,29 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import styles from './Violations.module.css';
 import { getJockeyList } from '../../services/jockey';
+import { getReports, submitReport } from '../../services/referee';
+import Button from '../../components/ui/Button';
 
 export default function Violations() {
   const [jockeys, setJockeys] = useState([]);
+  const [violations, setViolations] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    fetchJockeys();
-  }, []);
+  const fetchViolations = async () => {
+    try {
+      const data = await getReports({ reportType: 'VIOLATION' });
+      setViolations(data?.content || data || []);
+    } catch (e) {
+      console.error(e);
+    }
+  };
 
   const fetchJockeys = async () => {
     try {
       const data = await getJockeyList();
-      // Map API data or use mock if empty
       if (data && data.length > 0) {
         setJockeys(data);
       } else {
-        // Fallback mock data if DB is empty
         setJockeys([
           { id: 1, firstName: "Javier", lastName: "Castellano", age: 46, status: "ACTIVE", ridingStyle: "Hall of Fame", avatarUrl: "https://i.pravatar.cc/150?u=1" },
           { id: 2, firstName: "Irad", lastName: "Ortiz Jr.", age: 31, status: "ACTIVE", ridingStyle: "Pro Grade 1", avatarUrl: "https://i.pravatar.cc/150?u=2" },
@@ -31,6 +37,23 @@ export default function Violations() {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    fetchJockeys();
+    fetchViolations();
+  }, []);
+
+
+  const handleResolveViolation = async (id) => {
+    try {
+      await submitReport(id);
+      alert('Violation resolved and submitted officially!');
+      fetchViolations();
+    } catch (e) {
+      alert('Failed to submit violation');
+    }
+  };
+
 
   return (
     <div className={styles.container}>
@@ -127,26 +150,33 @@ export default function Violations() {
         <div className={styles.rightSidebar}>
           <div className={styles.incidentsCard}>
             <div className={styles.incidentsHeader}>
-              <h3 className={styles.incidentsTitle}>Recent Incidents</h3>
+              <h3 className={styles.incidentsTitle}>Recent Violations</h3>
               <a href="#" className={styles.viewLogLink}>View Log</a>
             </div>
             <div className={styles.incidentList}>
-              <div className={styles.incidentItem}>
-                <div className={styles.incidentIcon}>⚠️</div>
-                <div className={styles.incidentContent}>
-                  <div className={styles.incidentTop}>
-                    <span className={styles.incidentName}>EE-4432 (Flavien Prat)</span>
-                    <span className={styles.incidentTime}>2 hours ago</span>
-                  </div>
-                  <div className={styles.incidentDesc}>
-                    Improper use of whip in final stretch - Churchill Downs Race 4.
-                  </div>
-                  <div className={styles.incidentTags}>
-                    <span className={styles.tagLevel}>LEVEL 2 VIOLATION</span>
-                    <span className={styles.tagReview}>REVIEW REQUIRED</span>
+              {violations.length > 0 ? violations.map(v => (
+                <div key={v.id || v.reportId} className={styles.incidentItem}>
+                  <div className={styles.incidentIcon}>⚠️</div>
+                  <div className={styles.incidentContent}>
+                    <div className={styles.incidentTop}>
+                      <span className={styles.incidentName}>{v.reportType}</span>
+                    </div>
+                    <div className={styles.incidentDesc}>
+                      {v.summary}
+                    </div>
+                    <div className={styles.incidentTags}>
+                      <span className={styles.tagLevel}>{v.severityLevel}</span>
+                      {v.status !== 'SUBMITTED' ? (
+                        <Button variant="outline" onClick={() => handleResolveViolation(v.id || v.reportId)} style={{marginLeft: '8px', padding: '2px 8px', fontSize: '10px'}}>Submit Final</Button>
+                      ) : (
+                        <span className={styles.tagReview} style={{background: '#dcfce3', color: '#16a34a'}}>SUBMITTED</span>
+                      )}
+                    </div>
                   </div>
                 </div>
-              </div>
+              )) : (
+                <p style={{padding: '12px', fontSize: '12px', color: '#64748b'}}>No recent violations found.</p>
+              )}
             </div>
           </div>
 

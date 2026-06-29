@@ -41,8 +41,8 @@ function getErrorMessage(error, fallback) {
 }
 
 function formatDateTime(race) {
-  if (!race.date) return "Not scheduled";
-  const date = new Date(`${race.date}T${race.time || "00:00"}`);
+  if (!race.scheduledStartAt) return "Not scheduled";
+  const date = new Date(race.scheduledStartAt);
   return new Intl.DateTimeFormat("en-GB", {
     day: "2-digit",
     month: "short",
@@ -95,9 +95,6 @@ export default function RaceManagement() {
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [tournamentId, setTournamentId] = useState("");
   const [status, setStatus] = useState("");
-  const [dateFrom, setDateFrom] = useState("");
-  const [dateTo, setDateTo] = useState("");
-  const [appliedDates, setAppliedDates] = useState({ dateFrom: "", dateTo: "" });
   const [sort, setSort] = useState("date-asc");
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -131,7 +128,6 @@ export default function RaceManagement() {
           search: debouncedSearch,
           tournamentId,
           status,
-          ...appliedDates,
           sortBy,
           sortOrder,
           page,
@@ -152,7 +148,6 @@ export default function RaceManagement() {
       setLoading(false);
     }
   }, [
-    appliedDates,
     debouncedSearch,
     page,
     sortBy,
@@ -273,13 +268,20 @@ export default function RaceManagement() {
 
   function openEdit(race) {
     setSelectedRace(race);
+    let dateStr = "";
+    let timeStr = "";
+    if (race.scheduledStartAt) {
+      const dt = new Date(race.scheduledStartAt);
+      dateStr = dt.toISOString().split("T")[0];
+      timeStr = dt.toTimeString().slice(0, 5);
+    }
     setForm({
       tournamentId: race.tournamentId || "",
       name: race.name || "",
       raceType: race.raceType || "",
       distanceMeter: race.distanceMeter || "",
-      date: race.date || "",
-      time: race.time || "",
+      date: dateStr,
+      time: timeStr,
       predictionCutoffAt: race.predictionCutoffAt ? race.predictionCutoffAt.slice(0, 16) : "",
       trackCondition: race.trackCondition || "",
       weatherCondition: race.weatherCondition || "",
@@ -302,10 +304,17 @@ export default function RaceManagement() {
 
   function openSchedule(race = null) {
     setSelectedRace(race);
+    let dateStr = "";
+    let timeStr = "";
+    if (race?.scheduledStartAt) {
+      const dt = new Date(race.scheduledStartAt);
+      dateStr = dt.toISOString().split("T")[0];
+      timeStr = dt.toTimeString().slice(0, 5);
+    }
     setScheduleForm({
       raceId: race?.id || "",
-      date: race?.date || "",
-      time: race?.time || "",
+      date: dateStr,
+      time: timeStr,
       predictionCutoffAt: race?.predictionCutoffAt ? race.predictionCutoffAt.slice(0, 16) : "",
     });
     setModal("schedule");
@@ -323,6 +332,11 @@ export default function RaceManagement() {
     setModal("participants");
   }
 
+  function openDelete(race) {
+    setSelectedRace(race);
+    setModal("delete");
+  }
+
   async function refreshAfter(message) {
     closeModal(true);
     await loadRaces();
@@ -333,7 +347,17 @@ export default function RaceManagement() {
     event.preventDefault();
     setSubmitting(true);
     try {
-      const payload = { ...form, maxParticipants: Number(form.maxParticipants) };
+      const scheduledStartAt = form.date && form.time ? new Date(`${form.date}T${form.time}`).toISOString() : null;
+      const predictionCutoffAt = form.predictionCutoffAt ? new Date(form.predictionCutoffAt).toISOString() : null;
+      const payload = { 
+        ...form, 
+        scheduledStartAt,
+        predictionCutoffAt,
+        maxParticipants: Number(form.maxParticipants) 
+      };
+      delete payload.date;
+      delete payload.time;
+
       if (selectedRace) {
         await updateRace(selectedRace.id, payload);
         await refreshAfter("Race updated successfully.");
@@ -357,10 +381,16 @@ export default function RaceManagement() {
     }
     setSubmitting(true);
     try {
+      const scheduledStartAt = scheduleForm.date && scheduleForm.time 
+        ? new Date(`${scheduleForm.date}T${scheduleForm.time}`).toISOString() 
+        : null;
+      const predictionCutoffAt = scheduleForm.predictionCutoffAt 
+        ? new Date(scheduleForm.predictionCutoffAt).toISOString() 
+        : null;
+
       await scheduleRace(raceId, {
-        date: scheduleForm.date,
-        time: scheduleForm.time,
-        predictionCutoffAt: scheduleForm.predictionCutoffAt,
+        scheduledStartAt,
+        predictionCutoffAt,
       });
       await refreshAfter("Race scheduled successfully.");
     } catch (requestError) {
@@ -399,14 +429,19 @@ export default function RaceManagement() {
     }
   }
 
-  async function handleDelete(race) {
-    if (!window.confirm(`Delete ${race.name}? This action cannot be undone.`)) return;
+  async function handleDelete(event) {
+    if (event) event.preventDefault();
+    setSubmitting(true);
     try {
-      await deleteRace(race.id);
+      await deleteRace(selectedRace.id);
       await loadRaces();
+      closeModal(true);
       showNotice("Race deleted successfully.");
     } catch (requestError) {
+      closeModal(true);
       showNotice(getErrorMessage(requestError, "Unable to delete race."), "error");
+    } finally {
+      setSubmitting(false);
     }
   }
 
@@ -453,8 +488,22 @@ export default function RaceManagement() {
   return (
     <div className={styles.page}>
       {notice && (
-        <div className={`${styles.notice} ${styles[`notice${notice.type}`]}`}>
-          {notice.text}
+        <div className={styles.toastOverlay}>
+          <div className={styles.toastModal}>
+            <div className={`${styles.toastIcon} ${styles[`toastIcon_${notice.type}`]}`}>
+              {notice.type === "success" ? "✓" : "✕"}
+            </div>
+            <h3 className={styles.toastTitle}>
+              {notice.type === "success" ? "Thành công" : "Thất bại"}
+            </h3>
+            <p className={styles.toastMessage}>{notice.text}</p>
+            <button
+              className={`${styles.toastButton} ${styles[`toastButton_${notice.type}`]}`}
+              onClick={() => setNotice(null)}
+            >
+              Đóng
+            </button>
+          </div>
         </div>
       )}
 
@@ -518,14 +567,6 @@ export default function RaceManagement() {
           </select>
         </label>
         <label>
-          <span>Date From</span>
-          <input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} />
-        </label>
-        <label>
-          <span>Date To</span>
-          <input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} />
-        </label>
-        <label>
           <span>Sort</span>
           <select value={sort} onChange={(event) => setFilter(setSort, event.target.value)}>
             <option value="date-asc">Date: Earliest</option>
@@ -538,7 +579,6 @@ export default function RaceManagement() {
         <button
           className={styles.filterButton}
           onClick={() => {
-            setAppliedDates({ dateFrom, dateTo });
             setPage(1);
           }}
         >
@@ -653,7 +693,7 @@ export default function RaceManagement() {
                             <button
                               type="button"
                               className={styles.dangerAction}
-                              onClick={() => runAction(() => handleDelete(race))}
+                              onClick={() => runAction(() => openDelete(race))}
                             >
                               Delete Race
                             </button>
@@ -836,6 +876,17 @@ export default function RaceManagement() {
               ))}
             </div>
             <ModalActions submitting={submitting} onCancel={closeModal} submitLabel="Assign Participants" />
+          </form>
+        </Modal>
+      )}
+
+      {modal === "delete" && selectedRace && (
+        <Modal title={`Delete Race`} onClose={closeModal}>
+          <form className={styles.form} onSubmit={handleDelete}>
+            <p className={styles.warningText}>
+              Are you sure you want to delete <strong>{selectedRace.name}</strong>? This action cannot be undone.
+            </p>
+            <ModalActions submitting={submitting} onCancel={closeModal} submitLabel="Delete Race" danger />
           </form>
         </Modal>
       )}
