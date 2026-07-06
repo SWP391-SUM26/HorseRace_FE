@@ -56,3 +56,8 @@ export const removeAssignment = async (id) => {
   const response = await api.delete(`/api/v1/staffing/assignments/${id}`);
   return response.data?.success;
 };
+
+export const fetchRefereeConflicts = async (raceId) => {
+  const response = await api.get(`/api/v1/staffing/races/${raceId}/referee-conflicts`);
+  return response.data?.data;
+};

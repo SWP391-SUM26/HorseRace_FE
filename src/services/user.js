@@ -195,3 +195,8 @@ export async function getMyPermissions() {
     return [];
   }
 }
+
+export async function provisionUser(data) {
+  const response = await api.post("/api/v1/users", data);
+  return normalizeUser(response.data?.data || response.data);
+}
