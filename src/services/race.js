@@ -159,6 +159,12 @@ export function scheduleRace(id, payload) {
     .then((response) => mapRaceToUI(unwrap(response)));
 }
 
+export function publishRace(id) {
+  return api
+    .patch(`${ENDPOINT}/${id}/schedule`)
+    .then((response) => mapRaceToUI(unwrap(response)));
+}
+
 export function cancelRace(id) {
   return api
     .patch(`${ENDPOINT}/${id}/cancel`)

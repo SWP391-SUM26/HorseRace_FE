@@ -9,6 +9,7 @@ import {
   getRaceList,
   scheduleRace,
   updateRace,
+  publishRace,
 } from "../../services/race";
 import { getTournaments } from "../../services/tournament";
 import styles from "./RaceManagement.module.css";
@@ -23,6 +24,10 @@ const RACE_STATUS_OPTIONS = [
   "OFFICIAL",
   "CANCELLED",
 ];
+const RACE_STATUS_LABEL = {
+  SCHEDULED: 'Pending', OPEN: 'Published (open)', CLOSED: 'Closed', RUNNING: 'Active',
+  FINISHED: 'Finished', OFFICIAL: 'Official', CANCELLED: 'Cancelled'
+};
 const EMPTY_FORM = {
   tournamentId: "",
   name: "",
@@ -561,7 +566,7 @@ export default function RaceManagement() {
             <option value="">All Statuses</option>
             {RACE_STATUS_OPTIONS.map((option) => (
               <option key={option} value={option}>
-                {option}
+                {RACE_STATUS_LABEL[option] || option}
               </option>
             ))}
           </select>
@@ -649,7 +654,7 @@ export default function RaceManagement() {
                     </td>
                     <td>
                       <span className={`${styles.statusBadge} ${statusClass(race.status)}`}>
-                        {race.status}
+                        {RACE_STATUS_LABEL[race.status] || race.status}
                       </span>
                     </td>
                     <td>
@@ -677,6 +682,20 @@ export default function RaceManagement() {
                             <button type="button" onClick={() => runAction(() => openEdit(race))}>
                               Edit Race
                             </button>
+                            {race.status === 'SCHEDULED' && (
+                              <button type="button" onClick={async () => {
+                                try {
+                                  await publishRace(race.id);
+                                  showNotice("Race published successfully", "success");
+                                  loadRaces();
+                                  loadSummaryRaces();
+                                } catch(e) {
+                                  showNotice(getErrorMessage(e, "Failed to publish race"), "error");
+                                }
+                              }}>
+                                Publish (open registration)
+                              </button>
+                            )}
                             <button type="button" onClick={() => runAction(() => openSchedule(race))}>
                               Schedule Race
                             </button>
@@ -965,7 +984,7 @@ function DetailDrawer({ race, participants = [], onClose, onEdit }) {
           <button onClick={onClose}>x</button>
         </header>
         <div className={styles.drawerBody}>
-          <span className={`${styles.statusBadge} ${statusClass(race.status)}`}>{race.status}</span>
+          <span className={`${styles.statusBadge} ${statusClass(race.status)}`}>{RACE_STATUS_LABEL[race.status] || race.status}</span>
           <dl className={styles.detailGrid}>
             <div><dt>Tournament</dt><dd>{race.tournamentName}</dd></div>
             <div><dt>Date & Time</dt><dd>{formatDateTime(race)}</dd></div>

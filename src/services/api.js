@@ -40,7 +40,8 @@ function updateStoredSession(authData) {
 api.interceptors.request.use(
   (config) => {
     const session = getStoredSession();
-    if (session?.accessToken) {
+    // Only inject token if not already explicitly provided (e.g. during login/fetchMyProfile)
+    if (session?.accessToken && !config.headers.Authorization) {
       config.headers.Authorization = `Bearer ${session.accessToken}`;
     }
     return config;

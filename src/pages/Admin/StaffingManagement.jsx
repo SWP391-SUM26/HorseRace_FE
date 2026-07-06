@@ -7,7 +7,7 @@ import StatCard, { Card } from '../../components/ui/StatCard';
 import Badge from '../../components/ui/Badge';
 import Button from '../../components/ui/Button';
 import DataTable from '../../components/ui/DataTable';
-import { getRaceAssignments, getStaffingDashboard, getStaffList, assignReferee, reassignReferee, removeAssignment, createStaff, updateStaff } from '../../services/staffing';
+import { getRaceAssignments, getStaffingDashboard, getStaffList, assignReferee, reassignReferee, removeAssignment, createStaff, updateStaff, fetchRefereeConflicts } from '../../services/staffing';
 import {
   UserPlusIcon,
   CalendarIcon,
@@ -54,6 +54,8 @@ export default function StaffingManagement() {
 
   const [createStaffModal, setCreateStaffModal] = useState(false);
   const [newStaffForm, setNewStaffForm] = useState({ fullName: '', email: '', phone: '', password: '' });
+
+  const [conflicts, setConflicts] = useState(new Set());
 
   const showToast = (message, type = 'success') => {
     setToast({ show: true, message, type });
@@ -137,20 +139,32 @@ export default function StaffingManagement() {
     } catch (err) {}
   };
 
-  const handleOpenAssign = (row) => {
+  const handleOpenAssign = async (row) => {
     setSelectedRace(row);
     setModalMode('ASSIGN');
     setAssignmentForm({ refereeUserId: '', panelRole: 'CHIEF' });
     setModalOpen(true);
     fetchStaff();
+    try {
+      const conflictList = await fetchRefereeConflicts(row.raceId);
+      setConflicts(new Set(conflictList || []));
+    } catch(e) {
+      setConflicts(new Set());
+    }
   };
 
-  const handleOpenReassign = (row) => {
+  const handleOpenReassign = async (row) => {
     setSelectedRace(row);
     setModalMode('REASSIGN');
     setAssignmentForm({ refereeUserId: row.refereeUserId || '', panelRole: row.panelRole || 'CHIEF' });
     setModalOpen(true);
     fetchStaff();
+    try {
+      const conflictList = await fetchRefereeConflicts(row.raceId);
+      setConflicts(new Set(conflictList || []));
+    } catch(e) {
+      setConflicts(new Set());
+    }
   };
 
   const handleSaveAssignment = async () => {
@@ -463,11 +477,14 @@ export default function StaffingManagement() {
               <label className={styles.formLabel}>Select Referee</label>
               <select className={styles.formSelect} value={assignmentForm.refereeUserId} onChange={e => setAssignmentForm({...assignmentForm, refereeUserId: e.target.value})}>
                 <option value="">-- Choose Referee --</option>
-                {staffList.map(staff => (
-                  <option key={staff.userId || staff.id} value={staff.userId || staff.id}>
-                    {staff.fullName || staff.name} ({staff.userCode || staff.role})
-                  </option>
-                ))}
+                {staffList.map(staff => {
+                  const isConflict = conflicts.has(staff.userId || staff.id);
+                  return (
+                    <option key={staff.userId || staff.id} value={staff.userId || staff.id} disabled={isConflict}>
+                      {staff.fullName || staff.name} ({staff.userCode || staff.role}) {isConflict ? '- Bận lịch' : ''}
+                    </option>
+                  )
+                })}
               </select>
             </div>
             <div className={styles.formGroup}>

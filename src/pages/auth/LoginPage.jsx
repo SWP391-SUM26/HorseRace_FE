@@ -2,8 +2,8 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Link, useNavigate } from "react-router-dom";
-import { ArrowRight, Eye, EyeOff, Crown, Trophy, Users } from "lucide-react";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { ArrowRight, Eye, EyeOff, Crown, Trophy, Users, Clock } from "lucide-react";
 import toast from "react-hot-toast";
 
 import { Button, Input, Checkbox } from "@/common/ui";
@@ -38,6 +38,8 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { login } = useAuth();
+  const [searchParams] = useSearchParams();
+  const isPending = searchParams.get("pending") === "1";
 
   const onSubmit = async (data) => {
     setLoading(true);
@@ -71,6 +73,23 @@ export default function LoginPage() {
           Sign in to access Elite Management dashboard
         </p>
       </div>
+
+      {/* Banner thông báo tài khoản đang chờ duyệt */}
+      {isPending && (
+        <div className="flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4">
+          <Clock size={18} className="mt-0.5 shrink-0 text-amber-600" />
+          <div>
+            <p className="text-sm font-semibold text-amber-800">
+              Tài khoản đang chờ duyệt
+            </p>
+            <p className="mt-0.5 text-xs text-amber-700">
+              Hồ sơ Nài ngựa của bạn đã được gửi thành công. Vui lòng chờ
+              Trọng tài xem xét và duyệt — bạn sẽ nhận được thông báo qua
+              email khi tài khoản được kích hoạt.
+            </p>
+          </div>
+        </div>
+      )}
 
       <form
         onSubmit={handleSubmit(onSubmit)}

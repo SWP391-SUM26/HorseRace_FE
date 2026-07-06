@@ -36,3 +36,11 @@ export const closeRegistration = async (id) => {
   const response = await api.patch(`${TOURNAMENT_ENDPOINT}/${id}/close-registration`);
   return response.data;
 };
+export const uploadTournamentImage = async (id, file) => {
+  const fd = new FormData();
+  fd.append("file", file);
+  const response = await api.post(`${TOURNAMENT_ENDPOINT}/${id}/image`, fd, {
+    headers: { "Content-Type": undefined },
+  });
+  return response.data;
+};

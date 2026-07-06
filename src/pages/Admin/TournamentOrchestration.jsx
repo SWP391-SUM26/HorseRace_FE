@@ -1,6 +1,6 @@
 import React, { useRef, useState, useEffect } from 'react';
 import styles from './TournamentOrchestration.module.css';
-import { getTournaments, createTournament, updateTournament, getTournamentById } from '../../services/tournament';
+import { getTournaments, createTournament, updateTournament, getTournamentById, uploadTournamentImage } from '../../services/tournament';
 import { getRaceList } from '../../services/race';
 
 import PageHeader from '../../components/ui/PageHeader';
@@ -34,8 +34,10 @@ export default function TournamentOrchestration() {
     endDate: '',
     registrationOpenAt: '',
     registrationCloseAt: '',
-    status: 'DRAFT'
+    status: 'DRAFT',
+    imageUrl: ''
   });
+  const [coverImage, setCoverImage] = useState(null);
 
   const loadData = async () => {
     setLoading(true);
@@ -112,8 +114,10 @@ export default function TournamentOrchestration() {
         endDate: detailData.endDate ? new Date(detailData.endDate).toISOString().slice(0, 16) : '',
         registrationOpenAt: detailData.registrationOpenAt ? new Date(detailData.registrationOpenAt).toISOString().slice(0, 16) : '',
         registrationCloseAt: detailData.registrationCloseAt ? new Date(detailData.registrationCloseAt).toISOString().slice(0, 16) : '',
-        status: detailData.status || 'DRAFT'
+        status: detailData.status || 'DRAFT',
+        imageUrl: detailData.imageUrl || ''
       });
+      setCoverImage(null);
     } catch (err) {
       showToast("Error loading tournament details", "error");
     }
@@ -132,12 +136,20 @@ export default function TournamentOrchestration() {
       };
       if (selectedId) {
         await updateTournament(selectedId, payload);
+        if (coverImage) {
+          await uploadTournamentImage(selectedId, coverImage);
+        }
         showToast(`Tournament updated successfully!`, 'success');
       } else {
-        await createTournament(payload);
+        const res = await createTournament(payload);
+        const newId = res?.data?.id || res?.id;
+        if (coverImage && newId) {
+          await uploadTournamentImage(newId, coverImage);
+        }
         showToast(`Tournament ${finalStatus === 'DRAFT' ? 'saved as draft' : 'published'} successfully!`, 'success');
         handleNewTournament();
       }
+      setCoverImage(null);
       loadData();
     } catch (err) {
       showToast("Error saving tournament: " + (err.response?.data?.message || err.message), 'error');
@@ -330,6 +342,32 @@ export default function TournamentOrchestration() {
                   value={formData.name}
                   onChange={e => setFormData({ ...formData, name: e.target.value })}
                 />
+              </div>
+
+              <div className={styles.formGroup}>
+                <label className={styles.formLabel}>Cover Image</label>
+                <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
+                  <div style={{ width: '80px', height: '80px', borderRadius: '8px', overflow: 'hidden', background: '#f1f5f9', border: '1px solid #e2e8f0', flexShrink: 0 }}>
+                    {coverImage ? (
+                      <img src={URL.createObjectURL(coverImage)} alt="Preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} onLoad={() => URL.revokeObjectURL(coverImage)} />
+                    ) : formData.imageUrl ? (
+                      <img src={formData.imageUrl.startsWith('http') ? formData.imageUrl : `http://localhost:8080${formData.imageUrl}`} alt="Cover" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    ) : (
+                      <div style={{ display: 'flex', height: '100%', width: '100%', alignItems: 'center', justifyContent: 'center', fontSize: '12px', color: '#94a3b8' }}>No image</div>
+                    )}
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <input 
+                      type="file" 
+                      accept="image/png,image/jpeg,image/webp,image/gif"
+                      onChange={(e) => setCoverImage(e.target.files?.[0])}
+                      style={{ fontSize: '13px', color: '#64748b' }}
+                    />
+                    <p style={{ marginTop: '4px', fontSize: '12px', color: '#94a3b8' }}>
+                      {selectedId ? 'Uploads immediately (PNG/JPG/WebP/GIF, ≤5MB).' : 'Uploads after the tournament is created.'}
+                    </p>
+                  </div>
+                </div>
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>

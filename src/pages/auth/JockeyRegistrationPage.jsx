@@ -6,10 +6,9 @@ import { Link, useNavigate } from "react-router-dom";
 import { ArrowRight, Upload } from "lucide-react";
 import toast from "react-hot-toast";
 
-import { Button, Input, Select } from "@/common/ui";
-import { loginWithCredentials } from "../../services/auth";
+import { Button, Checkbox, Input, Select } from "@/common/ui";
 import jockeyImg from "../../assets/Jockey preparing for race.png";
-import { useRegisterJockey, useRequestEmailVerification } from "./hooks";
+import { useRegisterJockey } from "./hooks";
 import { emailField, passwordField } from "./validation";
 import { AuthSplitLayout } from "./components/AuthSplitLayout";
 
@@ -33,6 +32,9 @@ const schema = z
     nationality: z.string().optional(),
     yearsActive: optionalNumber,
     ridingStyle: z.string().optional(),
+    agreedToTerms: z.literal(true, {
+      errorMap: () => ({ message: "Bạn cần đồng ý điều khoản để tiếp tục" }),
+    }),
   })
   .refine((d) => d.password === d.confirmPassword, {
     path: ["confirmPassword"],
@@ -72,7 +74,7 @@ function Section({ icon, title, children }) {
   );
 }
 
-function UploadBox({ label }) {
+function UploadBox({ label, onFile }) {
   const ref = useRef(null);
   const [fileName, setFileName] = useState(null);
   return (
@@ -92,7 +94,11 @@ function UploadBox({ label }) {
         type="file"
         accept=".pdf,.png,.jpg,.jpeg"
         className="hidden"
-        onChange={(e) => setFileName(e.target.files?.[0]?.name ?? null)}
+        onChange={(e) => {
+          const f = e.target.files?.[0] ?? null;
+          setFileName(f?.name ?? null);
+          onFile?.(f);
+        }}
       />
     </button>
   );
@@ -108,10 +114,16 @@ export default function JockeyRegistrationPage() {
   });
 
   const mutation = useRegisterJockey();
-  const requestVerification = useRequestEmailVerification();
   const navigate = useNavigate();
+  // Lưu file thực sự được chọn (không dùng URL giả)
+  const [licenseFile, setLicenseFile] = useState(null);
+  const [fitnessFile, setFitnessFile] = useState(null);
 
   const onSubmit = (data) => {
+    if (!licenseFile || !fitnessFile) {
+      toast.error("Vui lòng tải lên Giấy phép nài ngựa và Chứng nhận thể lực");
+      return;
+    }
     mutation.mutate(
       {
         email: data.email,
@@ -124,16 +136,17 @@ export default function JockeyRegistrationPage() {
         nationality: data.nationality || undefined,
         yearsActive: data.yearsActive,
         ridingStyle: data.ridingStyle || undefined,
-        jockeyLicenseUrl: undefined,
-        fitnessCertificateUrl: undefined,
+        // File thực sự — hook sẽ đóng gói vào FormData
+        license: licenseFile,
+        fitnessCertificate: fitnessFile,
       },
       {
-        onSuccess: async () => {
-          requestVerification.mutate({ email: data.email });
-          toast.success("Đã gửi mã xác thực tới email của bạn");
-          
-          await loginWithCredentials(data.email, data.password);
-          navigate(`/verify-email?email=${encodeURIComponent(data.email)}`);
+        onSuccess: () => {
+          toast.success(
+            "Đăng ký thành công! Tài khoản đang chờ Trọng tài duyệt."
+          );
+          // Tài khoản PENDING -> không thể login ngay, chuyển về trang Login
+          navigate("/login?pending=1");
         },
         onError: (err) => {
           toast.error(
@@ -252,10 +265,23 @@ export default function JockeyRegistrationPage() {
 
         <Section icon="3" title="Credentials">
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <UploadBox label="Jockey License Copy" />
-            <UploadBox label="Current Fitness Certificate" />
+            <UploadBox label="Jockey License Copy" onFile={setLicenseFile} />
+            <UploadBox label="Current Fitness Certificate" onFile={setFitnessFile} />
           </div>
         </Section>
+
+        {/* Checkbox đồng ý điều khoản */}
+        <div className="flex flex-col gap-1">
+          <Checkbox
+            label="Tôi đồng ý với Điều khoản Dịch vụ và xác nhận thông tin tôi cung cấp là chính xác."
+            {...register("agreedToTerms")}
+          />
+          {errors.agreedToTerms && (
+            <span className="text-xs text-danger">
+              {errors.agreedToTerms.message}
+            </span>
+          )}
+        </div>
 
         <div className="flex items-center justify-between">
           <Link to="/login" className="text-sm text-muted hover:text-ink">
