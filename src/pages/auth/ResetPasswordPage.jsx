@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import api from '../../services/api';
+import { getPasswordResetErrorMessage, resetPassword } from '../../services/auth';
 import styles from './ResetPasswordPage.module.css';
 import PopupModal from '../../components/ui/PopupModal';
 
@@ -75,12 +75,7 @@ export default function ResetPasswordPage() {
     setLoading(true);
 
     try {
-      await api.post('/api/v1/auth/reset-password', {
-        email: email,
-        code: otp.join(''),
-        newPassword: newPass,
-        confirmPassword: confirm
-      });
+      await resetPassword(email, otp.join(''), newPass, confirm);
 
       setPopup({
         type: 'success',
@@ -102,7 +97,7 @@ export default function ResetPasswordPage() {
         title: 'ERROR!',
         message1: 'Thank you for your request.',
         message2: 'We are unable to continue the process.',
-        message3: err.response?.data?.message || err.message || 'Please try again to complete the request.',
+        message3: getPasswordResetErrorMessage(err),
         buttonText: 'Try Again',
         onButtonClick: () => setPopup(null)
       });

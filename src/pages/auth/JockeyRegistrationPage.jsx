@@ -9,6 +9,7 @@ import toast from "react-hot-toast";
 import { Button, Checkbox, Input, Select } from "@/common/ui";
 import jockeyImg from "../../assets/Jockey preparing for race.png";
 import { useRegisterJockey } from "./hooks";
+import { JOCKEY_PENDING_REGISTRATION_MESSAGE } from "../../services/auth";
 import { emailField, passwordField } from "./validation";
 import { AuthSplitLayout } from "./components/AuthSplitLayout";
 
@@ -136,6 +137,7 @@ export default function JockeyRegistrationPage() {
         nationality: data.nationality || undefined,
         yearsActive: data.yearsActive,
         ridingStyle: data.ridingStyle || undefined,
+        agreedToTerms: data.agreedToTerms,
         // File thực sự — hook sẽ đóng gói vào FormData
         license: licenseFile,
         fitnessCertificate: fitnessFile,
@@ -146,6 +148,7 @@ export default function JockeyRegistrationPage() {
             "Đăng ký thành công! Tài khoản đang chờ Trọng tài duyệt."
           );
           // Tài khoản PENDING -> không thể login ngay, chuyển về trang Login
+          toast.success(JOCKEY_PENDING_REGISTRATION_MESSAGE);
           navigate("/login?pending=1");
         },
         onError: (err) => {

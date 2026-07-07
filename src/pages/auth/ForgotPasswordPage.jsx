@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import api from '../../services/api';
+import { forgotPassword, PASSWORD_RESET_NEUTRAL_MESSAGE } from '../../services/auth';
 import styles from './ForgotPasswordPage.module.css';
 import PopupModal from '../../components/ui/PopupModal';
 
@@ -20,7 +20,7 @@ export default function ForgotPasswordPage() {
     const normalizedEmail = email.trim().toLowerCase();
 
     try {
-      await api.post('/api/v1/auth/forgot-password', { email: normalizedEmail });
+      await forgotPassword(normalizedEmail);
       sessionStorage.setItem('reset_password_email', normalizedEmail);
       setSent(true);
     } catch (err) {
@@ -30,7 +30,7 @@ export default function ForgotPasswordPage() {
         title: 'ERROR!',
         message1: 'Thank you for your request.',
         message2: 'We are unable to continue the process.',
-        message3: err.response?.data?.message || err.message || 'Failed to send reset code.',
+        message3: 'Please try again later.',
         buttonText: 'Try Again',
         onButtonClick: () => setPopup(null)
       });
@@ -137,7 +137,7 @@ export default function ForgotPasswordPage() {
                   <div className={styles.successIcon}>📬</div>
                   <h2 className={styles.successTitle}>Check Your Email</h2>
                   <p className={styles.successText}>
-                    We've sent a reset code to <strong>{email}</strong>
+                    {PASSWORD_RESET_NEUTRAL_MESSAGE}
                   </p>
 
                   <button

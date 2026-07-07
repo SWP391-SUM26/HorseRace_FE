@@ -22,6 +22,13 @@ import SearchFilterBar from '../../components/ui/SearchFilterBar';
 import DataTable from '../../components/ui/DataTable';
 import { DownloadIcon, UserPlusIcon, TrendingUpIcon, OwnerIcon, JockeyIcon, RefereeIcon, EyeIcon, CameraIcon } from '../../components/ui/Icons';
 
+function userStatusVariant(status) {
+  if (status === "ACTIVE") return "success";
+  if (status === "PENDING") return "warning";
+  if (status === "SUSPENDED") return "suspended";
+  return "ghost";
+}
+
 // ==========================================
 // SUB-PAGES VIEW MANAGEMENT
 // ==========================================
@@ -425,13 +432,7 @@ const UserManagementView = () => {
                   </span>
                 </Badge>
                 <Badge
-                  variant={
-                    selectedUser.status === "ACTIVE"
-                      ? "success"
-                      : selectedUser.status === "PENDING"
-                        ? "warning"
-                        : "suspended"
-                  }
+                  variant={userStatusVariant(selectedUser.status)}
                 >
                   {selectedUser.status}
                 </Badge>
@@ -566,13 +567,7 @@ const UserManagementView = () => {
                 </td>
                 <td className={styles.td}>
                   <Badge
-                    variant={
-                      u.status === "ACTIVE"
-                        ? "success"
-                        : u.status === "PENDING"
-                          ? "warning"
-                          : "suspended"
-                    }
+                    variant={userStatusVariant(u.status)}
                   >
                     {u.status}
                   </Badge>
