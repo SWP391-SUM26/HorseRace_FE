@@ -3,6 +3,11 @@ import { normalizeBackendImageUrl } from "@/common/lib/imageUrl";
 
 const SESSION_KEY = "equine_elite_session";
 const REFRESH_TOKEN_TTL_SECONDS = 7 * 24 * 60 * 60;
+export const ACCOUNT_PENDING_MESSAGE = "Your account is awaiting referee approval.";
+export const JOCKEY_PENDING_REGISTRATION_MESSAGE =
+  "Your account is pending referee approval.";
+export const PASSWORD_RESET_NEUTRAL_MESSAGE =
+  "If this email exists, we have sent reset instructions.";
 
 const API_ROLE_TO_APP_ROLE = {
   ADMIN: "Admin",
@@ -46,6 +51,43 @@ function getApiErrorMessage(error, fallback) {
     error?.message ||
     fallback
   );
+}
+
+function getApiErrorText(error) {
+  const data = error?.response?.data;
+  return String(data?.message || data?.error || error?.message || "");
+}
+
+function isPendingApprovalError(error) {
+  const text = getApiErrorText(error).toLowerCase();
+  return (
+    error?.response?.status === 403 &&
+    (text.includes("pending approval") ||
+      text.includes("pending referee approval") ||
+      text.includes("account_pending_approval"))
+  );
+}
+
+export function getPasswordResetErrorMessage(error) {
+  const text = getApiErrorText(error).toLowerCase();
+
+  if (text.includes("already been used")) {
+    return "This reset code has already been used.";
+  }
+
+  if (text.includes("wait before requesting") || error?.response?.status === 429) {
+    return "Please wait before requesting another code.";
+  }
+
+  if (text.includes("invalid") || text.includes("expired")) {
+    return "Invalid or expired reset code.";
+  }
+
+  if (text.includes("password must be")) {
+    return getApiErrorMessage(error, "Password does not meet security requirements.");
+  }
+
+  return getApiErrorMessage(error, "Unable to reset password. Please try again.");
 }
 
 function persistSession(session, rememberMe = false) {
@@ -189,6 +231,11 @@ export async function loginWithCredentials(
     const session = await buildSessionFromAuthData(authData);
     return persistSession(session, rememberMe);
   } catch (error) {
+    if (isPendingApprovalError(error)) {
+      localStorage.removeItem(SESSION_KEY);
+      throw new Error(ACCOUNT_PENDING_MESSAGE, { cause: error });
+    }
+
     throw new Error(
       getApiErrorMessage(error, "Email or password is incorrect."),
       { cause: error },
@@ -212,6 +259,11 @@ export async function loginWithGoogle(idToken) {
     const session = await buildSessionFromAuthData(authData);
     return persistSession(session, true);
   } catch (error) {
+    if (isPendingApprovalError(error)) {
+      localStorage.removeItem(SESSION_KEY);
+      throw new Error(ACCOUNT_PENDING_MESSAGE, { cause: error });
+    }
+
     throw new Error(
       getApiErrorMessage(error, "Unable to sign in with Google."),
       { cause: error },
@@ -270,7 +322,24 @@ export async function registerOwner(data) {
 }
 
 export async function registerJockey(data) {
-  const response = await api.post("/api/v1/auth/register/jockey", data);
+  const { license, fitnessCertificate, ...fields } = data;
+  const formData = new FormData();
+
+  Object.entries(fields).forEach(([key, value]) => {
+    if (value !== undefined && value !== null && value !== "") {
+      formData.append(key, String(value));
+    }
+  });
+
+  if (license) {
+    formData.append("license", license);
+  }
+
+  if (fitnessCertificate) {
+    formData.append("fitnessCertificate", fitnessCertificate);
+  }
+
+  const response = await api.post("/api/v1/auth/register/jockey", formData);
   return response.data;
 }
 
@@ -299,11 +368,19 @@ export async function resendAuthCode(email) {
 // ==========================================
 
 export async function forgotPassword(email) {
-  const response = await api.post("/api/v1/auth/forgot-password", { email });
-  return response.data;
+  await api.post("/api/v1/auth/forgot-password", { email });
+  return {
+    success: true,
+    message: PASSWORD_RESET_NEUTRAL_MESSAGE,
+  };
 }
 
-export async function resetPassword(email, code, newPassword) {
-  const response = await api.post("/api/v1/auth/reset-password", { email, code, newPassword });
+export async function resetPassword(email, code, newPassword, confirmPassword = newPassword) {
+  const response = await api.post("/api/v1/auth/reset-password", {
+    email,
+    code,
+    newPassword,
+    confirmPassword,
+  });
   return response.data;
 }

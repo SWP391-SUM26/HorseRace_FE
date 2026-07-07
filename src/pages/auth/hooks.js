@@ -1,5 +1,6 @@
 import { useMutation } from "@tanstack/react-query";
 import api from "../../services/api";
+import { registerJockey as registerJockeyRequest } from "../../services/auth";
 
 export function useRegisterSpectator() {
   return useMutation({
@@ -21,22 +22,7 @@ export function useRegisterOwner() {
 
 export function useRegisterJockey() {
   return useMutation({
-    mutationFn: async (input) => {
-      const { license, fitnessCertificate, ...fields } = input;
-      const fd = new FormData();
-      // Thêm từng trường text vào FormData (bỏ qua giá trị undefined/null/rỗng)
-      Object.entries(fields).forEach(([k, v]) => {
-        if (v !== undefined && v !== null && v !== "") fd.append(k, String(v));
-      });
-      // Đính kèm 2 file tài liệu
-      if (license) fd.append("license", license);
-      if (fitnessCertificate) fd.append("fitnessCertificate", fitnessCertificate);
-      // Để Content-Type là undefined -> Axios tự gán multipart/form-data + boundary đúng chuẩn
-      const response = await api.post("/api/v1/auth/register/jockey", fd, {
-        headers: { "Content-Type": undefined },
-      });
-      return response.data;
-    },
+    mutationFn: registerJockeyRequest,
   });
 }
 

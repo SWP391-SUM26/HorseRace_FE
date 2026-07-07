@@ -185,7 +185,7 @@ function JockeyProfilePage() {
                   <Avatar name={detail.fullName} src={detail.avatarUrl ?? void 0} size={56} />
                   <div className="min-w-0">
                     <p className="truncate font-semibold text-ink">{detail.fullName}</p>
-                    <Badge tone="success">{detail.status}</Badge>
+                    <Badge tone={statusTone(detail.status)}>{detail.status}</Badge>
                   </div>
                 </div>
 
@@ -218,6 +218,12 @@ function ReadOnly({ label, value }) {
       <dt className="text-muted">{label}</dt>
       <dd className="font-medium text-ink">{value}</dd>
     </div>;
+}
+function statusTone(status) {
+  if (status === "ACTIVE") return "success";
+  if (status === "PENDING") return "warning";
+  if (status === "SUSPENDED") return "danger";
+  return "neutral";
 }
 function ProfileSkeleton() {
   return <div className="grid gap-6 lg:grid-cols-3">
