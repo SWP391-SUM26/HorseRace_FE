@@ -8,6 +8,16 @@ import Button from '../../components/ui/Button';
 import DataTable from '../../components/ui/DataTable';
 import { PlusIcon, CalendarIcon, AlertTriangleIcon, MoreHorizontalIcon, LayoutIcon } from '../../components/ui/Icons';
 
+function generateTournamentCode(name) {
+  const slug = String(name || "TOURNAMENT")
+    .trim()
+    .toUpperCase()
+    .replace(/[^A-Z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 24) || "TOURNAMENT";
+  return `TRN-${slug}-${Date.now().toString(36).toUpperCase()}`.slice(0, 50);
+}
+
 export default function TournamentOrchestration() {
   const [tournaments, setTournaments] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -18,7 +28,6 @@ export default function TournamentOrchestration() {
   const [totalPages, setTotalPages] = useState(1);
   const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
   const builderRef = useRef(null);
-  const codeInputRef = useRef(null);
 
   const showToast = (message, type = 'success') => {
     setToast({ show: true, message, type });
@@ -95,8 +104,8 @@ export default function TournamentOrchestration() {
       registrationCloseAt: '',
       status: 'DRAFT'
     });
+    setCoverImage(null);
     builderRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    setTimeout(() => codeInputRef.current?.focus(), 250);
   };
 
   const handleSelect = async (item) => {
@@ -125,9 +134,17 @@ export default function TournamentOrchestration() {
 
   const handleSave = async (overrideStatus) => {
     try {
+      if (!formData.name.trim()) {
+        showToast("Tournament name is required", "error");
+        return;
+      }
+
       const finalStatus = overrideStatus || formData.status;
       const payload = {
-        ...formData,
+        tournamentCode: formData.tournamentCode || generateTournamentCode(formData.name),
+        name: formData.name.trim(),
+        description: formData.description?.trim() || undefined,
+        location: formData.location?.trim() || undefined,
         startDate: formData.startDate ? new Date(formData.startDate).toISOString() : null,
         endDate: formData.endDate ? new Date(formData.endDate).toISOString() : null,
         registrationOpenAt: formData.registrationOpenAt ? new Date(formData.registrationOpenAt).toISOString() : null,
@@ -137,14 +154,18 @@ export default function TournamentOrchestration() {
       if (selectedId) {
         await updateTournament(selectedId, payload);
         if (coverImage) {
-          await uploadTournamentImage(selectedId, coverImage);
+          uploadTournamentImage(selectedId, coverImage).catch((err) => {
+            showToast("Tournament updated, but image upload failed: " + (err.response?.data?.message || err.message), "error");
+          });
         }
         showToast(`Tournament updated successfully!`, 'success');
       } else {
         const res = await createTournament(payload);
-        const newId = res?.data?.id || res?.id;
+        const newId = res?.data?.tournamentId || res?.data?.id || res?.tournamentId || res?.id;
         if (coverImage && newId) {
-          await uploadTournamentImage(newId, coverImage);
+          uploadTournamentImage(newId, coverImage).catch((err) => {
+            showToast("Tournament created, but image upload failed: " + (err.response?.data?.message || err.message), "error");
+          });
         }
         showToast(`Tournament ${finalStatus === 'DRAFT' ? 'saved as draft' : 'published'} successfully!`, 'success');
         handleNewTournament();
@@ -323,18 +344,6 @@ export default function TournamentOrchestration() {
 
             <div className={styles.builderBody}>
               <div className={styles.formGroup}>
-                <label className={styles.formLabel}>Tournament Code <span style={{ color: 'red' }}>*</span></label>
-                <input
-                  ref={codeInputRef}
-                  type="text"
-                  className={styles.formInput}
-                  placeholder="e.g. TRN-2026-01"
-                  value={formData.tournamentCode}
-                  onChange={e => setFormData({ ...formData, tournamentCode: e.target.value })}
-                />
-              </div>
-
-              <div className={styles.formGroup}>
                 <label className={styles.formLabel}>Tournament Name <span style={{ color: 'red' }}>*</span></label>
                 <input
                   type="text"
@@ -346,25 +355,32 @@ export default function TournamentOrchestration() {
 
               <div className={styles.formGroup}>
                 <label className={styles.formLabel}>Cover Image</label>
-                <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
-                  <div style={{ width: '80px', height: '80px', borderRadius: '8px', overflow: 'hidden', background: '#f1f5f9', border: '1px solid #e2e8f0', flexShrink: 0 }}>
+                <div className={styles.imagePicker}>
+                  <div className={styles.imagePreview}>
                     {coverImage ? (
-                      <img src={URL.createObjectURL(coverImage)} alt="Preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} onLoad={() => URL.revokeObjectURL(coverImage)} />
+                      <img src={URL.createObjectURL(coverImage)} alt="Preview" className={styles.imagePreviewImg} onLoad={() => URL.revokeObjectURL(coverImage)} />
                     ) : formData.imageUrl ? (
-                      <img src={formData.imageUrl.startsWith('http') ? formData.imageUrl : `http://localhost:8080${formData.imageUrl}`} alt="Cover" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      <img src={formData.imageUrl.startsWith('http') ? formData.imageUrl : `http://localhost:8080${formData.imageUrl}`} alt="Cover" className={styles.imagePreviewImg} />
                     ) : (
-                      <div style={{ display: 'flex', height: '100%', width: '100%', alignItems: 'center', justifyContent: 'center', fontSize: '12px', color: '#94a3b8' }}>No image</div>
+                      <div className={styles.imagePreviewEmpty}>No image</div>
                     )}
                   </div>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <input 
-                      type="file" 
-                      accept="image/png,image/jpeg,image/webp,image/gif"
-                      onChange={(e) => setCoverImage(e.target.files?.[0])}
-                      style={{ fontSize: '13px', color: '#64748b' }}
-                    />
-                    <p style={{ marginTop: '4px', fontSize: '12px', color: '#94a3b8' }}>
-                      {selectedId ? 'Uploads immediately (PNG/JPG/WebP/GIF, ≤5MB).' : 'Uploads after the tournament is created.'}
+                  <div className={styles.imagePickerContent}>
+                    <div className={styles.imagePickerControl}>
+                      <label className={styles.imagePickerButton}>
+                        Choose Image
+                        <input
+                          type="file"
+                          accept="image/png,image/jpeg,image/webp,image/gif"
+                          onChange={(e) => setCoverImage(e.target.files?.[0] || null)}
+                        />
+                      </label>
+                      <span className={styles.imagePickerName}>
+                        {coverImage ? coverImage.name : formData.imageUrl ? 'Current cover image' : 'No file chosen'}
+                      </span>
+                    </div>
+                    <p className={styles.imagePickerHint}>
+                      {selectedId ? 'Uploads immediately (PNG/JPG/WebP/GIF, <=5MB).' : 'Uploads after the tournament is created.'}
                     </p>
                   </div>
                 </div>
