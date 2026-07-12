@@ -14,7 +14,8 @@ import {
   CalendarDays,
   Coins,
   Radio,
-  BarChart3
+  BarChart3,
+  FileText
 } from "lucide-react";
 const HorseIcon = Rabbit;
 
@@ -49,9 +50,11 @@ const ROLE_NAV = {
     sidebar: [
       { label: "Dashboard", to: "/referee/dashboard", icon: LayoutDashboard },
       { label: "Inspection", to: "/referee/pre-race-inspection", icon: ShieldCheck },
+      { label: "Document Review", to: "/referee/document-review", icon: FileText },
       { label: "Live Monitor", to: "/referee/live-monitor", icon: Radio },
       { label: "Results", to: "/referee/race-result-recording", icon: Flag },
       { label: "Violations", to: "/referee/violations", icon: ClipboardList },
+      { label: "Race Assignments", to: "/referee/race-assignments", icon: CalendarDays },
       { label: "Registrations", to: "/referee/registration", icon: Users }
     ],
     topbar: []
@@ -77,7 +80,11 @@ const ROLE_NAV = {
       { label: "Tournaments", to: "/spectator/tournaments", icon: Trophy },
       { label: "Live Races", to: "/spectator/live-races", icon: Radio }
     ],
-    topbar: []
+    topbar: [
+      { label: "Live Races", to: "/spectator-dashboard" },
+      { label: "Predictions", to: "/spectator/predictions" },
+      { label: "Rewards", to: "/spectator/rewards" }
+    ]
   }
 };
 

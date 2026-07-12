@@ -47,13 +47,16 @@ import NotificationsCenter from './pages/shared/NotificationsCenter';
 import UserProfile from './pages/shared/UserProfile';
 import ViolationManagement from '@/features/referee/pages/ViolationsPage';
 import RaceResultRecording from '@/features/referee/pages/RaceResultsPage';
+import MyRaceAssignmentsPage from '@/features/referee/pages/MyRaceAssignmentsPage';
+import DocumentReviewPage from '@/features/referee/pages/DocumentReviewPage';
 import OfficialReports from './pages/Referee/OfficialReports';
 import Settings from './pages/Admin/Settings';
-import SpectatorLayout from './layouts/SpectatorLayout';
-import LiveRaces from './pages/Spectator/LiveRaces';
+import { SpectatorLayout } from '@/common/layouts/SpectatorLayout';
+import SpectatorHubPage from '@/features/spectator/pages/SpectatorHubPage';
+import PredictionsPage from '@/features/spectator/pages/PredictionsPage';
+import RewardsPage from '@/features/spectator/pages/RewardsPage';
+import SpectatorLivePage from '@/features/spectator/pages/SpectatorLivePage';
 import Schedule from './pages/Spectator/Schedule';
-import Predictions from './pages/Spectator/Predictions';
-import Rewards from './pages/Spectator/Rewards';
 import StaffingManagement from './pages/Admin/StaffingManagement';
 
 const OwnerPlaceholder = ({ title }) => (
@@ -116,11 +119,11 @@ export default function App() {
 
         <Route element={<ProtectedRoute roles={['Spectator']} />}>
           <Route element={<SpectatorLayout />}>
-            <Route path="/spectator-dashboard" element={<LiveRaces />} />
-            <Route path="/spectator/live-races" element={<LiveRaces />} />
+            <Route path="/spectator-dashboard" element={<SpectatorHubPage />} />
+            <Route path="/spectator/live-races" element={<SpectatorLivePage />} />
             <Route path="/spectator/schedule" element={<Schedule />} />
-            <Route path="/spectator/predictions" element={<Predictions />} />
-            <Route path="/spectator/rewards" element={<Rewards />} />
+            <Route path="/spectator/predictions" element={<PredictionsPage />} />
+            <Route path="/spectator/rewards" element={<RewardsPage />} />
             <Route path="/spectator/notifications" element={<NotificationsCenter />} />
           </Route>
         </Route>
@@ -131,11 +134,13 @@ export default function App() {
             <Route path="/referee/registration" element={<RegistrationManagement />} />
             <Route path="/referee/inspection" element={<PreRaceInspection />} />
             <Route path="/referee/pre-race-inspection" element={<PreRaceInspection />} />
+            <Route path="/referee/document-review" element={<DocumentReviewPage />} />
             <Route path="/referee/live-monitor" element={<LiveRaceMonitor />} />
             <Route path="/referee/notifications" element={<NotificationsCenter />} />
             <Route path="/referee/violations" element={<ViolationManagement />} />
             <Route path="/referee/race-result-recording" element={<RaceResultRecording />} />
             <Route path="/referee/reports" element={<OfficialReports />} />
+            <Route path="/referee/race-assignments" element={<MyRaceAssignmentsPage />} />
             <Route path="/referee/settings" element={<Settings />} />
           </Route>
         </Route>
