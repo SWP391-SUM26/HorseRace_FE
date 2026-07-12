@@ -53,10 +53,11 @@ const ROLE_NAV = {
       { label: "Dashboard", to: "/referee/dashboard", icon: LayoutDashboard },
       { label: "Pre-Race Inspection", to: "/referee/pre-race-inspection", icon: ShieldCheck },
       { label: "Document Review", to: "/referee/document-review", icon: FileText },
+      { label: "Race Assignments", to: "/referee/race-assignments", icon: CalendarDays },
+      { label: "Live Monitor", to: "/referee/live-monitor", icon: Radio },
       { label: "Results", to: "/referee/race-result-recording", icon: Flag },
       { label: "Violations", to: "/referee/violations", icon: ClipboardList },
-      { label: "Race Reports", to: "/referee/reports", icon: FileText },
-      { label: "Live Monitor", to: "/referee/live-monitor", icon: Radio }
+      { label: "Race Reports", to: "/referee/reports", icon: FileText }
     ],
     topbar: []
   },
