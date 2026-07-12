@@ -14,31 +14,75 @@ import {
   fetchLiveRace,
   fetchMyAssignments,
   fetchMyTournamentInvitations,
+  fetchMyRaceAssignments,
+  acceptRaceAssignment,
+  declineRaceAssignment,
   acceptTournamentInvitation,
   rejectTournamentInvitation,
+  fetchEntryReviews,
+  acceptEntry,
+  rejectEntry,
   fetchRaceViolations,
   fetchRefereeDashboard,
   fetchRefereeRaces,
+  fetchRefereeRace,
   fetchRegistrations,
   fetchRegistrationStats,
   fetchResults,
   fetchViolation,
   recordInspection,
   recordResults,
+  requestRefereeCode,
+  submitReport,
+  flagInquiry,
   recordRuling,
   updateViolation,
   deleteViolation,
   fetchRaceEntries,
   rejectApplication,
   rejectRegistration,
+  deleteRegistration,
   requestApplicationInfo,
   submitAllInspections
 } from "./api";
 function useRefereeDashboard(enabled = true) {
   return useQuery({ queryKey: ["referee", "dashboard"], queryFn: fetchRefereeDashboard, enabled });
 }
-function useRefereeRaces() {
-  return useQuery({ queryKey: ["referee", "races"], queryFn: fetchRefereeRaces });
+function useRefereeRaces(options = {}) {
+  return useQuery({
+    queryKey: ["referee", "races"],
+    queryFn: fetchRefereeRaces,
+    refetchInterval: options.refetchInterval ?? false
+  });
+}
+function useRefereeRaceById(raceId) {
+  return useQuery({
+    queryKey: ["referee", "race", raceId],
+    queryFn: () => fetchRefereeRace(raceId),
+    enabled: !!raceId,
+    refetchInterval: 1e4
+  });
+}
+function useEntryReviews(raceId) {
+  return useQuery({
+    queryKey: ["referee", "entry-reviews", raceId],
+    queryFn: () => fetchEntryReviews(raceId),
+    enabled: !!raceId
+  });
+}
+function useAcceptEntry(raceId) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (entryId) => acceptEntry(raceId, entryId),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["referee", "entry-reviews", raceId] })
+  });
+}
+function useRejectEntry(raceId) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ entryId, reason }) => rejectEntry(raceId, entryId, reason),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["referee", "entry-reviews", raceId] })
+  });
 }
 function useInspections(raceId) {
   return useQuery({
@@ -132,7 +176,27 @@ function useResults(raceId) {
 function useRecordResults(raceId) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (vars) => recordResults(raceId, vars.results, vars.refCode),
+    mutationFn: (vars) => recordResults(raceId, vars.results),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["referee", "results", raceId] })
+  });
+}
+function useRequestRefereeCode(raceId) {
+  return useMutation({ mutationFn: () => requestRefereeCode(raceId) });
+}
+function useSubmitReport(raceId) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (vars) => submitReport(raceId, vars),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["referee", "results", raceId] });
+      qc.invalidateQueries({ queryKey: ["referee", "dashboard"] });
+    }
+  });
+}
+function useFlagInquiry(raceId) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (resultId) => flagInquiry(raceId, resultId),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["referee", "results", raceId] })
   });
 }
@@ -161,6 +225,23 @@ function useRejectTournamentInvitation() {
   return useMutation({
     mutationFn: (id) => rejectTournamentInvitation(id),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["referee", "tournament-invitations"] })
+  });
+}
+function useMyRaceAssignments() {
+  return useQuery({ queryKey: ["referee", "race-assignments"], queryFn: fetchMyRaceAssignments });
+}
+function useAcceptRaceAssignment() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id) => acceptRaceAssignment(id),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["referee", "race-assignments"] })
+  });
+}
+function useDeclineRaceAssignment() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (v) => declineRaceAssignment(v.id, v.reason),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["referee", "race-assignments"] })
   });
 }
 function useCertifyResults(raceId) {
@@ -224,6 +305,16 @@ function useRejectRegistration() {
     }
   });
 }
+function useDeleteRegistration() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id) => deleteRegistration(id),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["referee", "registrations"] });
+      qc.invalidateQueries({ queryKey: ["referee", "registration-stats"] });
+    }
+  });
+}
 function useApplications(query) {
   return useQuery({
     queryKey: ["referee", "applications", query],
@@ -276,48 +367,9 @@ function useRequestApplicationInfo() {
     }
   });
 }
-import {
-  fetchRefereeReports,
-  createRefereeReport,
-  updateRefereeReport,
-  submitRefereeReport,
-  recordHorseHealthCheck
-} from "./api";
-function useRefereeReports(filter) {
-  return useQuery({
-    queryKey: ["referee", "reports", filter],
-    queryFn: () => fetchRefereeReports(filter)
-  });
-}
-function useCreateRefereeReport() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: (body) => createRefereeReport(body),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["referee", "reports"] })
-  });
-}
-function useUpdateRefereeReport() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: (vars) => updateRefereeReport(vars.id, vars.body),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["referee", "reports"] })
-  });
-}
-function useSubmitRefereeReport() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: (id) => submitRefereeReport(id),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["referee", "reports"] })
-  });
-}
-function useRecordHorseHealthCheck(horseId) {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: (body) => recordHorseHealthCheck(horseId, body),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["referee", "horse-verification", horseId] })
-  });
-}
 export {
+  useAcceptEntry,
+  useAcceptRaceAssignment,
   useAcceptTournamentInvitation,
   useApplication,
   useApplicationStats,
@@ -325,35 +377,39 @@ export {
   useApproveApplication,
   useApproveRegistration,
   useCertifyResults,
-  useCreateRefereeReport,
   useCreateViolation,
+  useDeclineRaceAssignment,
+  useDeleteRegistration,
   useDeleteResult,
   useDeleteViolation,
+  useEntryReviews,
+  useFlagInquiry,
   useHorsePassport,
   useHorseVerification,
   useInspections,
   useLiveRace,
   useMyAssignments,
+  useMyRaceAssignments,
   useMyTournamentInvitations,
   useRaceEntries,
   useRaceViolations,
-  useRecordHorseHealthCheck,
   useRecordInspection,
   useRecordResults,
   useRecordRuling,
   useRefereeDashboard,
+  useRefereeRaceById,
   useRefereeRaces,
-  useRefereeReports,
   useRegistrationStats,
   useRegistrations,
   useRejectApplication,
+  useRejectEntry,
   useRejectRegistration,
   useRejectTournamentInvitation,
   useRequestApplicationInfo,
+  useRequestRefereeCode,
   useResults,
   useSubmitAllInspections,
-  useSubmitRefereeReport,
-  useUpdateRefereeReport,
+  useSubmitReport,
   useUpdateViolation,
   useViolation
 };

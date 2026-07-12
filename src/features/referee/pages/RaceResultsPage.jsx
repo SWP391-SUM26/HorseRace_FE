@@ -1,10 +1,22 @@
 import { useEffect, useMemo, useState } from "react";
-import { AlertTriangle, BadgeCheck, ScanLine } from "lucide-react";
+import { AlertTriangle, BadgeCheck, Lock, Mail, ShieldQuestion, Trash2 } from "lucide-react";
 import { isAxiosError } from "axios";
 import { PageHeader } from "@/common/components/PageHeader";
 import { Badge, Button, Card, CardBody, EmptyState, Input, Select, Skeleton, Textarea } from "@/common/ui";
 import { useToast } from "@/common/providers/ToastProvider";
-import { useCertifyResults, useRaceViolations, useRecordRuling, useRefereeRaces, useResults } from "../hooks";
+import { useAuth } from "@/common/hooks/useAuth";
+import {
+  useDeleteResult,
+  useFlagInquiry,
+  useRaceEntries,
+  useRaceViolations,
+  useRecordResults,
+  useRecordRuling,
+  useRefereeRaces,
+  useRequestRefereeCode,
+  useResults,
+  useSubmitReport
+} from "../hooks";
 import { humanize } from "../api";
 import { DECISION_TYPES } from "../constants";
 function fmtMs(ms) {
@@ -22,23 +34,29 @@ const OFFICIALITY_TONE = {
   AMENDED: "neutral"
 };
 function RaceResultsPage() {
+  const { user } = useAuth();
+  const isAdmin = user?.role === "ADMIN";
   const racesQuery = useRefereeRaces();
   const [raceId, setRaceId] = useState("");
+  const reportableRaces = useMemo(
+    () => (racesQuery.data ?? []).filter((r) => r.status === "FINISHED" || r.status === "OFFICIAL"),
+    [racesQuery.data]
+  );
   useEffect(() => {
-    if (!raceId && racesQuery.data && racesQuery.data.length > 0) {
-      setRaceId(racesQuery.data[0].raceId);
+    if (!raceId && reportableRaces.length > 0) {
+      setRaceId(reportableRaces[0].raceId);
     }
-  }, [racesQuery.data, raceId]);
+  }, [reportableRaces, raceId]);
   const resultsQuery = useResults(raceId || null);
-  const race = racesQuery.data?.find((r) => r.raceId === raceId);
+  const race = reportableRaces.find((r) => r.raceId === raceId);
   const results = resultsQuery.data;
   const isOfficial = results?.officialityStatus === "OFFICIAL";
   return <>
       <PageHeader
-    title="Official Results & Certification"
-    subtitle={race ? `${race.name} \xB7 ${race.trackCondition ?? "\u2014"}` : "Verify the order of finish and certify the result."}
+    title="Results — Record & Submit"
+    subtitle={race ? `${race.name} \xB7 ${race.trackCondition ?? "\u2014"}` : "Record the order of finish, then publish for admin certification."}
     actions={<Badge tone={isOfficial ? "success" : "warning"}>
-            {results ? isOfficial ? "Certified" : "Pending Certification" : "\u2014"}
+            {results && results.order.length > 0 ? isOfficial ? "Certified" : "Provisional" : "\u2014"}
           </Badge>}
   />
 
@@ -47,55 +65,80 @@ function RaceResultsPage() {
     label="Race"
     value={raceId}
     onChange={(e) => setRaceId(e.target.value)}
-    options={(racesQuery.data ?? []).map((r) => ({
+    options={reportableRaces.map((r) => ({
       value: r.raceId,
       label: `${r.raceCode ?? r.raceId.slice(0, 6)} \xB7 ${r.name}`
     }))}
   />
       </div>
 
-      {resultsQuery.isPending ? <Skeleton className="h-72 w-full rounded-2xl" /> : resultsQuery.isError ? <EmptyState title="Could not load results" description="Please reload the page." /> : !results ? <EmptyState title="No results recorded" description="Results appear once the race is run." /> : <CertificationBody raceId={raceId} results={results} />}
+      {reportableRaces.length === 0 ? <EmptyState
+    title="No finished races yet"
+    description="Results can be entered once an admin ends one of your assigned races."
+  /> : !raceId ? <EmptyState title="Select a race" description="Pick a finished race to record its results." /> : <ResultsBody
+    raceId={raceId}
+    results={results ?? null}
+    loading={resultsQuery.isPending}
+    isAdmin={isAdmin}
+  />}
     </>;
 }
-function CertificationBody({ raceId, results }) {
-  const isOfficial = results.officialityStatus === "OFFICIAL";
+function ResultsBody({
+  raceId,
+  results,
+  loading,
+  isAdmin
+}) {
+  const isOfficial = results?.officialityStatus === "OFFICIAL";
+  const submitted = (results?.order ?? []).some((o) => !!o.refereeSubmittedAt);
+  const refereeLocked = submitted || isOfficial;
+  const editable = isAdmin ? !isOfficial : !refereeLocked;
+  const entriesQuery = useRaceEntries(raceId || null);
+  const [rows, setRows] = useState({});
+  const seeded = useMemo(() => {
+    const byEntryNo = new Map((results?.order ?? []).map((o) => [o.entryNo, o]));
+    const next = {};
+    for (const e of entriesQuery.data ?? []) {
+      const o = e.entryNo != null ? byEntryNo.get(e.entryNo) : void 0;
+      next[e.entryId] = {
+        pos: o?.finishPosition != null ? String(o.finishPosition) : "",
+        sec: o?.finishTimeMs != null ? String((o.finishTimeMs / 1e3).toFixed(2)) : ""
+      };
+    }
+    return next;
+  }, [entriesQuery.data, results]);
+  useEffect(() => setRows(seeded), [seeded]);
+  function setCell(entryId, key, value) {
+    setRows((r) => ({ ...r, [entryId]: { ...r[entryId] ?? { pos: "", sec: "" }, [key]: value } }));
+  }
+  function buildPayload() {
+    return (entriesQuery.data ?? []).map((e) => {
+      const cell = rows[e.entryId];
+      if (!cell || !cell.pos.trim()) return null;
+      const sec = cell.sec.trim() ? Number(cell.sec) : void 0;
+      return {
+        entryId: e.entryId,
+        finishPosition: Number(cell.pos),
+        finishTimeMs: sec != null && !Number.isNaN(sec) ? Math.round(sec * 1e3) : void 0
+      };
+    }).filter(Boolean);
+  }
   return <div className="grid gap-6 lg:grid-cols-3">
-      {
-    /* LEFT — photofinish + order + report */
-  }
       <div className="space-y-6 lg:col-span-2">
-        {
-    /* Photofinish telemetry */
-  }
-        <Card>
-          <CardBody>
-            <div className="mb-3 flex items-center justify-between">
-              <h2 className="inline-flex items-center gap-2 font-semibold text-ink">
-                <ScanLine size={16} className="text-brand-700" /> Photofinish Telemetry
-              </h2>
-              <Badge tone={OFFICIALITY_TONE[results.officialityStatus]}>{results.officialityStatus}</Badge>
-            </div>
-            <div className="relative overflow-hidden rounded-xl border border-border bg-brand-900">
-              <div className="flex h-56 items-center justify-center text-sm text-white/60">
-                <ScanLine size={28} className="mr-2 opacity-60" /> Finish-line capture
-              </div>
-              {results.photofinishUrl && <img
-    src={results.photofinishUrl}
-    alt="Photofinish"
-    className="absolute inset-0 h-56 w-full object-cover"
-    onError={(e) => {
-      e.currentTarget.style.display = "none";
-    }}
-  />}
-              <span className="absolute bottom-2 left-2 rounded-md bg-black/50 px-2 py-0.5 text-xs text-white">
-                Camera: Finish Line Prime · 10,000 FPS
-              </span>
-            </div>
-          </CardBody>
-        </Card>
+        {refereeLocked && !isAdmin && <LockBanner isOfficial={isOfficial} />}
+
+        {editable && <Card>
+            <CardBody>
+              <h2 className="mb-1 font-semibold text-ink">Record / Edit Order of Finish</h2>
+              <p className="mb-3 text-xs text-muted">Set each runner's finishing position. Leave blank to skip a horse.</p>
+              {entriesQuery.isPending ? <Skeleton className="h-32 w-full rounded-xl" /> : !entriesQuery.data || entriesQuery.data.length === 0 ? <p className="rounded-lg bg-subtle/60 px-3 py-3 text-sm text-muted">No runners entered for this race.</p> : <ResultsGrid entries={entriesQuery.data} rows={rows} setCell={setCell} />}
+            </CardBody>
+          </Card>}
+
+        {editable && entriesQuery.data && entriesQuery.data.length > 0 && (isAdmin ? <AdminSavePanel raceId={raceId} buildPayload={buildPayload} /> : <PublishPanel raceId={raceId} buildPayload={buildPayload} />)}
 
         {
-    /* Provisional order of finish */
+    /* Order of finish (recorded) */
   }
         <Card>
           <CardBody>
@@ -103,71 +146,281 @@ function CertificationBody({ raceId, results }) {
               <h2 className="font-semibold text-ink">
                 {isOfficial ? "Official Order of Finish" : "Provisional Order of Finish"}
               </h2>
-              <span className="inline-flex items-center gap-1 text-xs text-success">
-                <BadgeCheck size={14} /> Integrity check passed
-              </span>
+              {results && results.order.length > 0 && <Badge tone={OFFICIALITY_TONE[results.officialityStatus]}>{results.officialityStatus}</Badge>}
             </div>
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-border text-left text-xs uppercase tracking-wide text-muted">
-                    <th className="px-2 py-2">Rank</th>
-                    <th className="px-2 py-2">PGM</th>
-                    <th className="px-2 py-2">Horse</th>
-                    <th className="px-2 py-2">Jockey</th>
-                    <th className="px-2 py-2 text-right">Weight</th>
-                    <th className="px-2 py-2 text-right">Time</th>
-                    <th className="px-2 py-2 text-right">Margin</th>
-                    <th className="px-2 py-2 text-right">Odds</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {results.order.map((o) => <tr key={o.resultId} className="border-b border-border/60">
-                      <td className="px-2 py-2 font-semibold tabular-nums text-ink">{o.finishPosition ?? "\u2014"}</td>
-                      <td className="px-2 py-2 tabular-nums text-muted">{o.entryNo ?? "\u2014"}</td>
-                      <td className="px-2 py-2 font-medium text-ink">{o.horseName}</td>
-                      <td className="px-2 py-2 text-muted">{o.jockeyName ?? "\u2014"}</td>
-                      <td className="px-2 py-2 text-right tabular-nums text-muted">{o.weightCarriedLbs ?? "\u2014"}</td>
-                      <td className="px-2 py-2 text-right tabular-nums text-ink">{fmtMs(o.finishTimeMs)}</td>
-                      <td className="px-2 py-2 text-right tabular-nums text-muted">
-                        {o.lengthsBehind != null ? o.lengthsBehind === 0 ? "\u2014" : o.lengthsBehind : "\u2014"}
-                      </td>
-                      <td className="px-2 py-2 text-right tabular-nums text-muted">{o.odds ?? "\u2014"}</td>
-                    </tr>)}
-                </tbody>
-              </table>
-            </div>
+            {loading ? <Skeleton className="h-32 w-full rounded-xl" /> : !results || results.order.length === 0 ? <p className="rounded-lg bg-subtle/60 px-3 py-3 text-sm text-muted">
+                No results recorded yet. Enter finish positions above and save.
+              </p> : <FinishTable
+    raceId={raceId}
+    results={results}
+    canDelete={isAdmin && !isOfficial}
+    canInquiry={!isOfficial}
+  />}
           </CardBody>
         </Card>
 
         {
-    /* Stewards report + final certification */
+    /* Registered but not entered in this race (read-only). */
   }
-        <CertifyCard raceId={raceId} disabled={isOfficial} />
+        {results && results.registeredNotEntered && results.registeredNotEntered.length > 0 && <Card>
+            <CardBody>
+              <div className="mb-1 flex items-center justify-between">
+                <h2 className="font-semibold text-ink">Registered — Not Entered</h2>
+                <Badge tone="neutral">{results.registeredNotEntered.length}</Badge>
+              </div>
+              <p className="mb-3 text-xs text-muted">
+                Horses approved for this tournament that were not entered in this race.
+              </p>
+              <ul className="divide-y divide-border">
+                {results.registeredNotEntered.map((r) => <li key={r.registrationId} className="flex items-center justify-between gap-3 py-2">
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-medium text-ink">{r.horseName ?? "\u2014"}</p>
+                      <p className="truncate text-xs text-muted">{r.ownerName ?? "\u2014"}</p>
+                    </div>
+                    {r.registrationCode && <span className="shrink-0 text-xs tabular-nums text-muted">{r.registrationCode}</span>}
+                  </li>)}
+              </ul>
+            </CardBody>
+          </Card>}
       </div>
 
-      {
-    /* RIGHT — active inquiry + telemetry */
-  }
       <aside className="space-y-6">
         <ActiveInquiry raceId={raceId} />
-        <Card>
-          <CardBody className="flex flex-col gap-3">
-            <h2 className="font-semibold text-ink">Race Telemetry</h2>
-            <dl className="flex flex-col gap-2 text-sm">
-              <Tele label="Winning Time" value={fmtMs(results.winningTimeMs)} />
-              <Tele
-    label="Fractions"
-    value={results.fractions && results.fractions.length > 0 ? results.fractions.join(", ") : "\u2014"}
-  />
-              <Tele label="Wind" value={results.windSpeedKph != null ? `${results.windSpeedKph} kph` : "\u2014"} />
-              <Tele label="Track Bias" value={results.trackBias ?? "\u2014"} />
-              <Tele label="Track Condition" value={results.trackCondition ?? "\u2014"} />
-            </dl>
-          </CardBody>
-        </Card>
+        <AdminCertificationNote isOfficial={isOfficial} />
+        {results && results.order.length > 0 && <Card>
+            <CardBody className="flex flex-col gap-3">
+              <h2 className="font-semibold text-ink">Race Telemetry</h2>
+              <dl className="flex flex-col gap-2 text-sm">
+                <Tele label="Winning Time" value={fmtMs(results.winningTimeMs)} />
+                <Tele label="Track Condition" value={results.trackCondition ?? "\u2014"} />
+                <Tele label="Track Bias" value={results.trackBias ?? "\u2014"} />
+              </dl>
+            </CardBody>
+          </Card>}
       </aside>
     </div>;
+}
+function LockBanner({ isOfficial }) {
+  return <div className="flex items-start gap-3 rounded-2xl border border-brand-200 bg-brand-50 p-4">
+      <Lock size={18} className="mt-0.5 shrink-0 text-brand-700" />
+      <div>
+        <h2 className="font-semibold text-ink">
+          {isOfficial ? "Results certified" : "Report submitted"}
+        </h2>
+        <p className="mt-0.5 text-sm text-muted">
+          {isOfficial ? "These results are certified OFFICIAL and can no longer be edited." : "Report submitted \u2014 awaiting admin certification. You can no longer edit the order of finish."}
+        </p>
+      </div>
+    </div>;
+}
+function ResultsGrid({
+  entries,
+  rows,
+  setCell
+}) {
+  return <div className="overflow-x-auto">
+      <table className="w-full text-sm">
+        <thead>
+          <tr className="border-b border-border text-left text-xs uppercase tracking-wide text-muted">
+            <th className="px-2 py-2">PGM</th>
+            <th className="px-2 py-2">Horse</th>
+            <th className="px-2 py-2 w-28">Position</th>
+            <th className="px-2 py-2 w-32">Time (s)</th>
+          </tr>
+        </thead>
+        <tbody>
+          {entries.map((e) => <tr key={e.entryId} className="border-b border-border/60">
+              <td className="px-2 py-2 tabular-nums text-muted">{e.entryNo ?? "\u2014"}</td>
+              <td className="px-2 py-2 font-medium text-ink">{e.horseName}</td>
+              <td className="px-2 py-1.5">
+                <Input
+    type="number"
+    min={1}
+    value={rows[e.entryId]?.pos ?? ""}
+    onChange={(ev) => setCell(e.entryId, "pos", ev.target.value)}
+    placeholder="—"
+  />
+              </td>
+              <td className="px-2 py-1.5">
+                <Input
+    type="number"
+    step="0.01"
+    value={rows[e.entryId]?.sec ?? ""}
+    onChange={(ev) => setCell(e.entryId, "sec", ev.target.value)}
+    placeholder="opt."
+  />
+              </td>
+            </tr>)}
+        </tbody>
+      </table>
+    </div>;
+}
+function PublishPanel({ raceId, buildPayload }) {
+  const toast = useToast();
+  const requestCode = useRequestRefereeCode(raceId);
+  const submit = useSubmitReport(raceId);
+  const [otp, setOtp] = useState("");
+  useEffect(() => setOtp(""), [raceId]);
+  function onRequest() {
+    requestCode.mutate(void 0, {
+      onSuccess: () => toast.success("Code sent to your email"),
+      onError: (err) => toast.error(errorMessage(err))
+    });
+  }
+  function onPublish() {
+    const results = buildPayload();
+    if (results.length === 0) return toast.error("Enter at least one finish position");
+    if (!otp.trim()) return toast.error("Enter the code sent to your email");
+    submit.mutate(
+      { otp: otp.trim(), results, violations: [] },
+      {
+        onSuccess: () => toast.success("Report submitted \u2014 awaiting admin certification"),
+        onError: (err) => toast.error(errorMessage(err))
+      }
+    );
+  }
+  return <div className="rounded-2xl border border-brand-200 bg-brand-50 p-4">
+      <div className="flex items-center gap-2">
+        <Mail size={16} className="text-brand-700" />
+        <h2 className="font-semibold text-ink">Publish report</h2>
+      </div>
+      <p className="mt-1 text-xs text-muted">
+        Publishing files the order of finish for admin certification. Request a one-time code — we email it to your
+        verified address — then enter it below to publish.
+      </p>
+      <div className="mt-3 grid items-end gap-3 sm:grid-cols-[1fr_auto]">
+        <Input
+    label="One-time code"
+    value={otp}
+    onChange={(e) => setOtp(e.target.value)}
+    placeholder="6-digit code"
+    inputMode="numeric"
+  />
+        <Button variant="secondary" loading={requestCode.isPending} onClick={onRequest}>
+          Request code
+        </Button>
+      </div>
+      <div className="mt-3 flex justify-end">
+        <Button loading={submit.isPending} disabled={!otp.trim()} onClick={onPublish}>
+          Publish report
+        </Button>
+      </div>
+    </div>;
+}
+function AdminSavePanel({ raceId, buildPayload }) {
+  const toast = useToast();
+  const record = useRecordResults(raceId);
+  function save() {
+    const results = buildPayload();
+    if (results.length === 0) return toast.error("Enter at least one finish position");
+    record.mutate(
+      { results },
+      {
+        onSuccess: () => toast.success("Results saved (provisional)"),
+        onError: (err) => toast.error(errorMessage(err))
+      }
+    );
+  }
+  return <div className="flex items-center justify-between gap-3 rounded-2xl border border-border bg-subtle/40 p-4">
+      <p className="text-xs text-muted">Admin override — save results without an OTP.</p>
+      <Button loading={record.isPending} onClick={save}>
+        Save results
+      </Button>
+    </div>;
+}
+function FinishTable({
+  raceId,
+  results,
+  canDelete,
+  canInquiry
+}) {
+  const toast = useToast();
+  const del = useDeleteResult(raceId);
+  const inquiry = useFlagInquiry(raceId);
+  const [confirmId, setConfirmId] = useState(null);
+  const showActions = canDelete || canInquiry;
+  function remove(resultId) {
+    del.mutate(resultId, {
+      onSuccess: () => {
+        toast.success("Result removed");
+        setConfirmId(null);
+      },
+      onError: (err) => toast.error(errorMessage(err))
+    });
+  }
+  function raise(resultId) {
+    inquiry.mutate(resultId, {
+      onSuccess: () => toast.success("Result flagged for review"),
+      onError: (err) => toast.error(errorMessage(err))
+    });
+  }
+  return <div className="overflow-x-auto">
+      <table className="w-full text-sm">
+        <thead>
+          <tr className="border-b border-border text-left text-xs uppercase tracking-wide text-muted">
+            <th className="px-2 py-2">Rank</th>
+            <th className="px-2 py-2">PGM</th>
+            <th className="px-2 py-2">Horse</th>
+            <th className="px-2 py-2">Jockey</th>
+            <th className="px-2 py-2 text-right">Time</th>
+            {showActions && <th className="px-2 py-2 text-right">Action</th>}
+          </tr>
+        </thead>
+        <tbody>
+          {results.order.map((o) => <tr key={o.resultId} className="border-b border-border/60">
+              <td className="px-2 py-2 font-semibold tabular-nums text-ink">{o.finishPosition ?? "\u2014"}</td>
+              <td className="px-2 py-2 tabular-nums text-muted">{o.entryNo ?? "\u2014"}</td>
+              <td className="px-2 py-2 font-medium text-ink">
+                <span className="inline-flex items-center gap-2">
+                  {o.horseName}
+                  {o.officialityStatus === "UNDER_REVIEW" && <Badge tone="info">Under Review</Badge>}
+                </span>
+              </td>
+              <td className="px-2 py-2 text-muted">{o.jockeyName ?? "\u2014"}</td>
+              <td className="px-2 py-2 text-right tabular-nums text-ink">{fmtMs(o.finishTimeMs)}</td>
+              {showActions && <td className="px-2 py-2 text-right">
+                  {confirmId === o.resultId ? <span className="inline-flex items-center gap-1">
+                      <Button variant="danger" size="sm" loading={del.isPending} onClick={() => remove(o.resultId)}>
+                        Delete
+                      </Button>
+                      <Button variant="ghost" size="sm" onClick={() => setConfirmId(null)}>
+                        Keep
+                      </Button>
+                    </span> : <span className="inline-flex items-center justify-end gap-3">
+                      {canInquiry && o.officialityStatus !== "UNDER_REVIEW" && <button
+    type="button"
+    onClick={() => raise(o.resultId)}
+    disabled={inquiry.isPending}
+    className="inline-flex items-center gap-1 text-xs text-brand-700 hover:underline disabled:opacity-50"
+  >
+                          <ShieldQuestion size={13} /> Raise inquiry
+                        </button>}
+                      {canDelete && <button
+    type="button"
+    onClick={() => setConfirmId(o.resultId)}
+    className="inline-flex items-center gap-1 text-xs text-danger hover:underline"
+  >
+                          <Trash2 size={13} /> Remove
+                        </button>}
+                    </span>}
+                </td>}
+            </tr>)}
+        </tbody>
+      </table>
+    </div>;
+}
+function AdminCertificationNote({ isOfficial }) {
+  return <Card>
+      <CardBody className="flex flex-col gap-2">
+        <h2 className="inline-flex items-center gap-2 font-semibold text-ink">
+          <BadgeCheck size={16} className={isOfficial ? "text-success" : "text-muted"} /> Certification
+        </h2>
+        {isOfficial ? <p className="text-sm text-success">These results are certified OFFICIAL.</p> : <p className="text-sm text-muted">
+            Your results are provisional. An <strong>admin</strong> reviews and certifies them as official —
+            owners are notified once published.
+          </p>}
+      </CardBody>
+    </Card>;
 }
 function Tele({ label, value }) {
   return <div className="flex items-center justify-between gap-3">
@@ -191,7 +444,7 @@ function ActiveInquiry({ raceId }) {
     return <Card>
         <CardBody>
           <h2 className="font-semibold text-ink">Inquiries</h2>
-          <p className="mt-2 text-sm text-muted">No active inquiries. Clear to certify.</p>
+          <p className="mt-2 text-sm text-muted">No active inquiries.</p>
         </CardBody>
       </Card>;
   }
@@ -247,78 +500,14 @@ function ActiveInquiry({ raceId }) {
         </div>}
     </div>;
 }
-function CertifyCard({ raceId, disabled }) {
-  const toast = useToast();
-  const certify = useCertifyResults(raceId);
-  const [report, setReport] = useState("");
-  const [pin, setPin] = useState("");
-  const [ack, setAck] = useState(false);
-  function submit() {
-    certify.mutate(
-      { chiefStewardPin: pin, acknowledgeInquiriesResolved: ack, stewardsReport: report.trim() || void 0 },
-      {
-        onSuccess: () => toast.success("Results certified official"),
-        onError: (err) => toast.error(errorMessage(err))
-      }
-    );
-  }
-  return <div className="grid gap-6 md:grid-cols-2">
-      <Card>
-        <CardBody className="flex flex-col gap-2">
-          <h2 className="font-semibold text-ink">Official Stewards Report</h2>
-          <p className="text-xs text-muted">Appended to the permanent race record.</p>
-          <Textarea
-    rows={6}
-    value={report}
-    onChange={(e) => setReport(e.target.value)}
-    placeholder="Summarize the race, any inquiries, and the official outcome…"
-    disabled={disabled}
-  />
-        </CardBody>
-      </Card>
-      <Card>
-        <CardBody className="flex flex-col gap-3">
-          <h2 className="font-semibold text-ink">Final Certification</h2>
-          <p className="text-xs text-muted">
-            Certifying makes the results <strong>OFFICIAL</strong> (admin / RESULT_PUBLISH). Requires the chief
-            steward PIN and confirmation that all inquiries are resolved.
-          </p>
-          <Input
-    label="Chief Steward Signature (PIN)"
-    type="password"
-    value={pin}
-    onChange={(e) => setPin(e.target.value)}
-    placeholder="••••"
-    disabled={disabled}
-  />
-          <label className="flex items-start gap-2 text-sm text-ink">
-            <input
-    type="checkbox"
-    checked={ack}
-    onChange={(e) => setAck(e.target.checked)}
-    disabled={disabled}
-    className="mt-0.5 h-4 w-4 rounded border-border text-brand-700 focus:ring-brand-500"
-  />
-            I acknowledge that all pending inquiries are resolved and the photofinish has been verified.
-          </label>
-          <Button
-    leftIcon={<BadgeCheck size={16} />}
-    loading={certify.isPending}
-    disabled={disabled || !pin.trim() || !ack}
-    onClick={submit}
-  >
-            {disabled ? "Already certified" : "Certify Official Results"}
-          </Button>
-        </CardBody>
-      </Card>
-    </div>;
-}
 function errorMessage(err) {
   if (isAxiosError(err)) {
+    const data = err.response?.data;
+    if (data?.message) return data.message;
     const s = err.response?.status;
-    if (s === 403) return "Only an admin can certify official results.";
-    if (s === 400) return "Certification blocked \u2014 resolve open inquiries or check the PIN.";
-    if (s === 409) return "These results are already official.";
+    if (s === 429) return "Too many code requests \u2014 please wait a moment before retrying.";
+    if (s === 403) return "You are not authorised to file this report.";
+    if (s === 400) return "Check your entries and the one-time code.";
   }
   return "Something went wrong. Please try again.";
 }
