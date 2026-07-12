@@ -26,12 +26,19 @@ import TournamentManagement from './pages/Admin/TournamentManagement';
 import RaceManagement from './pages/Admin/RaceManagement';
 import RaceApproval from './pages/Admin/RaceApproval';
 import ResultsPredictions from './pages/Admin/ResultsPredictions';
+import AdminDashboardV2 from '@/features/admin/pages/AdminDashboardPage';
+import AdminHorseManagement from '@/features/admin/pages/HorseManagementPage';
+import AdminJockeyManagement from '@/features/admin/pages/JockeyManagementPage';
+import AdminTournamentOrchestration from '@/features/admin/pages/TournamentOrchestrationPage';
+import AdminStaffingV2 from '@/features/admin/pages/StaffingPage';
 import Overview from './pages/Owner/Overview';
 import StableManagement from './pages/Owner/StableManagement';
 import JockeyMarket from './pages/Owner/JockeyMarket';
 import JockeyDetail from './pages/Owner/JockeyDetail';
 import OwnerRegistrations from './pages/Owner/OwnerRegistrations';
 import OwnerRaceSchedule from './pages/Owner/RaceSchedule';
+import OwnerUploadDocuments from '@/features/owner/pages/UploadDocumentsPage';
+import ConfirmParticipation from '@/features/owner/pages/ConfirmParticipationPage';
 import MyInvitationsPage from '@/features/jockey/pages/MyInvitationsPage'; // For Owner
 import JockeyDashboardPage from '@/features/jockey/pages/JockeyDashboardPage';
 import JockeyInvitationsPage from '@/features/jockey/pages/JockeyInvitationsPage';
@@ -43,6 +50,7 @@ import RegistrationManagement from '@/features/referee/pages/RegistrationManagem
 import PreRaceInspection from '@/features/referee/pages/PreRaceInspectionPage';
 import RefereeDashboard from '@/features/referee/pages/RefereeDashboardPage';
 import LiveRaceMonitor from '@/features/referee/pages/LiveRaceMonitorPage';
+import DocumentReview from '@/features/referee/pages/DocumentReviewPage';
 import NotificationsCenter from './pages/shared/NotificationsCenter';
 import UserProfile from './pages/shared/UserProfile';
 import ViolationManagement from '@/features/referee/pages/ViolationsPage';
@@ -94,6 +102,8 @@ export default function App() {
             <Route path="/owner/jockey-market/:jockeyId" element={<JockeyDetail />} />
             <Route path="/owner/registrations" element={<OwnerRegistrations />} />
             <Route path="/owner/race-schedule" element={<OwnerRaceSchedule />} />
+            <Route path="/owner/documents" element={<OwnerUploadDocuments />} />
+            <Route path="/owner/races/:raceId/confirm" element={<ConfirmParticipation />} />
 
             {/* Backward-compatible owner routes */}
             <Route path="/owner-dashboard" element={<Overview />} />
@@ -132,6 +142,7 @@ export default function App() {
           <Route element={<DashboardLayout />}>
             <Route path="/referee/dashboard" element={<RefereeDashboard />} />
             <Route path="/referee/registration" element={<RegistrationManagement />} />
+            <Route path="/referee/document-review" element={<DocumentReview />} />
             <Route path="/referee/inspection" element={<PreRaceInspection />} />
             <Route path="/referee/pre-race-inspection" element={<PreRaceInspection />} />
             <Route path="/referee/document-review" element={<DocumentReviewPage />} />
@@ -149,13 +160,15 @@ export default function App() {
         <Route element={<ProtectedRoute roles={['Admin']} />}>
           <Route element={<AdminLayout />}>
             <Route path="/admin" element={<AdminDashboard />} />
-            <Route path="/admin/dashboard" element={<AdminDashboard />} />
+            <Route path="/admin/dashboard" element={<AdminDashboardV2 />} />
             <Route path="/admin/users" element={<UserManagement />} />
-            <Route path="/admin/tournaments" element={<TournamentManagement />} />
+            <Route path="/admin/horses" element={<AdminHorseManagement />} />
+            <Route path="/admin/jockeys" element={<AdminJockeyManagement />} />
+            <Route path="/admin/tournaments" element={<AdminTournamentOrchestration />} />
             <Route path="/admin/races" element={<RaceManagement />} />
             <Route path="/admin/race-approval" element={<RaceApproval />} />
             <Route path="/admin/results" element={<ResultsPredictions />} />
-            <Route path="/admin/staffing" element={<StaffingManagement />} />
+            <Route path="/admin/staffing" element={<AdminStaffingV2 />} />
             <Route path="/admin/settings" element={<Settings />} />
           </Route>
         </Route>

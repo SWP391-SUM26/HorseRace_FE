@@ -1,7 +1,9 @@
 import { useState } from "react";
-import { Check, X } from "lucide-react";
+import { Check, X, FileText, Trash2 } from "lucide-react";
+import { useRegistrationAttachments } from "@/features/registrations/hooks";
 import { isAxiosError } from "axios";
 import { PageHeader } from "@/common/components/PageHeader";
+import { DocumentViewerModal, useDocumentViewer } from "@/common/components/DocumentViewerModal";
 import {
   Avatar,
   Badge,
@@ -21,6 +23,7 @@ import { cn } from "@/common/lib/cn";
 import { downloadCsv } from "@/common/lib/csv";
 import {
   useApproveRegistration,
+  useDeleteRegistration,
   useHorseVerification,
   useRegistrations,
   useRegistrationStats,
@@ -33,7 +36,8 @@ const STATUS_TONE = {
   SUBMITTED: "warning",
   UNDER_REVIEW: "warning",
   DRAFT: "neutral",
-  WITHDRAWN: "neutral"
+  WITHDRAWN: "neutral",
+  REMOVED: "neutral"
 };
 const REVIEWABLE = ["SUBMITTED", "UNDER_REVIEW"];
 function RegistrationManagementPage() {
@@ -48,6 +52,8 @@ function RegistrationManagementPage() {
   const listQuery = useRegistrations({ q: q || void 0, status: status || void 0, page });
   const approve = useApproveRegistration();
   const reject = useRejectRegistration();
+  const remove = useDeleteRegistration();
+  const viewer = useDocumentViewer();
   const stats = statsQuery.data;
   const rows = listQuery.data?.rows ?? [];
   const totalPages = listQuery.data?.totalPages ?? 1;
@@ -92,6 +98,16 @@ function RegistrationManagementPage() {
       }
     );
   }
+  function handleRemove() {
+    if (!selected) return;
+    remove.mutate(selected.registrationId, {
+      onSuccess: () => {
+        toast.success("Registration removed");
+        setSelected(null);
+      },
+      onError: (err) => toast.error(errorMessage(err))
+    });
+  }
   return <>
       <PageHeader
     title="Registration Management"
@@ -116,7 +132,7 @@ function RegistrationManagementPage() {
       {
     /* KPI row */
   }
-      <div className="grid gap-4 sm:grid-cols-4">
+      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
         {statsQuery.isPending || !stats ? Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-24 w-full rounded-2xl" />) : <>
             <StatCard label="Total" value={stats.total} />
             <StatCard label="Pending Approval" value={stats.pending} hint="Awaiting review" />
@@ -129,7 +145,7 @@ function RegistrationManagementPage() {
     /* Filters */
   }
       <div className="mt-6 flex flex-wrap items-end gap-3">
-        <div className="w-64">
+        <div className="w-full sm:w-64">
           <Input
     label="Search"
     placeholder="ID, horse, or owner…"
@@ -140,7 +156,7 @@ function RegistrationManagementPage() {
     }}
   />
         </div>
-        <div className="w-48">
+        <div className="w-full sm:w-48">
           <Select
     label="Status"
     options={REGISTRATION_STATUS_FILTERS}
@@ -153,7 +169,7 @@ function RegistrationManagementPage() {
         </div>
       </div>
 
-      <div className="mt-4 grid gap-6 lg:grid-cols-3">
+      <div className="mt-4 grid gap-6 grid-cols-1 lg:grid-cols-3">
         {
     /* LEFT — list */
   }
@@ -216,10 +232,14 @@ function RegistrationManagementPage() {
   }
         <aside>
           <VerificationPanel
+    key={selected?.registrationId ?? "none"}
     registration={selected}
     approving={approve.isPending}
+    removing={remove.isPending}
     onApprove={() => selected && handleApprove(selected.registrationId)}
     onReject={() => setRejectOpen(true)}
+    onRemove={handleRemove}
+    onView={viewer.view}
   />
         </aside>
       </div>
@@ -245,17 +265,24 @@ function RegistrationManagementPage() {
     onChange={(e) => setReason(e.target.value)}
   />
       </Modal>
+
+      <DocumentViewerModal {...viewer.modalProps} />
     </>;
 }
 function VerificationPanel({
   registration,
   approving,
+  removing,
   onApprove,
-  onReject
+  onReject,
+  onRemove,
+  onView
 }) {
   const verify = useHorseVerification(registration?.horseId ?? null);
+  const dossier = useRegistrationAttachments(registration?.registrationId ?? null);
   const reviewable = registration ? REVIEWABLE.includes(registration.status) : false;
   const [notes, setNotes] = useState("");
+  const [removeConfirm, setRemoveConfirm] = useState(false);
   return <Card>
       <CardBody className="flex flex-col gap-5">
         <h2 className="font-semibold text-ink">Horse Verification</h2>
@@ -287,6 +314,20 @@ function VerificationPanel({
                 <Eligibility label="Fitness Certification" ok={verify.data.fitnessCertified === true} />
                 <Eligibility label="Passport Scan" ok={verify.data.passportScanStatus === "VALID"} />
               </ul>
+            </div>
+            <div>
+              <p className="text-xs font-medium uppercase tracking-wide text-muted">Submitted Dossier</p>
+              {dossier.isPending ? <p className="mt-2 text-sm text-muted">Loading…</p> : !dossier.data || dossier.data.length === 0 ? <p className="mt-2 text-sm text-muted">No dossier files attached.</p> : <ul className="mt-2 flex flex-col gap-1.5">
+                  {dossier.data.map((f) => <li key={f.attachmentId}>
+                      <button
+    type="button"
+    onClick={() => onView(`/attachments/${f.attachmentId}/download`, f.fileName)}
+    className="flex w-full items-center gap-2 text-left text-sm text-brand-700 hover:underline"
+  >
+                        <FileText size={14} className="shrink-0" /> <span className="truncate">{f.fileName}</span>
+                      </button>
+                    </li>)}
+                </ul>}
             </div>
             <div>
               <p className="text-xs font-medium uppercase tracking-wide text-muted">Referee Notes</p>
@@ -322,6 +363,32 @@ function VerificationPanel({
             {!reviewable && <p className="text-xs text-muted">
                 This registration is {registration.status.toLowerCase()} — no action available.
               </p>}
+
+            {
+    /* Soft-remove (referee/admin) — hides the registration from the active list. */
+  }
+            <div className="border-t border-border pt-3">
+              {removeConfirm ? <div className="flex flex-wrap items-center justify-between gap-2">
+                  <span className="text-xs text-muted">Remove this registration?</span>
+                  <span className="inline-flex gap-2">
+                    <Button variant="danger" size="sm" loading={removing} onClick={onRemove}>
+                      Delete
+                    </Button>
+                    <Button variant="ghost" size="sm" disabled={removing} onClick={() => setRemoveConfirm(false)}>
+                      Keep
+                    </Button>
+                  </span>
+                </div> : <Button
+    variant="ghost"
+    size="sm"
+    className="text-danger hover:bg-danger/10"
+    leftIcon={<Trash2 size={14} />}
+    disabled={registration.status === "REMOVED"}
+    onClick={() => setRemoveConfirm(true)}
+  >
+                  Remove registration
+                </Button>}
+            </div>
           </>}
       </CardBody>
     </Card>;

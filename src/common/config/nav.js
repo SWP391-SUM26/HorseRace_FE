@@ -10,13 +10,14 @@ import {
   Mail,
   UserCog,
   ShieldCheck,
-  Eye,
   CalendarDays,
   Coins,
-  Radio,
   BarChart3,
-  FileText
+  FileText,
+  Radio,
+  UserSquare
 } from "lucide-react";
+
 const HorseIcon = Rabbit;
 
 const ROLE_NAV = {
@@ -25,7 +26,8 @@ const ROLE_NAV = {
       { label: "Overview", to: "/owner/overview", icon: LayoutDashboard },
       { label: "Stable Management", to: "/owner/stable", icon: HorseIcon },
       { label: "Jockey Market", to: "/owner/jockey-market", icon: Users },
-      { label: "Race Schedule", to: "/owner/race-schedule", icon: CalendarDays },
+      { label: "Race Calendar", to: "/owner/race-schedule", icon: CalendarDays },
+      { label: "My Documents", to: "/owner/documents", icon: FileText },
       { label: "Profile", to: "/profile", icon: UserCog }
     ],
     topbar: [
@@ -49,13 +51,13 @@ const ROLE_NAV = {
   RACE_REFEREE: {
     sidebar: [
       { label: "Dashboard", to: "/referee/dashboard", icon: LayoutDashboard },
-      { label: "Inspection", to: "/referee/pre-race-inspection", icon: ShieldCheck },
+      { label: "Pre-Race Inspection", to: "/referee/pre-race-inspection", icon: ShieldCheck },
       { label: "Document Review", to: "/referee/document-review", icon: FileText },
+      { label: "Race Assignments", to: "/referee/race-assignments", icon: CalendarDays },
       { label: "Live Monitor", to: "/referee/live-monitor", icon: Radio },
       { label: "Results", to: "/referee/race-result-recording", icon: Flag },
       { label: "Violations", to: "/referee/violations", icon: ClipboardList },
-      { label: "Race Assignments", to: "/referee/race-assignments", icon: CalendarDays },
-      { label: "Registrations", to: "/referee/registration", icon: Users }
+      { label: "Race Reports", to: "/referee/reports", icon: FileText }
     ],
     topbar: []
   },
@@ -63,38 +65,33 @@ const ROLE_NAV = {
     sidebar: [
       { label: "Dashboard", to: "/admin/dashboard", icon: LayoutDashboard },
       { label: "User Management", to: "/admin/users", icon: Users },
+      { label: "Horses", to: "/admin/horses", icon: HorseIcon },
+      { label: "Jockeys", to: "/admin/jockeys", icon: UserSquare },
       { label: "Tournaments", to: "/admin/tournaments", icon: Trophy },
-      { label: "Race Management", to: "/admin/races", icon: Flag },
+      { label: "Race Management", to: "/admin/races", icon: CalendarDays },
       { label: "Race Approval", to: "/admin/race-approval", icon: ClipboardList },
-      { label: "Results & Predictions", to: "/admin/results", icon: BarChart3 },
+      { label: "Results & Predictions", to: "/admin/results", icon: FileText },
+      { label: "Staffing", to: "/admin/staffing", icon: UserCog },
       { label: "Settings", to: "/admin/settings", icon: UserCog }
     ],
     topbar: []
   },
   SPECTATOR: {
     sidebar: [
-      { label: "Lobby", to: "/spectator-dashboard", icon: LayoutDashboard },
-      { label: "Race Schedule", to: "/spectator/schedule", icon: CalendarDays },
+      { label: "Live Races", to: "/spectator/live-races", icon: LayoutDashboard },
       { label: "Predictions", to: "/spectator/predictions", icon: Coins },
-      { label: "Rewards", to: "/spectator/rewards", icon: Trophy },
-      { label: "Tournaments", to: "/spectator/tournaments", icon: Trophy },
-      { label: "Live Races", to: "/spectator/live-races", icon: Radio }
+      { label: "Rewards", to: "/spectator/rewards", icon: Trophy }
     ],
     topbar: [
-      { label: "Live Races", to: "/spectator-dashboard" },
+      { label: "Live Races", to: "/spectator/live-races" },
       { label: "Predictions", to: "/spectator/predictions" },
       { label: "Rewards", to: "/spectator/rewards" }
     ]
   }
 };
 
-ROLE_NAV.OWNER = ROLE_NAV.HORSE_OWNER;
-
 function roleWord(role) {
-  return ROLE_LABELS[role] || ROLE_LABELS.HORSE_OWNER;
+  return role === "HORSE_OWNER" ? "Owner" : ROLE_LABELS[role];
 }
 
-export {
-  ROLE_NAV,
-  roleWord
-};
+export { ROLE_NAV, roleWord };

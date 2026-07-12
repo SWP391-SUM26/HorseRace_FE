@@ -9,6 +9,22 @@ function normalizeArray(payload) {
   return payload?.items || payload?.content || payload?.data?.content || payload?.data || [];
 }
 
+function normalizeRaceResults(payload) {
+  if (Array.isArray(payload)) return payload;
+  if (Array.isArray(payload?.order)) return payload.order;
+  if (Array.isArray(payload?.results)) return payload.results;
+  if (Array.isArray(payload?.content)) return payload.content;
+  if (Array.isArray(payload?.data?.order)) return payload.data.order;
+  if (Array.isArray(payload?.data?.results)) return payload.data.results;
+  if (Array.isArray(payload?.data?.content)) return payload.data.content;
+  return [];
+}
+
+function isResultReadyRace(race) {
+  const status = String(race.status || race.raceStatus || race.officialityStatus || "").toUpperCase();
+  return ["FINISHED", "OFFICIAL", "COMPLETED"].includes(status);
+}
+
 export default function ResultsPredictions() {
   const [races, setRaces] = useState([]);
   const [selectedRaceId, setSelectedRaceId] = useState("");
@@ -24,23 +40,33 @@ export default function ResultsPredictions() {
     async function loadInitialData() {
       setLoading(true);
       setError("");
-      try {
-        const [raceData, predictionData] = await Promise.all([
-          getRaceList({ page: 1, pageSize: 100, sortBy: "scheduledStartAt", sortOrder: "desc" }),
-          getPredictionList(),
-        ]);
-        if (!mounted) return;
+      const errors = [];
+      const [raceResult, predictionResult] = await Promise.allSettled([
+        getRaceList({ page: 1, pageSize: 100, sortBy: "scheduledStartAt", sortOrder: "desc" }),
+        getPredictionList(),
+      ]);
 
+      if (!mounted) return;
+
+      if (raceResult.status === "fulfilled") {
+        const raceData = raceResult.value;
         const nextRaces = raceData?.items || [];
         setRaces(nextRaces);
-        setPredictions(normalizeArray(predictionData));
-        setSelectedRaceId(nextRaces[0]?.raceId || nextRaces[0]?.id || "");
-      } catch (requestError) {
-        if (!mounted) return;
-        setError(requestError?.response?.data?.message || requestError.message || "Unable to load results and predictions.");
-      } finally {
-        if (mounted) setLoading(false);
+        const defaultRace = nextRaces.find(isResultReadyRace) || nextRaces[0];
+        setSelectedRaceId(defaultRace?.raceId || defaultRace?.id || "");
+      } else {
+        errors.push(raceResult.reason?.response?.data?.message || raceResult.reason?.message || "Unable to load races.");
       }
+
+      if (predictionResult.status === "fulfilled") {
+        setPredictions(normalizeArray(predictionResult.value));
+      } else {
+        setPredictions([]);
+        errors.push(predictionResult.reason?.response?.data?.message || predictionResult.reason?.message || "Unable to load predictions.");
+      }
+
+      setError(errors.join(" "));
+      setLoading(false);
     }
 
     loadInitialData();
@@ -61,7 +87,7 @@ export default function ResultsPredictions() {
       setDetailLoading(true);
       try {
         const data = await getRaceResults(selectedRaceId);
-        if (mounted) setResults(normalizeArray(data));
+        if (mounted) setResults(normalizeRaceResults(data));
       } catch {
         if (mounted) setResults([]);
       } finally {
@@ -115,7 +141,7 @@ export default function ResultsPredictions() {
             >
               {races.map((race) => (
                 <option key={race.raceId || race.id} value={race.raceId || race.id}>
-                  {race.name || race.raceCode}
+                  {race.name || race.raceName || race.raceCode} {isResultReadyRace(race) ? `(${race.status || race.raceStatus})` : ""}
                 </option>
               ))}
             </select>
@@ -161,7 +187,7 @@ export default function ResultsPredictions() {
           <div className="mb-4 flex items-center justify-between gap-3">
             <div>
               <h2 className="text-lg font-semibold text-ink">Prediction Activity</h2>
-              <p className="text-sm text-muted">Loaded from GET /api/v1/predictions/me. Backend returns the current user's prediction history.</p>
+              <p className="text-sm text-muted">Loaded from the backend prediction API. If admin list access is unavailable, it falls back to current-user history.</p>
             </div>
             <Button type="button" variant="secondary" onClick={() => window.location.reload()}>Refresh</Button>
           </div>
