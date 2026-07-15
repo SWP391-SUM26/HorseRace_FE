@@ -7,13 +7,13 @@ import {
 } from 'react-router-dom';
 
 import HomePage from './pages/HomePage';
-import LoginPage from './pages/auth/LoginPage';
-import JockeyRegistrationPage from './pages/auth/JockeyRegistrationPage';
-import OwnerRegistrationPage from './pages/auth/OwnerRegistrationPage';
-import SpectatorRegistrationPage from './pages/auth/SpectatorRegistrationPage';
-import ForgotPasswordPage from './pages/auth/ForgotPasswordPage';
-import ResetPasswordPage from './pages/auth/ResetPasswordPage';
-import VerifyEmailPage from './pages/auth/VerifyEmailPage';
+import LoginPage from '@/features/auth/pages/LoginPage';
+import JockeyRegistrationPage from '@/features/auth/pages/JockeyRegistrationPage';
+import OwnerRegistrationPage from '@/features/auth/pages/OwnerRegistrationPage';
+import SpectatorRegistrationPage from '@/features/auth/pages/SpectatorRegistrationPage';
+import ForgotPasswordPage from '@/features/auth/pages/ForgotPasswordPage';
+import ResetPasswordPage from '@/features/auth/pages/ResetPasswordPage';
+import VerifyEmailPage from '@/features/auth/pages/VerifyEmailPage';
 import { Toaster } from 'react-hot-toast';
 import ProtectedRoute from './components/ProtectedRoute';
 import { DashboardLayout } from '@/common/layouts/DashboardLayout';
@@ -39,8 +39,6 @@ import JockeyMarket from './pages/Owner/JockeyMarket';
 import JockeyDetail from './pages/Owner/JockeyDetail';
 import OwnerRegistrations from './pages/Owner/OwnerRegistrations';
 import OwnerRaceSchedule from './pages/Owner/RaceSchedule';
-import OwnerUploadDocuments from '@/features/owner/pages/UploadDocumentsPage';
-import ConfirmParticipation from '@/features/owner/pages/ConfirmParticipationPage';
 import MyInvitationsPage from '@/features/jockey/pages/MyInvitationsPage'; // For Owner
 import JockeyDashboardPage from '@/features/jockey/pages/JockeyDashboardPage';
 import JockeyInvitationsPage from '@/features/jockey/pages/JockeyInvitationsPage';
@@ -52,21 +50,20 @@ import RegistrationManagement from '@/features/referee/pages/RegistrationManagem
 import PreRaceInspection from '@/features/referee/pages/PreRaceInspectionPage';
 import RefereeDashboard from '@/features/referee/pages/RefereeDashboardPage';
 import LiveRaceMonitor from '@/features/referee/pages/LiveRaceMonitorPage';
-import DocumentReview from '@/features/referee/pages/DocumentReviewPage';
 import NotificationsCenter from './pages/shared/NotificationsCenter';
 import UserProfile from './pages/shared/UserProfile';
 import ViolationManagement from '@/features/referee/pages/ViolationsPage';
 import RaceResultRecording from '@/features/referee/pages/RaceResultsPage';
 import MyRaceAssignmentsPage from '@/features/referee/pages/MyRaceAssignmentsPage';
-import DocumentReviewPage from '@/features/referee/pages/DocumentReviewPage';
-import OfficialReports from './pages/Referee/OfficialReports';
+import TournamentInvitationsPage from '@/features/referee/pages/TournamentInvitationsPage';
+import RaceReportPage from '@/features/races/pages/RaceReportPage';
 import Settings from './pages/Admin/Settings';
 import { SpectatorLayout } from '@/common/layouts/SpectatorLayout';
 import SpectatorHubPage from '@/features/spectator/pages/SpectatorHubPage';
 import PredictionsPage from '@/features/spectator/pages/PredictionsPage';
 import RewardsPage from '@/features/spectator/pages/RewardsPage';
 import SpectatorLivePage from '@/features/spectator/pages/SpectatorLivePage';
-import Schedule from './pages/Spectator/Schedule';
+
 
 const OwnerPlaceholder = ({ title }) => (
   <div style={{ padding: '40px', textAlign: 'center', backgroundColor: '#ffffff', borderRadius: '12px', border: '1px solid #e2e8f0', boxShadow: '0 1px 3px rgba(0,0,0,0.02)' }}>
@@ -84,14 +81,24 @@ export default function App() {
         {/* HOME */}
         <Route path="/" element={<HomePage />} />
         <Route path="/login" element={<LoginPage />} />
+              <Route path="/register/jockey" element={<JockeyRegistrationPage />} />
         <Route path="/jockey-register" element={<JockeyRegistrationPage />} />
+        <Route path="/register/owner" element={<OwnerRegistrationPage />} />
         <Route path="/owner-register" element={<OwnerRegistrationPage />} />
+        <Route path="/register/spectator" element={<SpectatorRegistrationPage />} />
         <Route path="/spectator-register" element={<SpectatorRegistrationPage />} />
+        <Route path="/forgot" element={<ForgotPasswordPage />} />
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+        <Route path="/reset" element={<ResetPasswordPage />} />
         <Route path="/reset-password" element={<ResetPasswordPage />} />
         <Route path="/verify-email" element={<VerifyEmailPage />} />
         <Route element={<ProtectedRoute />}>
-          <Route path="/profile" element={<UserProfile />} />
+          <Route element={<DashboardLayout />}>
+            <Route path="/profile" element={<UserProfile />} />
+            <Route path="/app/notifications" element={<NotificationsPage />} />
+            <Route path="/wallet" element={<WalletPage />} />
+            <Route path="/wallet/return" element={<WalletReturnPage />} />
+          </Route>
         </Route>
 
         {/* DASHBOARDS */}
@@ -103,8 +110,6 @@ export default function App() {
             <Route path="/owner/jockey-market/:jockeyId" element={<JockeyDetail />} />
             <Route path="/owner/registrations" element={<OwnerRegistrations />} />
             <Route path="/owner/race-schedule" element={<OwnerRaceSchedule />} />
-            <Route path="/owner/documents" element={<OwnerUploadDocuments />} />
-            <Route path="/owner/races/:raceId/confirm" element={<ConfirmParticipation />} />
 
             {/* Backward-compatible owner routes */}
             <Route path="/owner-dashboard" element={<Overview />} />
@@ -132,27 +137,28 @@ export default function App() {
           <Route element={<SpectatorLayout />}>
             <Route path="/spectator-dashboard" element={<SpectatorHubPage />} />
             <Route path="/spectator/live-races" element={<SpectatorLivePage />} />
-            <Route path="/spectator/schedule" element={<Schedule />} />
             <Route path="/spectator/predictions" element={<PredictionsPage />} />
             <Route path="/spectator/rewards" element={<RewardsPage />} />
             <Route path="/spectator/notifications" element={<NotificationsCenter />} />
+            <Route path="/app/wallet" element={<WalletPage />} />
+            <Route path="/app/wallet/return" element={<WalletReturnPage />} />  
           </Route>
         </Route>
 
         <Route element={<ProtectedRoute roles={['Referee']} />}>
           <Route element={<DashboardLayout />}>
             <Route path="/referee/dashboard" element={<RefereeDashboard />} />
-            <Route path="/referee/registration" element={<RegistrationManagement />} />
-            <Route path="/referee/document-review" element={<DocumentReview />} />
             <Route path="/referee/inspection" element={<PreRaceInspection />} />
             <Route path="/referee/pre-race-inspection" element={<PreRaceInspection />} />
-            <Route path="/referee/document-review" element={<DocumentReviewPage />} />
-            <Route path="/referee/live-monitor" element={<LiveRaceMonitor />} />
-            <Route path="/referee/notifications" element={<NotificationsCenter />} />
-            <Route path="/referee/violations" element={<ViolationManagement />} />
             <Route path="/referee/race-result-recording" element={<RaceResultRecording />} />
-            <Route path="/referee/reports" element={<OfficialReports />} />
+            <Route path="/referee/violations" element={<ViolationManagement />} />
+            <Route path="/referee/reports" element={<RaceReportPage scope="referee" />} />
+            <Route path="/referee/invitations" element={<TournamentInvitationsPage />} />
             <Route path="/referee/race-assignments" element={<MyRaceAssignmentsPage />} />
+            <Route path="/referee/live-monitor" element={<LiveRaceMonitor />} />
+            <Route path="/referee/live-monitor/:raceId" element={<LiveRaceMonitor />} />
+            <Route path="/referee/notifications" element={<NotificationsCenter />} />
+            <Route path="/referee/registration" element={<RegistrationManagement />} />
             <Route path="/referee/settings" element={<Settings />} />
           </Route>
         </Route>

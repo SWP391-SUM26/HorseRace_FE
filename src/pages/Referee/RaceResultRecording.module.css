@@ -1,5 +1,0 @@
-.selector { margin-bottom: 18px; padding: 18px !important; }.selector label{display:grid;gap:7px;max-width:540px;color:#52627a;font-weight:700}.selector select{padding:11px;border:1px solid #cbd5e1;border-radius:8px}
-.card{padding:0!important;overflow:hidden}.header{display:flex;justify-content:space-between;align-items:center;padding:20px 24px;border-bottom:1px solid #e2e8f0}.header h2{margin:0}.header p{margin:6px 0 0;color:#64748b}
-.notice,.error{padding:14px 18px;color:#b54708;background:#fffaeb;border:1px solid #fedf89}.error{margin-bottom:14px;color:#b42318;background:#fff1f0;border-color:#fecdca}
-.card table{width:100%;border-collapse:collapse}.card th,.card td{padding:14px 18px;border-bottom:1px solid #edf2f7;text-align:left}.card th{color:#64748b;background:#f8fafc;font-size:11px}.card input{width:100%;padding:8px;border:1px solid #dbe3ee;border-radius:6px;background:#f8fafc}
-.actions{display:flex;justify-content:flex-end;padding:18px}.state{padding:40px;text-align:center;background:#fff;border:1px solid #dbe3ee;border-radius:12px;color:#64748b}

@@ -1,97 +1,135 @@
 import { useMemo } from "react";
-import { useMutation, useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  useMutation,
+  useQueries,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
 import {
   cancelPrediction,
   claimReward,
+  fetchLivePoolOdds,
   fetchMyPredictions,
   fetchPendingRewards,
   fetchRaceEntries,
   fetchRaceResults,
   fetchRewardHistory,
   fetchSpectatorRaces,
-  submitPrediction
+  submitPrediction,
 } from "./api";
-function useSpectatorRaces(query = {}, options = {}) {
+
+// ---------- Races ----------
+/**
+ * Race list. Pass `refetchInterval` to keep race status fresh while mounted (e.g. the live page,
+ * so a race flipping out of RUNNING actually stops the fast live poll).
+ */
+export function useSpectatorRaces(query = {}, options = {}) {
   return useQuery({
     queryKey: ["spectator", "races", query],
     queryFn: () => fetchSpectatorRaces(query),
-    refetchInterval: options.refetchInterval ?? false
+    refetchInterval: options.refetchInterval ?? false,
   });
 }
-function useRaceEntries(raceId) {
+export function useRaceEntries(raceId) {
   return useQuery({
     queryKey: ["spectator", "race-entries", raceId],
     queryFn: () => fetchRaceEntries(raceId),
-    enabled: !!raceId
+    enabled: !!raceId,
   });
 }
-function useEntryNames(raceIds) {
-  const uniqueIds = useMemo(() => [...new Set(raceIds.filter(Boolean))], [raceIds]);
+/**
+ * Resolve `entryId → horseName` across a set of races. Fires one entries query per
+ * unique `raceId` (sharing the `useRaceEntries` cache keys) and folds every race's
+ * runners into a single Map for display lookups — e.g. the prediction-history table,
+ * which only carries `predictedEntryId`, not the horse name.
+ */
+export function useEntryNames(raceIds) {
+  const uniqueIds = useMemo(
+    () => [...new Set(raceIds.filter(Boolean))],
+    [raceIds],
+  );
   return useQueries({
     queries: uniqueIds.map((raceId) => ({
       queryKey: ["spectator", "race-entries", raceId],
-      queryFn: () => fetchRaceEntries(raceId)
+      queryFn: () => fetchRaceEntries(raceId),
     })),
     combine: (results) => {
-      const map = /* @__PURE__ */ new Map();
+      const map = new Map();
       for (const r of results) {
         for (const e of r.data ?? []) {
           if (e.horseName) map.set(e.entryId, e.horseName);
         }
       }
       return map;
-    }
+    },
   });
 }
-function useRaceResults(raceId) {
+export function useRaceResults(raceId) {
   return useQuery({
     queryKey: ["spectator", "race-results", raceId],
     queryFn: () => fetchRaceResults(raceId),
-    enabled: !!raceId
+    enabled: !!raceId,
   });
 }
-function useMyPredictions() {
-  return useQuery({ queryKey: ["spectator", "predictions"], queryFn: fetchMyPredictions });
+/**
+ * Live estimated pari-mutuel pool odds for a race. Polls while mounted so the displayed
+ * "estimated" payouts keep moving as more money enters the pool.
+ */
+export function useLivePoolOdds(raceId) {
+  return useQuery({
+    queryKey: ["spectator", "pool-odds", raceId],
+    queryFn: () => fetchLivePoolOdds(raceId),
+    enabled: !!raceId,
+    refetchInterval: 15_000,
+  });
 }
-function useSubmitPrediction() {
+
+// ---------- Predictions ----------
+export function useMyPredictions() {
+  return useQuery({
+    queryKey: ["spectator", "predictions"],
+    queryFn: fetchMyPredictions,
+  });
+}
+export function useSubmitPrediction() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (body) => submitPrediction(body),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["spectator", "predictions"] })
+    onSuccess: () =>
+      qc.invalidateQueries({ queryKey: ["spectator", "predictions"] }),
   });
 }
-function useCancelPrediction() {
+export function useCancelPrediction() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (predictionId) => cancelPrediction(predictionId),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["spectator", "predictions"] })
+    onSuccess: () =>
+      qc.invalidateQueries({ queryKey: ["spectator", "predictions"] }),
   });
 }
-function useRewardHistory(query = {}) {
-  return useQuery({ queryKey: ["spectator", "rewards", "history", query], queryFn: () => fetchRewardHistory(query) });
+
+// ---------- Rewards ----------
+export function useRewardHistory(query = {}) {
+  return useQuery({
+    queryKey: ["spectator", "rewards", "history", query],
+    queryFn: () => fetchRewardHistory(query),
+  });
 }
-function usePendingRewards(query = {}) {
-  return useQuery({ queryKey: ["spectator", "rewards", "pending", query], queryFn: () => fetchPendingRewards(query) });
+export function usePendingRewards(query = {}) {
+  return useQuery({
+    queryKey: ["spectator", "rewards", "pending", query],
+    queryFn: () => fetchPendingRewards(query),
+  });
 }
-function useClaimReward() {
+export function useClaimReward() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (rewardId) => claimReward(rewardId),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["spectator", "rewards"] })
+    onSuccess: () =>
+      qc.invalidateQueries({ queryKey: ["spectator", "rewards"] }),
   });
 }
-import { useLiveRace, useLiveLeaderboard } from "@/common/live/useLiveRace";
-export {
-  useCancelPrediction,
-  useClaimReward,
-  useEntryNames,
-  useLiveLeaderboard,
-  useLiveRace,
-  useMyPredictions,
-  usePendingRewards,
-  useRaceEntries,
-  useRaceResults,
-  useRewardHistory,
-  useSpectatorRaces,
-  useSubmitPrediction
-};
+
+// ---------- Live monitor (polling) ----------
+// useLiveRace / useLiveLeaderboard moved to @/common/live; re-exported for existing importers.
+export { useLiveRace, useLiveLeaderboard } from "@/common/live/useLiveRace";
