@@ -3,15 +3,15 @@ import { useNavigate } from "react-router-dom";
 import { CalendarDays, ChevronRight, Pencil, Plus } from "lucide-react";
 import { PageHeader } from "@/common/components/PageHeader";
 import { Avatar, Badge, Button, Card, CardBody, EmptyState, Input, Select, Skeleton } from "@/common/ui";
-import { useToast } from "@/common/providers/ToastProvider";
 import { cn } from "@/common/lib/cn";
 import { formatDate } from "@/common/lib/format";
-import { usePublishTournament, useRaces, useRegistrations, useTournament, useTournaments } from "../hooks";
+import { useRaces, useRegistrations, useTournament, useTournaments } from "../hooks";
+import { TournamentAdvanceButton } from "../components/TournamentAdvanceButton";
 import { TournamentBuilderModal } from "../components/TournamentBuilderModal";
 import { RaceFormModal } from "../components/RaceFormModal";
 import { RaceDetailModal } from "../components/RaceDetailModal";
 import { RegistrationDetailModal } from "../components/RegistrationDetailModal";
-import { TOURNAMENT_STATUS_FILTERS, RACE_STATUS_TONE, RACE_STATUS_LABEL, REGISTRATION_STATUS_TONE, errorMessage } from "../constants";
+import { TOURNAMENT_STATUS_FILTERS, RACE_STATUS_TONE, RACE_STATUS_LABEL, REGISTRATION_STATUS_TONE } from "../constants";
 import heroHorses from "@/assets/hero-horses.png";
 import silverStreak from "@/assets/silver-streak.png";
 import authHorse from "@/assets/auth-horse.jpg";
@@ -138,12 +138,10 @@ function CatalogCard({ t, index, active, onSelect }) {
     </button>;
 }
 function DetailPanel({ tournament }) {
-  const toast = useToast();
   const navigate = useNavigate();
   const detailQuery = useTournament(tournament.tournamentId);
   const racesQuery = useRaces({ tournamentId: tournament.tournamentId, size: 100 });
   const entriesQuery = useRegistrations({ tournamentId: tournament.tournamentId, size: 100 });
-  const publish = usePublishTournament();
   const [editing, setEditing] = useState(false);
   const [addingRace, setAddingRace] = useState(false);
   const [openRace, setOpenRace] = useState(null);
@@ -157,9 +155,6 @@ function DetailPanel({ tournament }) {
   const s = statusDisplay(t.status);
   const entriesCount = t.registeredEntriesCount ?? t.registeredEntries ?? entries.length;
   const maxEntries = Math.max(1, ...races.map((r) => r.entriesCount ?? 0));
-  function onPublish() {
-    publish.mutate(t.tournamentId, { onSuccess: () => toast.success("Tournament published"), onError: (e) => toast.error(errorMessage(e)) });
-  }
   return <Card className="overflow-hidden">
       {
     /* Hero */
@@ -169,7 +164,7 @@ function DetailPanel({ tournament }) {
         <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/40 to-black/10" />
         <div className="absolute right-4 top-4 flex gap-2">
           <Button size="sm" variant="secondary" onClick={() => setEditing(true)}><Pencil size={14} /> Edit</Button>
-          {t.status === "DRAFT" && <Button size="sm" loading={publish.isPending} onClick={onPublish}>Publish</Button>}
+          <TournamentAdvanceButton tournamentId={t.tournamentId} status={t.status} />
         </div>
         <div className="absolute inset-x-0 bottom-0 p-5">
           <div className="flex flex-wrap items-center gap-2">
@@ -251,7 +246,7 @@ function DetailPanel({ tournament }) {
             </div>
           </div>}
 
-        <button type="button" onClick={() => navigate(`/app/admin/tournaments/${t.tournamentId}`)} className="self-start text-sm font-medium text-brand-700 hover:underline">
+        <button type="button" onClick={() => navigate(`/admin/tournaments/${t.tournamentId}`)} className="self-start text-sm font-medium text-brand-700 hover:underline">
           Open full management page →
         </button>
       </CardBody>

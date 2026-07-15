@@ -1,15 +1,33 @@
 import { apiClient } from "@/common/lib/apiClient";
 function toArray(d) {
   if (Array.isArray(d)) return d;
-  return d?.content ?? [];
+  if (!d || typeof d !== "object") return [];
+
+  const keys = ["content", "items", "records", "rows", "data", "list"];
+  for (const key of keys) {
+    if (Array.isArray(d[key])) return d[key];
+  }
+
+  if (d.data && typeof d.data === "object") return toArray(d.data);
+  return [];
 }
 function toPage(d) {
   if (Array.isArray(d)) return { rows: d, totalPages: 1, page: 0, total: d.length };
+  const nested = d?.data && typeof d.data === "object" && !Array.isArray(d.data) ? d.data : null;
+  const pageData = nested ?? d;
+  const rows = toArray(pageData);
+  const total =
+    pageData?.totalElements ??
+    pageData?.totalItems ??
+    pageData?.totalRecords ??
+    pageData?.total ??
+    rows.length;
+  const size = pageData?.size ?? pageData?.pageSize ?? rows.length ?? 10;
   return {
-    rows: d?.content ?? [],
-    totalPages: d?.totalPages ?? 1,
-    page: d?.number ?? 0,
-    total: d?.totalElements ?? (d?.content?.length ?? 0)
+    rows,
+    totalPages: pageData?.totalPages ?? Math.max(1, Math.ceil(total / Math.max(1, size))),
+    page: pageData?.number ?? pageData?.page ?? pageData?.currentPage ?? 0,
+    total
   };
 }
 function humanize(value) {
@@ -79,7 +97,17 @@ async function fetchAdminJockeys(query) {
 }
 async function fetchAdminJockey(id) {
   const { data } = await apiClient.get(`/jockeys/${id}`);
-  return data.data;
+  return {
+    ...data.data,
+    jockeyLicenseUrl: data.data.jockeyLicenseUrl ?? null,
+    fitnessCertificateUrl: data.data.fitnessCertificateUrl ?? null
+  };
+}
+async function approveJockey(id) {
+  await apiClient.patch(`/jockeys/${id}/approve`);
+}
+async function rejectJockey(id, reason) {
+  await apiClient.patch(`/jockeys/${id}/reject`, { reason });
 }
 async function deleteUser(id) {
   await apiClient.delete(`/users/${id}`);
@@ -122,6 +150,18 @@ async function uploadTournamentImage(id, file) {
 async function publishTournament(id) {
   await apiClient.patch(`/tournaments/${id}/publish`);
 }
+async function openTournamentRegistration(id) {
+  await apiClient.patch(`/tournaments/${id}/open-registration`);
+}
+async function closeTournamentRegistration(id) {
+  await apiClient.patch(`/tournaments/${id}/close-registration`);
+}
+async function startTournament(id) {
+  await apiClient.patch(`/tournaments/${id}/start`);
+}
+async function completeTournament(id) {
+  await apiClient.patch(`/tournaments/${id}/complete`);
+}
 async function deleteTournament(id) {
   await apiClient.delete(`/tournaments/${id}`);
 }
@@ -135,8 +175,7 @@ async function fetchRace(id) {
 }
 async function fetchRaceEntries(raceId) {
   const { data } = await apiClient.get(`/races/${raceId}/entries`);
-  const d = data.data;
-  const list = Array.isArray(d) ? d : d?.content ?? [];
+  const list = toArray(data.data);
   return list.map((e) => ({
     entryId: e.entryId,
     entryNo: e.entryNo ?? null,
@@ -216,6 +255,16 @@ async function reassignReferee(assignmentId, newRefereeUserId, panelRole) {
 async function removeAssignment(assignmentId) {
   await apiClient.delete(`/staffing/assignments/${assignmentId}`);
 }
+async function fetchWithdrawals(query = {}) {
+  const { data } = await apiClient.get("/admin/withdrawals", { params: { size: 10, ...query } });
+  return toPage(data.data);
+}
+async function approveWithdrawal(id) {
+  await apiClient.patch(`/admin/withdrawals/${id}/approve`);
+}
+async function rejectWithdrawal(id) {
+  await apiClient.patch(`/admin/withdrawals/${id}/reject`);
+}
 async function fetchTournamentAssignments(tournamentId) {
   const { data } = await apiClient.get(
     "/staffing/tournament-assignments",
@@ -230,11 +279,15 @@ async function revokeTournamentAssignment(id) {
   await apiClient.delete(`/staffing/tournament-assignments/${id}`);
 }
 export {
+  approveJockey,
   approveRegistration,
+  approveWithdrawal,
   assignReferee,
   cancelRace,
   changeUserRole,
   changeUserStatus,
+  closeTournamentRegistration,
+  completeTournament,
   createRace,
   createTournament,
   deleteRace,
@@ -264,17 +317,22 @@ export {
   fetchUserStats,
   fetchUserWins,
   fetchUsers,
+  fetchWithdrawals,
   finishRace,
   humanize,
   inviteTournamentReferee,
+  openTournamentRegistration,
   provisionUser,
   publishTournament,
   reassignReferee,
+  rejectJockey,
   rejectRegistration,
+  rejectWithdrawal,
   removeAssignment,
   revokeTournamentAssignment,
   scheduleRace,
   startRace,
+  startTournament,
   updateRace,
   updateTournament,
   updateUser,

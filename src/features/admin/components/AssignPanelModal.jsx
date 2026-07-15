@@ -2,8 +2,9 @@ import { useState } from "react";
 import { Plus, X } from "lucide-react";
 import { Button, Modal, Select } from "@/common/ui";
 import { useToast } from "@/common/providers/ToastProvider";
+import { getApiErrorMessage } from "@/common/lib/apiError";
 import { useAssignReferee, useRacePanel, useRefereeConflicts, useStaff } from "../hooks";
-import { PANEL_ROLE_OPTIONS, errorMessage } from "../constants";
+import { PANEL_ROLE_OPTIONS } from "../constants";
 function AssignPanelModal({ raceId, onClose }) {
   const toast = useToast();
   const staffQuery = useStaff();
@@ -38,7 +39,7 @@ function AssignPanelModal({ raceId, onClose }) {
     if (ok > 0) toast.success(`Assigned ${ok} referee${ok === 1 ? "" : "s"}`);
     if (failed > 0) {
       const firstErr = results.find((x) => x.status === "rejected");
-      toast.error(`${failed} failed \u2014 ${firstErr ? errorMessage(firstErr.reason) : "please retry"}`);
+      toast.error(`${failed} failed \u2014 ${firstErr ? getApiErrorMessage(firstErr.reason) : "please retry"}`);
     }
     if (failed === 0) onClose();
   }

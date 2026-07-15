@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { Trophy, Flag, UserCog, Users, ClipboardList, ChevronRight } from "lucide-react";
+import { Trophy, Flag, UserCog, Users, ClipboardList, ChevronRight, Wallet } from "lucide-react";
 import { Card, StatCard, Skeleton } from "@/common/ui";
 import { PageHeader } from "@/common/components/PageHeader";
 import {
@@ -7,7 +7,8 @@ import {
   useRegistrationStats,
   useStaffingDashboard,
   useUserStats,
-  useTournaments
+  useTournaments,
+  useWithdrawals
 } from "../hooks";
 function Kpi({
   label,
@@ -31,17 +32,19 @@ function AdminDashboardPage() {
   const staffing = useStaffingDashboard();
   const userStats = useUserStats();
   const tournaments = useTournaments({});
+  const withdrawals = useWithdrawals({});
   const sections = [
-    { label: "Tournaments", description: "Create, publish and orchestrate tournaments", to: "/app/admin/tournaments", icon: <Trophy size={18} /> },
-    { label: "Race Calendar", description: "Schedule and manage races", to: "/app/admin/races", icon: <Flag size={18} /> },
-    { label: "Staffing", description: "Assign referees to races", to: "/app/admin/staffing", icon: <UserCog size={18} /> },
-    { label: "User Management", description: "Owners, jockeys, referees and admins", to: "/app/admin/users", icon: <Users size={18} /> },
-    { label: "Registration Approval", description: "Review horse race registrations", to: "/app/admin/registrations", icon: <ClipboardList size={18} /> }
+    { label: "Tournaments", description: "Create, publish and orchestrate tournaments", to: "/admin/tournaments", icon: <Trophy size={18} /> },
+    { label: "Race Calendar", description: "Schedule and manage races", to: "/admin/races", icon: <Flag size={18} /> },
+    { label: "Staffing", description: "Assign referees to races", to: "/admin/staffing", icon: <UserCog size={18} /> },
+    { label: "User Management", description: "Owners, jockeys, referees and admins", to: "/admin/users", icon: <Users size={18} /> },
+    { label: "Registration Approval", description: "Review horse race registrations", to: "/admin/race-approval", icon: <ClipboardList size={18} /> },
+    { label: "Withdrawals", description: "Review spectator withdrawal requests", to: "/admin/withdrawals", icon: <Wallet size={18} /> }
   ];
   return <div className="flex flex-col gap-6">
       <PageHeader title="Admin Dashboard" subtitle="Cross-domain overview of the racing operation." />
 
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-6">
         <Kpi
     label="Tournaments"
     icon={<Trophy size={18} />}
@@ -79,6 +82,14 @@ function AdminDashboardPage() {
     pending={userStats.isPending}
     error={userStats.isError}
     value={userStats.data?.totalUsers ?? 0}
+  />
+        <Kpi
+    label="Withdrawals"
+    icon={<Wallet size={18} />}
+    pending={withdrawals.isPending}
+    error={withdrawals.isError}
+    value={withdrawals.data?.total ?? 0}
+    hint={<span className="text-warning">pending review</span>}
   />
       </div>
 

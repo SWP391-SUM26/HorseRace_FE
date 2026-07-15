@@ -48,7 +48,7 @@ function StaffingPage() {
     setPage(0);
   }
   function open(raceId) {
-    navigate(`/app/admin/staffing/${raceId}`);
+    navigate(`/admin/staffing/${raceId}`);
   }
   return <>
       <PageHeader

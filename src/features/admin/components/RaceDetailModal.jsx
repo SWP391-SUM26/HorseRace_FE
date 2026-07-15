@@ -6,7 +6,7 @@ import { useToast } from "@/common/providers/ToastProvider";
 import { formatDate } from "@/common/lib/format";
 import { useCancelRace, useDeleteRace, useFinishRace, useHorse, useRace, useRaceEntries, useScheduleRace, useStartRace, useUser } from "../hooks";
 import { humanize } from "../api";
-import { RACE_STATUS_LABEL, RACE_STATUS_TONE, errorMessage } from "../constants";
+import { RACE_STATUS_LABEL, RACE_STATUS_TONE } from "../constants";
 import { RaceFormModal } from "./RaceFormModal";
 const TERMINAL = ["FINISHED", "OFFICIAL", "CANCELLED"];
 function Field({ label, value }) {
@@ -121,25 +121,24 @@ function RaceDetailModal({ raceId, fallback, tournaments, onClose }) {
     if (!race?.scheduledStartAt) return toast.error("Set a start time before opening entries");
     schedule.mutate(
       { id: raceId, scheduledStartAt: race.scheduledStartAt },
-      { onSuccess: () => toast.success("Race opened for entries"), onError: (e) => toast.error(errorMessage(e)) }
+      { onSuccess: () => toast.success("Race opened for entries") }
     );
   }
   function onStart() {
-    start.mutate(raceId, { onSuccess: () => toast.success("Race started \u2014 entries are now locked"), onError: (e) => toast.error(errorMessage(e)) });
+    start.mutate(raceId, { onSuccess: () => toast.success("Race started \u2014 entries are now locked") });
   }
   function onFinish() {
-    finish.mutate(raceId, { onSuccess: () => toast.success("Race finished \u2014 referees can now file reports"), onError: (e) => toast.error(errorMessage(e)) });
+    finish.mutate(raceId, { onSuccess: () => toast.success("Race finished \u2014 referees can now file reports") });
   }
   function onCancel() {
-    cancel.mutate(raceId, { onSuccess: () => toast.success("Race cancelled"), onError: (e) => toast.error(errorMessage(e)) });
+    cancel.mutate(raceId, { onSuccess: () => toast.success("Race cancelled") });
   }
   function onDelete() {
     del.mutate(raceId, {
       onSuccess: () => {
         toast.success("Race deleted");
         onClose();
-      },
-      onError: (e) => toast.error(errorMessage(e))
+      }
     });
   }
   const canCancel = race ? !TERMINAL.includes(race.status) : false;
@@ -219,6 +218,7 @@ function RaceDetailModal({ raceId, fallback, tournaments, onClose }) {
             <Field label="Start time" value={race.scheduledStartAt ? formatDate(race.scheduledStartAt) : null} />
             <Field label="Prediction cutoff" value={race.predictionCutoffAt ? formatDate(race.predictionCutoffAt) : null} />
             <Field label="Total purse" value={race.totalPurse != null ? `$${race.totalPurse.toLocaleString()}` : null} />
+            <Field label="Entry fee" value={race.entryFee != null ? `$${race.entryFee.toLocaleString()}` : null} />
             <Field label="Actual start" value={race.actualStartAt ? formatDate(race.actualStartAt) : null} />
             <Field label="Actual end" value={race.actualEndAt ? formatDate(race.actualEndAt) : null} />
           </div>

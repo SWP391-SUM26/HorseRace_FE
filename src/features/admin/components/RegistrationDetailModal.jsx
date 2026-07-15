@@ -4,7 +4,7 @@ import { Avatar, Badge, Button, Modal, Skeleton, Textarea } from "@/common/ui";
 import { useToast } from "@/common/providers/ToastProvider";
 import { formatDate } from "@/common/lib/format";
 import { useApproveRegistration, useHorse, useRejectRegistration, useTournament, useUser } from "../hooks";
-import { REGISTRATION_STATUS_TONE, TOURNAMENT_STATUS_TONE, errorMessage } from "../constants";
+import { REGISTRATION_STATUS_TONE, TOURNAMENT_STATUS_TONE } from "../constants";
 const REVIEWABLE = ["SUBMITTED", "UNDER_REVIEW"];
 function Field({ label, value }) {
   return <div>
@@ -30,8 +30,7 @@ function RegistrationDetailModal({ registration, onClose }) {
       onSuccess: () => {
         toast.success("Registration approved");
         onClose();
-      },
-      onError: (e) => toast.error(errorMessage(e))
+      }
     });
   }
   function onReject() {
@@ -41,7 +40,7 @@ function RegistrationDetailModal({ registration, onClose }) {
       { onSuccess: () => {
         toast.success("Registration rejected");
         onClose();
-      }, onError: (e) => toast.error(errorMessage(e)) }
+      } }
     );
   }
   return <Modal

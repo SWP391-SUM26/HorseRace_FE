@@ -1,4 +1,3 @@
-import { isAxiosError } from "axios";
 const REGISTRATION_STATUS_FILTERS = [
   { value: "", label: "All statuses" },
   { value: "SUBMITTED", label: "Submitted" },
@@ -31,7 +30,11 @@ const USER_STATUS_OPTIONS = [
   { value: "SUSPENDED", label: "Suspended" },
   { value: "BANNED", label: "Banned" }
 ];
-const USER_STATUS_FILTERS = [{ value: "", label: "All statuses" }, ...USER_STATUS_OPTIONS];
+const USER_STATUS_FILTERS = [
+  { value: "", label: "All statuses" },
+  { value: "PENDING", label: "Pending" },
+  ...USER_STATUS_OPTIONS
+];
 const USER_STATUS_TONE = {
   ACTIVE: "success",
   INACTIVE: "neutral",
@@ -122,18 +125,6 @@ const PANEL_ROLE_OPTIONS = [
   { value: "TIMEKEEPER", label: "Timekeeper" },
   { value: "OBSERVER", label: "Observer" }
 ];
-function errorMessage(err) {
-  if (isAxiosError(err)) {
-    const s = err.response?.status;
-    const serverMsg = err.response?.data?.message;
-    if (s === 403) return "You are not authorized to perform this action.";
-    if (s === 404) return "This feature is not available on the backend yet.";
-    if (s === 409) return serverMsg || "This item was already actioned or conflicts with an existing one.";
-    if (s === 400) return serverMsg || "Invalid request. Please check the fields.";
-    if (serverMsg) return serverMsg;
-  }
-  return "Something went wrong. Please try again.";
-}
 export {
   HORSE_GENDER_FILTERS,
   HORSE_HEALTH_TONE,
@@ -152,6 +143,5 @@ export {
   TOURNAMENT_STATUS_TONE,
   USER_STATUS_FILTERS,
   USER_STATUS_OPTIONS,
-  USER_STATUS_TONE,
-  errorMessage
+  USER_STATUS_TONE
 };
