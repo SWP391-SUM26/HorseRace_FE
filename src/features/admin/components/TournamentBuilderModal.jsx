@@ -1,8 +1,11 @@
 import { useEffect, useRef, useState } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import { Button, Checkbox, Input, Modal, Select, Textarea } from "@/common/ui";
 import { useToast } from "@/common/providers/ToastProvider";
+import { getApiErrorMessage } from "@/common/lib/apiError";
 import { useCreateTournament, useUpdateTournament, useUploadTournamentImage } from "../hooks";
-import { errorMessage } from "../constants";
 const CIRCUIT_TIER_OPTIONS = [
   { value: "", label: "Select circuit tier\u2026" },
   { value: "GROUP_1_ELITE", label: "Group 1 (Elite)" },
@@ -11,21 +14,77 @@ const CIRCUIT_TIER_OPTIONS = [
   { value: "LISTED", label: "Listed" },
   { value: "UNGRADED", label: "Ungraded" }
 ];
-const EMPTY = {
-  name: "",
-  description: "",
-  startDate: "",
-  endDate: "",
-  registrationOpenAt: "",
-  registrationCloseAt: "",
-  location: "",
-  status: "DRAFT"
-};
 function toIsoDateTime(v) {
   if (!v) return void 0;
   if (/^\d{4}-\d{2}-\d{2}$/.test(v)) return `${v}T00:00:00Z`;
   const d = new Date(v);
   return Number.isNaN(d.getTime()) ? void 0 : d.toISOString();
+}
+function makeSchema(isEdit) {
+  const reqStr = (msg) => z.string().trim().min(1, msg);
+  const posNum = (msg) => reqStr(msg).refine((v) => Number(v) > 0, "Ph\u1EA3i l\u1EDBn h\u01A1n 0");
+  const posInt = (msg) => reqStr(msg).refine((v) => Number.isInteger(Number(v)) && Number(v) > 0, "Ph\u1EA3i l\xE0 s\u1ED1 nguy\xEAn > 0");
+  const lenientNum = z.string().refine((v) => v === "" || Number(v) > 0, "Ph\u1EA3i l\u1EDBn h\u01A1n 0");
+  const lenientInt = z.string().refine((v) => v === "" || Number.isInteger(Number(v)) && Number(v) > 0, "Ph\u1EA3i l\xE0 s\u1ED1 nguy\xEAn > 0");
+  const opt = (required) => isEdit ? z.string() : required;
+  return z.object({
+    name: reqStr("Nh\u1EADp t\xEAn gi\u1EA3i \u0111\u1EA5u"),
+    description: opt(reqStr("Nh\u1EADp m\xF4 t\u1EA3")),
+    location: opt(reqStr("Nh\u1EADp \u0111\u1ECBa \u0111i\u1EC3m")),
+    startDate: opt(reqStr("Ch\u1ECDn ng\xE0y b\u1EAFt \u0111\u1EA7u")),
+    endDate: opt(reqStr("Ch\u1ECDn ng\xE0y k\u1EBFt th\xFAc")),
+    circuitTier: isEdit ? z.string() : reqStr("Ch\u1ECDn h\u1EA1ng gi\u1EA3i"),
+    totalPurse: isEdit ? lenientNum : posNum("Nh\u1EADp t\u1ED5ng gi\u1EA3i th\u01B0\u1EDFng"),
+    entryCap: isEdit ? lenientInt : posInt("Nh\u1EADp gi\u1EDBi h\u1EA1n s\u1ED1 ng\u1EF1a"),
+    registrationOpenAt: isEdit ? z.string() : reqStr("Ch\u1ECDn th\u1EDDi \u0111i\u1EC3m m\u1EDF \u0111\u0103ng k\xFD"),
+    registrationCloseAt: isEdit ? z.string() : reqStr("Ch\u1ECDn th\u1EDDi \u0111i\u1EC3m \u0111\xF3ng \u0111\u0103ng k\xFD"),
+    minAgeYears: z.string().default("").refine((v) => v === "" || Number.isInteger(Number(v)) && Number(v) >= 0, "Tu\u1ED5i t\u1ED1i thi\u1EC3u kh\xF4ng h\u1EE3p l\u1EC7"),
+    thoroughbredsOnly: z.boolean(),
+    requiresGroupWin: z.boolean()
+  }).refine((v) => !v.startDate || !v.endDate || new Date(v.endDate) >= new Date(v.startDate), {
+    path: ["endDate"],
+    message: "K\u1EBFt th\xFAc ph\u1EA3i sau b\u1EAFt \u0111\u1EA7u"
+  }).refine(
+    (v) => !v.registrationOpenAt || !v.registrationCloseAt || new Date(v.registrationCloseAt) >= new Date(v.registrationOpenAt),
+    { path: ["registrationCloseAt"], message: "\u0110\xF3ng \u0111\u0103ng k\xFD ph\u1EA3i sau khi m\u1EDF" }
+  ).refine(
+    (v) => !v.registrationOpenAt || !v.startDate || new Date(v.registrationOpenAt) <= new Date(v.startDate),
+    { path: ["registrationOpenAt"], message: "\u0110\u0103ng k\xFD ph\u1EA3i m\u1EDF tr\u01B0\u1EDBc khi gi\u1EA3i b\u1EAFt \u0111\u1EA7u" }
+  );
+}
+function toDefaults(t) {
+  if (!t) {
+    return {
+      name: "",
+      description: "",
+      location: "",
+      startDate: "",
+      endDate: "",
+      circuitTier: "",
+      totalPurse: "",
+      entryCap: "",
+      registrationOpenAt: "",
+      registrationCloseAt: "",
+      minAgeYears: "",
+      thoroughbredsOnly: true,
+      requiresGroupWin: false
+    };
+  }
+  return {
+    name: t.name,
+    description: t.description ?? "",
+    location: t.location ?? "",
+    startDate: t.startDate ? t.startDate.slice(0, 10) : "",
+    endDate: t.endDate ? t.endDate.slice(0, 10) : "",
+    registrationOpenAt: t.registrationOpenAt ? t.registrationOpenAt.slice(0, 10) : "",
+    registrationCloseAt: t.registrationCloseAt ? t.registrationCloseAt.slice(0, 10) : "",
+    circuitTier: t.circuitTier ?? "",
+    totalPurse: t.totalPurse != null ? String(t.totalPurse) : "",
+    entryCap: t.entryCap != null ? String(t.entryCap) : "",
+    minAgeYears: t.eligibility?.minAgeYears != null ? String(t.eligibility.minAgeYears) : "",
+    thoroughbredsOnly: t.eligibility?.thoroughbredsOnly ?? true,
+    requiresGroupWin: t.eligibility?.requiresPreviousGroupWin ?? false
+  };
 }
 function TournamentBuilderModal({ tournament, onClose, onCreated }) {
   const toast = useToast();
@@ -33,6 +92,14 @@ function TournamentBuilderModal({ tournament, onClose, onCreated }) {
   const update = useUpdateTournament();
   const uploadImage = useUploadTournamentImage();
   const isEdit = !!tournament;
+  const {
+    register,
+    handleSubmit,
+    formState: { errors }
+  } = useForm({
+    resolver: zodResolver(makeSchema(isEdit)),
+    defaultValues: toDefaults(tournament)
+  });
   const [pendingImage, setPendingImage] = useState(null);
   const [imagePreview, setImagePreview] = useState(tournament?.imageUrl ?? null);
   const blobUrlRef = useRef(null);
@@ -59,7 +126,7 @@ function TournamentBuilderModal({ tournament, onClose, onCreated }) {
           // Revert to the actual persisted image so the preview doesn't lie about what was saved.
           onError: (e) => {
             setImagePreview(tournament?.imageUrl ?? null);
-            toast.error(errorMessage(e));
+            toast.error(getApiErrorMessage(e));
           }
         }
       );
@@ -67,43 +134,24 @@ function TournamentBuilderModal({ tournament, onClose, onCreated }) {
       setPendingImage(file);
     }
   }
-  const [form, setForm] = useState(
-    tournament ? {
-      name: tournament.name,
-      description: tournament.description ?? "",
-      startDate: tournament.startDate ? tournament.startDate.slice(0, 10) : "",
-      endDate: tournament.endDate ? tournament.endDate.slice(0, 10) : "",
-      registrationOpenAt: tournament.registrationOpenAt ?? "",
-      registrationCloseAt: tournament.registrationCloseAt ?? "",
-      location: tournament.location ?? "",
-      status: tournament.status
-    } : EMPTY
-  );
-  const [circuitTier, setCircuitTier] = useState(tournament?.circuitTier ?? "");
-  const [eligibility, setEligibility] = useState({ thoroughbredsOnly: true, age3plus: true, requiresGroupWin: false });
-  const [tracks, setTracks] = useState([]);
-  const [newTrack, setNewTrack] = useState("");
   const busy = create.isPending || update.isPending || uploadImage.isPending;
-  function set(k, v) {
-    setForm((f) => ({ ...f, [k]: v }));
-  }
-  function addTrack() {
-    const t = newTrack.trim();
-    if (!t || tracks.includes(t)) return;
-    setTracks((prev) => [...prev, t]);
-    setNewTrack("");
-  }
-  function save() {
-    if (!form.name.trim()) return toast.error("Name is required");
+  function onValid(v) {
     const body = {
-      name: form.name.trim(),
-      description: form.description?.trim() || void 0,
-      location: form.location?.trim() || void 0,
-      status: form.status,
-      startDate: toIsoDateTime(form.startDate),
-      endDate: toIsoDateTime(form.endDate),
-      registrationOpenAt: toIsoDateTime(form.registrationOpenAt),
-      registrationCloseAt: toIsoDateTime(form.registrationCloseAt)
+      name: v.name.trim(),
+      description: v.description.trim() || void 0,
+      location: v.location.trim() || void 0,
+      startDate: toIsoDateTime(v.startDate),
+      endDate: toIsoDateTime(v.endDate),
+      registrationOpenAt: toIsoDateTime(v.registrationOpenAt),
+      registrationCloseAt: toIsoDateTime(v.registrationCloseAt),
+      circuitTier: v.circuitTier || void 0,
+      totalPurse: v.totalPurse !== "" ? Number(v.totalPurse) : void 0,
+      entryCap: v.entryCap !== "" ? Number(v.entryCap) : void 0,
+      eligibility: {
+        thoroughbredsOnly: v.thoroughbredsOnly,
+        requiresPreviousGroupWin: v.requiresGroupWin,
+        minAgeYears: v.minAgeYears !== "" ? Number(v.minAgeYears) : null
+      }
     };
     if (isEdit) {
       update.mutate(
@@ -111,7 +159,7 @@ function TournamentBuilderModal({ tournament, onClose, onCreated }) {
         { onSuccess: () => {
           toast.success("Tournament saved");
           onClose();
-        }, onError: (e) => toast.error(errorMessage(e)) }
+        } }
       );
     } else {
       create.mutate(body, {
@@ -119,14 +167,13 @@ function TournamentBuilderModal({ tournament, onClose, onCreated }) {
           if (pendingImage) {
             uploadImage.mutate(
               { id: t.tournamentId, file: pendingImage },
-              { onError: (e) => toast.error(`Tournament created; image upload failed: ${errorMessage(e)}`) }
+              { onError: (e) => toast.error(`Tournament created; image upload failed: ${getApiErrorMessage(e)}`) }
             );
           }
           toast.success("Tournament created");
           onCreated?.(t.tournamentId);
           onClose();
-        },
-        onError: (e) => toast.error(errorMessage(e))
+        }
       });
     }
   }
@@ -137,14 +184,17 @@ function TournamentBuilderModal({ tournament, onClose, onCreated }) {
     title={isEdit ? "Edit Tournament" : "Tournament Builder"}
     footer={<>
           <Button variant="secondary" onClick={onClose} disabled={busy}>Cancel</Button>
-          <Button loading={busy} onClick={save}>{isEdit ? "Save Changes" : "Save Draft"}</Button>
+          {
+      /* Modal footer is a DOM sibling of the body (not inside a <form>), so bind submit via onClick. */
+    }
+          <Button loading={busy} onClick={handleSubmit(onValid)}>{isEdit ? "Save Changes" : "Save Draft"}</Button>
         </>}
   >
       <div className="flex flex-col gap-4">
-        <Input label="Tournament Name" value={form.name} onChange={(e) => set("name", e.target.value)} placeholder="e.g. Royal Ascot Invitational" />
+        <Input label="Tournament Name" {...register("name")} error={errors.name?.message} placeholder="e.g. Royal Ascot Invitational" />
 
         <div>
-          <p className="mb-2 text-sm font-medium text-ink">Cover Image</p>
+          <p className="mb-2 text-sm font-medium text-ink">Cover Image (optional)</p>
           <div className="flex items-center gap-3 rounded-xl border border-border p-3">
             <div className="h-16 w-24 shrink-0 overflow-hidden rounded-lg bg-brand-50">
               {imagePreview ? <img src={imagePreview} alt="Tournament cover" className="h-full w-full object-cover" /> : <div className="flex h-full w-full items-center justify-center text-xs text-muted">No image</div>}
@@ -164,66 +214,32 @@ function TournamentBuilderModal({ tournament, onClose, onCreated }) {
           </div>
         </div>
 
-        <Select label="Circuit Tier" value={circuitTier} onChange={(e) => setCircuitTier(e.target.value)} options={CIRCUIT_TIER_OPTIONS} />
+        <Select label="Circuit Tier" {...register("circuitTier")} error={errors.circuitTier?.message} options={CIRCUIT_TIER_OPTIONS} />
+
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <Input label="Total Purse" type="number" min="0" step="0.01" {...register("totalPurse")} error={errors.totalPurse?.message} placeholder="e.g. 500000" />
+          <Input label="Entry Cap" type="number" min="1" step="1" {...register("entryCap")} error={errors.entryCap?.message} placeholder="e.g. 20" />
+        </div>
 
         <div>
           <p className="mb-2 text-sm font-medium text-ink">Eligibility Criteria</p>
           <div className="flex flex-col gap-2 rounded-xl border border-border p-3">
-            <Checkbox
-    name="elig-tb"
-    label="Thoroughbreds Only"
-    checked={eligibility.thoroughbredsOnly}
-    onChange={(e) => setEligibility((el) => ({ ...el, thoroughbredsOnly: e.target.checked }))}
-  />
-            <Checkbox
-    name="elig-age"
-    label="Age 3+ Years"
-    checked={eligibility.age3plus}
-    onChange={(e) => setEligibility((el) => ({ ...el, age3plus: e.target.checked }))}
-  />
-            <Checkbox
-    name="elig-group"
-    label="Requires Previous Group Win"
-    checked={eligibility.requiresGroupWin}
-    onChange={(e) => setEligibility((el) => ({ ...el, requiresGroupWin: e.target.checked }))}
-  />
+            <Checkbox label="Thoroughbreds Only" {...register("thoroughbredsOnly")} />
+            <Checkbox label="Requires Previous Group Win" {...register("requiresGroupWin")} />
+            <Input label="Minimum Age (years, optional)" type="number" min="0" step="1" {...register("minAgeYears")} error={errors.minAgeYears?.message} placeholder="e.g. 3" />
           </div>
         </div>
 
-        <div>
-          <p className="mb-2 text-sm font-medium text-ink">Track Selection</p>
-          <div className="rounded-xl border border-border p-3">
-            {tracks.length > 0 && <div className="mb-2 flex flex-wrap gap-1.5">
-                {tracks.map((track) => <span key={track} className="flex items-center gap-1 rounded-full bg-brand-50 px-3 py-1 text-xs font-medium text-brand-700">
-                    {track}
-                    <button type="button" className="ml-0.5 text-brand-500 hover:text-brand-900" onClick={() => setTracks((t) => t.filter((x) => x !== track))}>×</button>
-                  </span>)}
-              </div>}
-            <div className="flex gap-2">
-              <input
-    className="min-w-0 flex-1 rounded-lg border border-border bg-surface px-3 py-1.5 text-sm text-ink placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-brand-500"
-    placeholder="e.g. Meydan Racecourse"
-    value={newTrack}
-    onChange={(e) => setNewTrack(e.target.value)}
-    onKeyDown={(e) => {
-      if (e.key === "Enter") {
-        e.preventDefault();
-        addTrack();
-      }
-    }}
-  />
-              <Button size="sm" variant="secondary" onClick={addTrack}>+ Add</Button>
-            </div>
-          </div>
-          <p className="mt-1 text-xs text-muted">Circuit tier, eligibility and tracks save once the backend adds support.</p>
-        </div>
-
-        <Textarea label="Description" rows={2} value={form.description ?? ""} onChange={(e) => set("description", e.target.value)} />
+        <Textarea label="Description" rows={2} {...register("description")} error={errors.description?.message} />
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          <Input label="Start date" type="date" value={form.startDate ?? ""} onChange={(e) => set("startDate", e.target.value)} />
-          <Input label="End date" type="date" value={form.endDate ?? ""} onChange={(e) => set("endDate", e.target.value)} />
+          <Input label="Start date" type="date" {...register("startDate")} error={errors.startDate?.message} />
+          <Input label="End date" type="date" {...register("endDate")} error={errors.endDate?.message} />
         </div>
-        <Input label="Location" value={form.location ?? ""} onChange={(e) => set("location", e.target.value)} placeholder="e.g. Ascot, UK" />
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <Input label="Registration opens" type="date" {...register("registrationOpenAt")} error={errors.registrationOpenAt?.message} />
+          <Input label="Registration closes" type="date" {...register("registrationCloseAt")} error={errors.registrationCloseAt?.message} />
+        </div>
+        <Input label="Location" {...register("location")} error={errors.location?.message} placeholder="e.g. Ascot, UK" />
       </div>
     </Modal>;
 }

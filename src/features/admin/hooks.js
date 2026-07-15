@@ -9,6 +9,8 @@ import {
   fetchHorseMedical,
   fetchAdminJockeys,
   fetchAdminJockey,
+  approveJockey,
+  rejectJockey,
   createRace,
   createTournament,
   uploadTournamentImage,
@@ -37,6 +39,10 @@ import {
   inviteTournamentReferee,
   provisionUser,
   publishTournament,
+  openTournamentRegistration,
+  closeTournamentRegistration,
+  startTournament,
+  completeTournament,
   reassignReferee,
   rejectRegistration,
   removeAssignment,
@@ -47,8 +53,28 @@ import {
   updateRace,
   updateTournament,
   updateUser,
-  fetchUsers
+  fetchUsers,
+  fetchWithdrawals,
+  approveWithdrawal,
+  rejectWithdrawal
 } from "./api";
+function useWithdrawals(query = {}) {
+  return useQuery({ queryKey: ["admin", "withdrawals", query], queryFn: () => fetchWithdrawals(query) });
+}
+function useApproveWithdrawal() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id) => approveWithdrawal(id),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["admin", "withdrawals"] })
+  });
+}
+function useRejectWithdrawal() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id) => rejectWithdrawal(id),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["admin", "withdrawals"] })
+  });
+}
 function useRegistrations(query) {
   return useQuery({ queryKey: ["admin", "registrations", query], queryFn: () => fetchRegistrations(query) });
 }
@@ -108,6 +134,28 @@ function useAdminJockeys(query) {
 function useAdminJockey(id) {
   return useQuery({ queryKey: ["admin", "jockey", id], queryFn: () => fetchAdminJockey(id), enabled: !!id });
 }
+function useApproveJockey() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id) => approveJockey(id),
+    meta: { skipGlobalErrorToast: true },
+    onSuccess: (_data, id) => {
+      qc.invalidateQueries({ queryKey: ["admin", "jockeys"] });
+      qc.invalidateQueries({ queryKey: ["admin", "jockey", id] });
+    }
+  });
+}
+function useRejectJockey() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, reason }) => rejectJockey(id, reason),
+    meta: { skipGlobalErrorToast: true },
+    onSuccess: (_data, { id }) => {
+      qc.invalidateQueries({ queryKey: ["admin", "jockeys"] });
+      qc.invalidateQueries({ queryKey: ["admin", "jockey", id] });
+    }
+  });
+}
 function useDeleteUser() {
   const qc = useQueryClient();
   return useMutation({ mutationFn: (id) => deleteUser(id), onSuccess: () => qc.invalidateQueries({ queryKey: ["admin", "users"] }) });
@@ -161,6 +209,8 @@ function useUploadTournamentImage() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: ({ id, file }) => uploadTournamentImage(id, file),
+    // Divergent per-site error text (plain revert vs. "tournament created; upload failed") → self-rendered.
+    meta: { skipGlobalErrorToast: true },
     onSuccess: (_data, { id }) => {
       qc.invalidateQueries({ queryKey: ["admin", "tournaments"] });
       qc.invalidateQueries({ queryKey: ["admin", "tournament", id] });
@@ -170,6 +220,28 @@ function useUploadTournamentImage() {
 function usePublishTournament() {
   const qc = useQueryClient();
   return useMutation({ mutationFn: (id) => publishTournament(id), onSuccess: () => qc.invalidateQueries({ queryKey: ["admin", "tournaments"] }) });
+}
+function useTournamentTransition(fn) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id) => fn(id),
+    onSuccess: (_data, id) => {
+      qc.invalidateQueries({ queryKey: ["admin", "tournaments"] });
+      qc.invalidateQueries({ queryKey: ["admin", "tournament", id] });
+    }
+  });
+}
+function useOpenTournamentRegistration() {
+  return useTournamentTransition(openTournamentRegistration);
+}
+function useCloseTournamentRegistration() {
+  return useTournamentTransition(closeTournamentRegistration);
+}
+function useStartTournament() {
+  return useTournamentTransition(startTournament);
+}
+function useCompleteTournament() {
+  return useTournamentTransition(completeTournament);
 }
 function useDeleteTournament() {
   const qc = useQueryClient();
@@ -191,6 +263,8 @@ function invalidateRaces(qc) {
   qc.invalidateQueries({ queryKey: ["admin", "races"] });
   qc.invalidateQueries({ queryKey: ["admin", "race"] });
   qc.invalidateQueries({ queryKey: ["admin", "race-stats"] });
+  qc.invalidateQueries({ queryKey: ["races", "calendar"] });
+  qc.invalidateQueries({ queryKey: ["races", "details"] });
 }
 function useCreateRace() {
   const qc = useQueryClient();
@@ -251,6 +325,8 @@ function useAssignReferee() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (body) => assignReferee(body),
+    // Batch-assigned via Promise.allSettled with a composite error toast → self-rendered.
+    meta: { skipGlobalErrorToast: true },
     onSuccess: () => invalidateStaffing(qc)
   });
 }
@@ -294,12 +370,16 @@ export {
   useAdminHorses,
   useAdminJockey,
   useAdminJockeys,
+  useApproveJockey,
   useApproveRegistration,
+  useApproveWithdrawal,
   useAssignReferee,
   useAssignments,
   useCancelRace,
   useChangeUserRole,
   useChangeUserStatus,
+  useCloseTournamentRegistration,
+  useCompleteTournament,
   useCreateRace,
   useCreateTournament,
   useDeleteRace,
@@ -309,6 +389,7 @@ export {
   useHorse,
   useHorseMedical,
   useInviteTournamentReferee,
+  useOpenTournamentRegistration,
   useProvisionUser,
   usePublishTournament,
   useRace,
@@ -320,13 +401,16 @@ export {
   useRefereeConflicts,
   useRegistrationStats,
   useRegistrations,
+  useRejectJockey,
   useRejectRegistration,
+  useRejectWithdrawal,
   useRemoveAssignment,
   useRevokeTournamentAssignment,
   useScheduleRace,
   useStaff,
   useStaffingDashboard,
   useStartRace,
+  useStartTournament,
   useTournament,
   useTournamentAssignments,
   useTournaments,
@@ -338,5 +422,6 @@ export {
   useUserHorses,
   useUserStats,
   useUserWins,
-  useUsers
+  useUsers,
+  useWithdrawals
 };

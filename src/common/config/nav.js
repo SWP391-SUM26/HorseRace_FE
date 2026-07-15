@@ -68,11 +68,11 @@ const ROLE_NAV = {
       { label: "Horses", to: "/admin/horses", icon: HorseIcon },
       { label: "Jockeys", to: "/admin/jockeys", icon: UserSquare },
       { label: "Tournaments", to: "/admin/tournaments", icon: Trophy },
-      { label: "Race Management", to: "/admin/races", icon: CalendarDays },
-      { label: "Race Approval", to: "/admin/race-approval", icon: ClipboardList },
-      { label: "Results & Predictions", to: "/admin/results", icon: FileText },
+      { label: "Race Calendar", to: "/admin/races", icon: CalendarDays },
+      { label: "Race Reports", to: "/admin/reports", icon: FileText },
+      { label: "Registration Approval", to: "/admin/registrations", icon: ClipboardList },
       { label: "Staffing", to: "/admin/staffing", icon: UserCog },
-      { label: "Settings", to: "/admin/settings", icon: UserCog }
+      { label: "Withdrawals", to: "/admin/withdrawals", icon: Wallet }
     ],
     topbar: []
   },

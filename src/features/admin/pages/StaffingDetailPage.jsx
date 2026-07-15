@@ -6,7 +6,7 @@ import { useToast } from "@/common/providers/ToastProvider";
 import { formatDate } from "@/common/lib/format";
 import { AssignPanelModal } from "../components/AssignPanelModal";
 import { useRace, useRacePanel, useRemoveAssignment } from "../hooks";
-import { PANEL_ROLE_OPTIONS, RACE_STATUS_LABEL, RACE_STATUS_TONE, errorMessage } from "../constants";
+import { PANEL_ROLE_OPTIONS, RACE_STATUS_LABEL, RACE_STATUS_TONE } from "../constants";
 const ROLE_LABEL = Object.fromEntries(PANEL_ROLE_OPTIONS.map((o) => [o.value, o.label]));
 const ROLE_TONE = {
   CHIEF: "success",
@@ -27,14 +27,13 @@ function StaffingDetailPage() {
   const panel = panelQuery.data ?? [];
   function onRemove(a) {
     remove.mutate(a.refAssignmentId, {
-      onSuccess: () => toast.success("Referee removed from panel"),
-      onError: (e) => toast.error(errorMessage(e))
+      onSuccess: () => toast.success("Referee removed from panel")
     });
   }
   return <>
       <button
     type="button"
-    onClick={() => navigate("/app/admin/staffing")}
+    onClick={() => navigate("/admin/staffing")}
     className="mb-4 inline-flex items-center gap-1.5 text-sm text-muted hover:text-ink"
   >
         <ArrowLeft size={16} /> Staffing
