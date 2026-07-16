@@ -1,8 +1,13 @@
-import { isAxiosError } from "axios";
-function canPredict(status) {
-  return status === "SCHEDULED" || status === "OPEN";
+/** Betting-window gating: a prediction is accepted only for a CLOSED, locked, pre-cutoff race. */
+export function canPredict(status) {
+  return status === "CLOSED";
 }
-function parseOdds(odds) {
+
+/**
+ * Parse a BE odds string into a decimal multiplier.
+ * Accepts decimal ("3.5") or fractional ("5/1" → 6). Returns null when unparseable.
+ */
+export function parseOdds(odds) {
   if (!odds) return null;
   const raw = odds.trim();
   if (!raw) return null;
@@ -14,51 +19,42 @@ function parseOdds(odds) {
   const n = Number(raw);
   return Number.isFinite(n) ? n : null;
 }
-function estimatedReturn(stake, oddsMultiplier) {
+
+/** Client-side preview of the potential return. Never negative. */
+export function estimatedReturn(stake, oddsMultiplier) {
   if (!(stake > 0) || !(oddsMultiplier > 0)) return 0;
   return stake * oddsMultiplier;
 }
-const PREDICTION_TYPE_OPTIONS = [
+
+/**
+ * Bet-type options for the single-runner predictions UI.
+ * Restricted to WIN|PLACE|SHOW — EXACTA/QUINELLA need multiple runners this UI can't express.
+ */
+export const PREDICTION_TYPE_OPTIONS = [
   { value: "WIN", label: "Win" },
   { value: "PLACE", label: "Place" },
-  { value: "SHOW", label: "Show" }
+  { value: "SHOW", label: "Show" },
 ];
-const PREDICTION_STATUS_META = {
+
+export const PREDICTION_STATUS_META = {
   PENDING: { label: "Pending", tone: "warning" },
   CONFIRMED: { label: "Confirmed", tone: "info" },
   WON: { label: "Won", tone: "success" },
   LOST: { label: "Lost", tone: "danger" },
   VOID: { label: "Void", tone: "neutral" },
-  REFUNDED: { label: "Refunded", tone: "neutral" }
+  REFUNDED: { label: "Refunded", tone: "neutral" },
 };
-const REWARD_STATUS_META = {
+
+export const REWARD_STATUS_META = {
   PENDING: { label: "Available", tone: "info" },
   CLAIMED: { label: "Claimed", tone: "success" },
-  EXPIRED: { label: "Expired", tone: "danger" }
+  EXPIRED: { label: "Expired", tone: "danger" },
 };
-const REWARD_TYPE_LABEL = {
+
+export const REWARD_TYPE_LABEL = {
   DAILY_LOGIN: "Daily Login",
   MILESTONE: "Milestone",
   PROMOTION: "Promotion",
   REFERRAL: "Referral",
-  COMPENSATION: "Compensation"
-};
-function errorMessage(err) {
-  if (isAxiosError(err)) {
-    const body = err.response?.data;
-    if (body?.message) return body.message;
-    if (body?.code) return body.code.replace(/_/g, " ");
-    if (err.response?.status === 409) return "This item was already actioned or conflicts with an existing one.";
-  }
-  return "Something went wrong. Please try again.";
-}
-export {
-  PREDICTION_STATUS_META,
-  PREDICTION_TYPE_OPTIONS,
-  REWARD_STATUS_META,
-  REWARD_TYPE_LABEL,
-  canPredict,
-  errorMessage,
-  estimatedReturn,
-  parseOdds
+  COMPENSATION: "Compensation",
 };

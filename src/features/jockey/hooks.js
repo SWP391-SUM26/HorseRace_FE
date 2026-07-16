@@ -12,74 +12,92 @@ import {
   fetchRideIntelligence,
   rejectInvitation,
   updateMyJockeyProfile,
-  withdrawInvitation
+  withdrawInvitation,
 } from "./api";
+
 const INVITATIONS_KEY = ["jockey", "invitations"];
-function useJockeyProfile(id) {
+
+export function useJockeyProfile(id) {
   return useQuery({
     queryKey: ["jockey", "profile", id],
     queryFn: () => fetchJockeyProfile(id),
-    enabled: !!id
+    enabled: !!id,
   });
 }
-function useJockeyInvitations(jockeyUserId, status) {
+
+export function useJockeyInvitations(jockeyUserId, status) {
   return useQuery({
     queryKey: ["jockey", "invitations", jockeyUserId, status],
     queryFn: () => fetchJockeyInvitations(jockeyUserId, status),
-    enabled: !!jockeyUserId
+    enabled: !!jockeyUserId,
   });
 }
-function useJockeyStats(enabled = true) {
+
+/** REAL — GET /jockeys/me/stats. Gated on auth (token-resolved /me endpoint). */
+export function useJockeyStats(enabled = true) {
   return useQuery({
     queryKey: ["jockey", "stats"],
     queryFn: fetchJockeyStats,
-    enabled
+    enabled,
   });
 }
-function useInvitationInsights(enabled = true) {
+
+/** REAL — GET /jockeys/me/invitation-insights. */
+export function useInvitationInsights(enabled = true) {
   return useQuery({
     queryKey: ["jockey", "invitation-insights"],
     queryFn: fetchInvitationInsights,
-    enabled
+    enabled,
   });
 }
-function useMyRides(when, enabled = true) {
+
+/** REAL — GET /assignments/me/rides?when=. */
+export function useMyRides(when, enabled = true) {
   return useQuery({
     queryKey: ["jockey", "rides", when],
     queryFn: () => fetchMyRides(when),
-    enabled
+    enabled,
   });
 }
-function useLeaderboard() {
+
+/** REAL — derived leaderboard from GET /jockeys (no auth needed). */
+export function useLeaderboard() {
   return useQuery({
     queryKey: ["jockey", "leaderboard"],
-    queryFn: () => fetchLeaderboard()
+    queryFn: () => fetchLeaderboard(),
   });
 }
-function useRaceEntries(raceId) {
+
+/** REAL — GET /races/{raceId}/entries (used to resolve a ride's horseId by name). */
+export function useRaceEntries(raceId) {
   return useQuery({
     queryKey: ["jockey", "race-entries", raceId],
     queryFn: () => fetchRaceEntries(raceId),
     enabled: !!raceId,
-    staleTime: 5 * 6e4
+    staleTime: 5 * 60_000,
   });
 }
-function useRideIntelligence(horseId) {
+
+/** REAL — GET /horses/{id}/ride-intelligence (form profile is slow-changing). */
+export function useRideIntelligence(horseId) {
   return useQuery({
     queryKey: ["horses", "ride-intelligence", horseId],
     queryFn: () => fetchRideIntelligence(horseId),
     enabled: !!horseId,
-    staleTime: 5 * 6e4
+    staleTime: 5 * 60_000,
   });
 }
-function useJockeyDetail(id) {
+
+/** REAL — GET /jockeys/{id} full editable profile (seeds the self-edit form). */
+export function useJockeyDetail(id) {
   return useQuery({
     queryKey: ["jockey", "detail", id],
     queryFn: () => fetchJockeyDetail(id),
-    enabled: !!id
+    enabled: !!id,
   });
 }
-function useUpdateMyJockeyProfile() {
+
+export function useUpdateMyJockeyProfile() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (body) => updateMyJockeyProfile(body),
@@ -87,10 +105,11 @@ function useUpdateMyJockeyProfile() {
       qc.setQueryData(["jockey", "detail", detail.id], detail);
       qc.invalidateQueries({ queryKey: ["jockey", "profile"] });
       qc.invalidateQueries({ queryKey: ["jockey", "leaderboard"] });
-    }
+    },
   });
 }
-function useAcceptInvitation() {
+
+export function useAcceptInvitation() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (id) => acceptInvitation(id),
@@ -99,20 +118,23 @@ function useAcceptInvitation() {
       qc.invalidateQueries({ queryKey: ["jockey", "rides"] });
       qc.invalidateQueries({ queryKey: ["jockey", "stats"] });
       qc.invalidateQueries({ queryKey: ["jockey", "invitation-insights"] });
-    }
+    },
   });
 }
-function useRejectInvitation() {
+
+export function useRejectInvitation() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (id) => rejectInvitation(id),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: INVITATIONS_KEY });
       qc.invalidateQueries({ queryKey: ["jockey", "invitation-insights"] });
-    }
+    },
   });
 }
-function useWithdrawInvitation() {
+
+/** Jockey withdraws from an ACCEPTED ride (→ CANCELLED). Affects rides + stats. */
+export function useWithdrawInvitation() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (id) => withdrawInvitation(id),
@@ -121,57 +143,6 @@ function useWithdrawInvitation() {
       qc.invalidateQueries({ queryKey: ["jockey", "rides"] });
       qc.invalidateQueries({ queryKey: ["jockey", "stats"] });
       qc.invalidateQueries({ queryKey: ["jockey", "invitation-insights"] });
-    }
+    },
   });
 }
-import {
-  fetchJockeySuggestions,
-  searchJockeys,
-  fetchJockeysPage,
-  filterJockeys
-} from "./api";
-function useJockeySuggestions(raceId) {
-  return useQuery({
-    queryKey: ["jockey", "suggestions", raceId],
-    queryFn: () => fetchJockeySuggestions(raceId),
-    enabled: !!raceId
-  });
-}
-function useSearchJockeys(query) {
-  return useQuery({
-    queryKey: ["jockey", "search", query],
-    queryFn: () => searchJockeys(query),
-    enabled: !!query
-  });
-}
-function useJockeysPage(params) {
-  return useQuery({
-    queryKey: ["jockey", "page", params],
-    queryFn: () => fetchJockeysPage(params)
-  });
-}
-function useFilterJockeys(filter) {
-  return useQuery({
-    queryKey: ["jockey", "filter", filter],
-    queryFn: () => filterJockeys(filter)
-  });
-}
-export {
-  useAcceptInvitation,
-  useFilterJockeys,
-  useInvitationInsights,
-  useJockeyDetail,
-  useJockeyInvitations,
-  useJockeyProfile,
-  useJockeyStats,
-  useJockeySuggestions,
-  useJockeysPage,
-  useLeaderboard,
-  useMyRides,
-  useRaceEntries,
-  useRejectInvitation,
-  useRideIntelligence,
-  useSearchJockeys,
-  useUpdateMyJockeyProfile,
-  useWithdrawInvitation
-};

@@ -43,373 +43,417 @@ import {
   rejectRegistration,
   deleteRegistration,
   requestApplicationInfo,
-  submitAllInspections
+  submitAllInspections,
 } from "./api";
-function useRefereeDashboard(enabled = true) {
-  return useQuery({ queryKey: ["referee", "dashboard"], queryFn: fetchRefereeDashboard, enabled });
+
+// ---------- Dashboard ----------
+export function useRefereeDashboard(enabled = true) {
+  return useQuery({
+    queryKey: ["referee", "dashboard"],
+    queryFn: fetchRefereeDashboard,
+    enabled,
+  });
 }
-function useRefereeRaces(options = {}) {
+
+// ---------- Races picker ----------
+/**
+ * Races scoped to the signed-in referee's assignments. Pass `refetchInterval` to keep race
+ * status fresh while mounted (e.g. the live monitor, so a race leaving RUNNING stops the fast poll).
+ */
+export function useRefereeRaces(options = {}) {
   return useQuery({
     queryKey: ["referee", "races"],
     queryFn: fetchRefereeRaces,
-    refetchInterval: options.refetchInterval ?? false
+    refetchInterval: options.refetchInterval ?? false,
   });
 }
-function useRefereeRaceById(raceId) {
+
+/** Fetch one race directly — resolves a deep-linked race that falls outside the scoped list's window. */
+export function useRefereeRaceById(raceId) {
   return useQuery({
     queryKey: ["referee", "race", raceId],
     queryFn: () => fetchRefereeRace(raceId),
     enabled: !!raceId,
-    refetchInterval: 1e4
+    refetchInterval: 10000,
   });
 }
-function useEntryReviews(raceId) {
+
+// ---------- Document review (CN2) ----------
+export function useEntryReviews(raceId) {
   return useQuery({
     queryKey: ["referee", "entry-reviews", raceId],
     queryFn: () => fetchEntryReviews(raceId),
-    enabled: !!raceId
+    enabled: !!raceId,
   });
 }
-function useAcceptEntry(raceId) {
+
+export function useAcceptEntry(raceId) {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (entryId) => acceptEntry(raceId, entryId),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["referee", "entry-reviews", raceId] })
+    onSuccess: () =>
+      qc.invalidateQueries({ queryKey: ["referee", "entry-reviews", raceId] }),
   });
 }
-function useRejectEntry(raceId) {
+
+export function useRejectEntry(raceId) {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: ({ entryId, reason }) => rejectEntry(raceId, entryId, reason),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["referee", "entry-reviews", raceId] })
+    onSuccess: () =>
+      qc.invalidateQueries({ queryKey: ["referee", "entry-reviews", raceId] }),
   });
 }
-function useInspections(raceId) {
+
+// ---------- Inspection ----------
+export function useInspections(raceId) {
   return useQuery({
     queryKey: ["referee", "inspections", raceId],
     queryFn: () => fetchInspections(raceId),
-    enabled: !!raceId
+    enabled: !!raceId,
   });
 }
-function useRecordInspection(raceId) {
+
+export function useRecordInspection(raceId) {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (body) => recordInspection(raceId, body),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["referee", "inspections", raceId] });
       qc.invalidateQueries({ queryKey: ["referee", "dashboard"] });
-    }
+    },
   });
 }
-function useSubmitAllInspections(raceId) {
+
+export function useSubmitAllInspections(raceId) {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: () => submitAllInspections(raceId),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["referee", "inspections", raceId] });
       qc.invalidateQueries({ queryKey: ["referee", "dashboard"] });
-    }
+    },
   });
 }
-function useRaceViolations(raceId) {
+
+// ---------- Violations ----------
+export function useRaceViolations(raceId) {
   return useQuery({
     queryKey: ["referee", "violations", "race", raceId],
     queryFn: () => fetchRaceViolations(raceId),
-    enabled: !!raceId
+    enabled: !!raceId,
   });
 }
-function useViolation(violationId) {
+
+export function useViolation(violationId) {
   return useQuery({
     queryKey: ["referee", "violation", violationId],
     queryFn: () => fetchViolation(violationId),
-    enabled: !!violationId
+    enabled: !!violationId,
   });
 }
-function useCreateViolation(raceId) {
+
+export function useCreateViolation(raceId) {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (body) => createViolation(raceId, body),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["referee", "violations"] });
       qc.invalidateQueries({ queryKey: ["referee", "dashboard"] });
-    }
+    },
   });
 }
-function useRecordRuling(violationId) {
+
+export function useRecordRuling(violationId) {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (body) => recordRuling(violationId, body),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["referee", "violation", violationId] });
       qc.invalidateQueries({ queryKey: ["referee", "violations"] });
-    }
+    },
   });
 }
-function useUpdateViolation() {
+
+export function useUpdateViolation() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (v) => updateViolation(v.violationId, v.body),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["referee", "violations"] })
+    onSuccess: () =>
+      qc.invalidateQueries({ queryKey: ["referee", "violations"] }),
   });
 }
-function useDeleteViolation() {
+
+export function useDeleteViolation() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (violationId) => deleteViolation(violationId),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["referee", "violations"] })
+    onSuccess: () =>
+      qc.invalidateQueries({ queryKey: ["referee", "violations"] }),
   });
 }
-function useRaceEntries(raceId) {
+
+export function useRaceEntries(raceId) {
   return useQuery({
     queryKey: ["referee", "race-entries", raceId],
     queryFn: () => fetchRaceEntries(raceId),
-    enabled: !!raceId
+    enabled: !!raceId,
   });
 }
-function useResults(raceId) {
+
+// ---------- Results ----------
+export function useResults(raceId) {
   return useQuery({
     queryKey: ["referee", "results", raceId],
     queryFn: () => fetchResults(raceId),
-    enabled: !!raceId
+    enabled: !!raceId,
   });
 }
-function useRecordResults(raceId) {
+
+/** ADMIN-ONLY legacy save (no OTP). Referees publish via useSubmitReport. */
+export function useRecordResults(raceId) {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (vars) => recordResults(raceId, vars.results),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["referee", "results", raceId] })
+    onSuccess: () =>
+      qc.invalidateQueries({ queryKey: ["referee", "results", raceId] }),
   });
 }
-function useRequestRefereeCode(raceId) {
+
+/** CN3: email the referee a fresh OTP for this race. */
+export function useRequestRefereeCode(raceId) {
   return useMutation({ mutationFn: () => requestRefereeCode(raceId) });
 }
-function useSubmitReport(raceId) {
+
+/** CN3: publish the combined report (results + violations) with the emailed OTP. */
+export function useSubmitReport(raceId) {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (vars) => submitReport(raceId, vars),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["referee", "results", raceId] });
       qc.invalidateQueries({ queryKey: ["referee", "dashboard"] });
-    }
+    },
   });
 }
-function useFlagInquiry(raceId) {
+
+/** CN3: flag a result row UNDER_REVIEW. */
+export function useFlagInquiry(raceId) {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (resultId) => flagInquiry(raceId, resultId),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["referee", "results", raceId] })
+    onSuccess: () =>
+      qc.invalidateQueries({ queryKey: ["referee", "results", raceId] }),
   });
 }
-function useDeleteResult(raceId) {
+
+export function useDeleteResult(raceId) {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (resultId) => deleteResult(raceId, resultId),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["referee", "results", raceId] })
+    onSuccess: () =>
+      qc.invalidateQueries({ queryKey: ["referee", "results", raceId] }),
   });
 }
-function useMyAssignments() {
-  return useQuery({ queryKey: ["referee", "my-assignments"], queryFn: fetchMyAssignments });
+
+/** The signed-in referee's assignments incl. their per-race code. */
+export function useMyAssignments() {
+  return useQuery({
+    queryKey: ["referee", "my-assignments"],
+    queryFn: fetchMyAssignments,
+  });
 }
-function useMyTournamentInvitations() {
-  return useQuery({ queryKey: ["referee", "tournament-invitations"], queryFn: fetchMyTournamentInvitations });
+
+// ---------- Tournament invitations (referee accepts/declines) ----------
+export function useMyTournamentInvitations() {
+  return useQuery({
+    queryKey: ["referee", "tournament-invitations"],
+    queryFn: fetchMyTournamentInvitations,
+  });
 }
-function useAcceptTournamentInvitation() {
+export function useAcceptTournamentInvitation() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (id) => acceptTournamentInvitation(id),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["referee", "tournament-invitations"] })
+    onSuccess: () =>
+      qc.invalidateQueries({ queryKey: ["referee", "tournament-invitations"] }),
   });
 }
-function useRejectTournamentInvitation() {
+export function useRejectTournamentInvitation() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (id) => rejectTournamentInvitation(id),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["referee", "tournament-invitations"] })
+    onSuccess: () =>
+      qc.invalidateQueries({ queryKey: ["referee", "tournament-invitations"] }),
   });
 }
-function useMyRaceAssignments() {
-  return useQuery({ queryKey: ["referee", "race-assignments"], queryFn: fetchMyRaceAssignments });
+
+// CN1: per-race assignment accept/decline
+export function useMyRaceAssignments() {
+  return useQuery({
+    queryKey: ["referee", "race-assignments"],
+    queryFn: fetchMyRaceAssignments,
+  });
 }
-function useAcceptRaceAssignment() {
+export function useAcceptRaceAssignment() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (id) => acceptRaceAssignment(id),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["referee", "race-assignments"] })
+    onSuccess: () =>
+      qc.invalidateQueries({ queryKey: ["referee", "race-assignments"] }),
   });
 }
-function useDeclineRaceAssignment() {
+export function useDeclineRaceAssignment() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (v) => declineRaceAssignment(v.id, v.reason),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["referee", "race-assignments"] })
+    onSuccess: () =>
+      qc.invalidateQueries({ queryKey: ["referee", "race-assignments"] }),
   });
 }
-function useCertifyResults(raceId) {
+
+export function useCertifyResults(raceId) {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (body) => certifyResults(raceId, body),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["referee", "results", raceId] });
       qc.invalidateQueries({ queryKey: ["referee", "dashboard"] });
-    }
+    },
   });
 }
-function useLiveRace(raceId, refetchMs = 5e3) {
+
+// ---------- Live monitor ----------
+export function useLiveRace(raceId, refetchMs = 5000) {
   return useQuery({
     queryKey: ["referee", "live", raceId],
     queryFn: () => fetchLiveRace(raceId),
     enabled: !!raceId,
-    refetchInterval: refetchMs
+    refetchInterval: refetchMs,
   });
 }
-function useRegistrations(query) {
+
+// ---------- Registration management ----------
+export function useRegistrations(query) {
   return useQuery({
     queryKey: ["referee", "registrations", query],
-    queryFn: () => fetchRegistrations(query)
+    queryFn: () => fetchRegistrations(query),
   });
 }
-function useRegistrationStats() {
-  return useQuery({ queryKey: ["referee", "registration-stats"], queryFn: fetchRegistrationStats });
+
+export function useRegistrationStats() {
+  return useQuery({
+    queryKey: ["referee", "registration-stats"],
+    queryFn: fetchRegistrationStats,
+  });
 }
-function useHorsePassport(horseId) {
+
+export function useHorsePassport(horseId) {
   return useQuery({
     queryKey: ["referee", "horse-passport", horseId],
     queryFn: () => fetchHorsePassport(horseId),
-    enabled: !!horseId
+    enabled: !!horseId,
   });
 }
-function useHorseVerification(horseId) {
+
+export function useHorseVerification(horseId) {
   return useQuery({
     queryKey: ["referee", "horse-verification", horseId],
     queryFn: () => fetchHorseVerification(horseId),
-    enabled: !!horseId
+    enabled: !!horseId,
   });
 }
-function useApproveRegistration() {
+
+export function useApproveRegistration() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (id) => approveRegistration(id),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["referee", "registrations"] });
       qc.invalidateQueries({ queryKey: ["referee", "registration-stats"] });
-    }
+    },
   });
 }
-function useRejectRegistration() {
+
+export function useRejectRegistration() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: ({ id, reason }) => rejectRegistration(id, reason),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["referee", "registrations"] });
       qc.invalidateQueries({ queryKey: ["referee", "registration-stats"] });
-    }
+    },
   });
 }
-function useDeleteRegistration() {
+
+/** Referee/admin soft-remove of a registration (DELETE → status REMOVED). */
+export function useDeleteRegistration() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (id) => deleteRegistration(id),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["referee", "registrations"] });
       qc.invalidateQueries({ queryKey: ["referee", "registration-stats"] });
-    }
+    },
   });
 }
-function useApplications(query) {
+
+// ---------- Applicant onboarding (Registration Approval) ----------
+// retry:false — the BE endpoints are spec-only for now, so fail fast to an empty/error state.
+export function useApplications(query) {
   return useQuery({
     queryKey: ["referee", "applications", query],
     queryFn: () => fetchApplications(query),
-    retry: false
+    retry: false,
   });
 }
-function useApplicationStats() {
+
+export function useApplicationStats() {
   return useQuery({
     queryKey: ["referee", "application-stats"],
     queryFn: fetchApplicationStats,
-    retry: false
+    retry: false,
   });
 }
-function useApplication(id) {
+
+export function useApplication(id) {
   return useQuery({
     queryKey: ["referee", "application", id],
     queryFn: () => fetchApplication(id),
     enabled: !!id,
-    retry: false
+    retry: false,
   });
 }
-function useApproveApplication() {
+
+export function useApproveApplication() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (id) => approveApplication(id),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["referee", "applications"] });
       qc.invalidateQueries({ queryKey: ["referee", "application-stats"] });
-    }
+    },
   });
 }
-function useRejectApplication() {
+
+export function useRejectApplication() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: ({ id, reason }) => rejectApplication(id, reason),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["referee", "applications"] });
       qc.invalidateQueries({ queryKey: ["referee", "application-stats"] });
-    }
+    },
   });
 }
-function useRequestApplicationInfo() {
+
+export function useRequestApplicationInfo() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: ({ id, note }) => requestApplicationInfo(id, note),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["referee", "applications"] });
       qc.invalidateQueries({ queryKey: ["referee", "application"] });
-    }
+    },
   });
 }
-export {
-  useAcceptEntry,
-  useAcceptRaceAssignment,
-  useAcceptTournamentInvitation,
-  useApplication,
-  useApplicationStats,
-  useApplications,
-  useApproveApplication,
-  useApproveRegistration,
-  useCertifyResults,
-  useCreateViolation,
-  useDeclineRaceAssignment,
-  useDeleteRegistration,
-  useDeleteResult,
-  useDeleteViolation,
-  useEntryReviews,
-  useFlagInquiry,
-  useHorsePassport,
-  useHorseVerification,
-  useInspections,
-  useLiveRace,
-  useMyAssignments,
-  useMyRaceAssignments,
-  useMyTournamentInvitations,
-  useRaceEntries,
-  useRaceViolations,
-  useRecordInspection,
-  useRecordResults,
-  useRecordRuling,
-  useRefereeDashboard,
-  useRefereeRaceById,
-  useRefereeRaces,
-  useRegistrationStats,
-  useRegistrations,
-  useRejectApplication,
-  useRejectEntry,
-  useRejectRegistration,
-  useRejectTournamentInvitation,
-  useRequestApplicationInfo,
-  useRequestRefereeCode,
-  useResults,
-  useSubmitAllInspections,
-  useSubmitReport,
-  useUpdateViolation,
-  useViolation
-};

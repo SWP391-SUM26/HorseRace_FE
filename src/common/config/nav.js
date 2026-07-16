@@ -10,14 +10,13 @@ import {
   Mail,
   UserCog,
   ShieldCheck,
+  Eye,
   CalendarDays,
   Coins,
-  BarChart3,
-  FileText,
   Radio,
-  UserSquare
+  BarChart3,
+  FileText
 } from "lucide-react";
-
 const HorseIcon = Rabbit;
 
 const ROLE_NAV = {
@@ -26,8 +25,7 @@ const ROLE_NAV = {
       { label: "Overview", to: "/owner/overview", icon: LayoutDashboard },
       { label: "Stable Management", to: "/owner/stable", icon: HorseIcon },
       { label: "Jockey Market", to: "/owner/jockey-market", icon: Users },
-      { label: "Race Calendar", to: "/owner/race-schedule", icon: CalendarDays },
-      { label: "My Documents", to: "/owner/documents", icon: FileText },
+      { label: "Race Schedule", to: "/owner/race-schedule", icon: CalendarDays },
       { label: "Profile", to: "/profile", icon: UserCog }
     ],
     topbar: [
@@ -51,13 +49,13 @@ const ROLE_NAV = {
   RACE_REFEREE: {
     sidebar: [
       { label: "Dashboard", to: "/referee/dashboard", icon: LayoutDashboard },
-      { label: "Pre-Race Inspection", to: "/referee/pre-race-inspection", icon: ShieldCheck },
-      { label: "Document Review", to: "/referee/document-review", icon: FileText },
-      { label: "Race Assignments", to: "/referee/race-assignments", icon: CalendarDays },
-      { label: "Live Monitor", to: "/referee/live-monitor", icon: Radio },
+      { label: "Pre-Race Inspection", to: "/referee/inspection", icon: ShieldCheck },
       { label: "Results", to: "/referee/race-result-recording", icon: Flag },
       { label: "Violations", to: "/referee/violations", icon: ClipboardList },
-      { label: "Race Reports", to: "/referee/reports", icon: FileText }
+      { label: "Race Reports", to: "/referee/reports", icon: FileText },
+      { label: "Tournament Invitations", to: "/referee/invitations", icon: Mail },
+      { label: "My Race Assignments", to: "/referee/race-assignments", icon: CalendarDays },
+      { label: "Live Monitor", to: "/referee/live-monitor", icon: Radio }
     ],
     topbar: []
   },
@@ -65,8 +63,6 @@ const ROLE_NAV = {
     sidebar: [
       { label: "Dashboard", to: "/admin/dashboard", icon: LayoutDashboard },
       { label: "User Management", to: "/admin/users", icon: Users },
-      { label: "Horses", to: "/admin/horses", icon: HorseIcon },
-      { label: "Jockeys", to: "/admin/jockeys", icon: UserSquare },
       { label: "Tournaments", to: "/admin/tournaments", icon: Trophy },
       { label: "Race Calendar", to: "/admin/races", icon: CalendarDays },
       { label: "Race Reports", to: "/admin/reports", icon: FileText },
@@ -78,20 +74,30 @@ const ROLE_NAV = {
   },
   SPECTATOR: {
     sidebar: [
-      { label: "Live Races", to: "/spectator/live-races", icon: LayoutDashboard },
+      { label: "Lobby", to: "/spectator-dashboard", icon: LayoutDashboard },
+      { label: "Race Schedule", to: "/spectator/schedule", icon: CalendarDays },
       { label: "Predictions", to: "/spectator/predictions", icon: Coins },
-      { label: "Rewards", to: "/spectator/rewards", icon: Trophy }
+      { label: "Rewards", to: "/spectator/rewards", icon: Trophy },
+      { label: "Tournaments", to: "/spectator/tournaments", icon: Trophy },
+      { label: "Live Races", to: "/spectator/live-races", icon: Radio },
+      { label: "Wallet", to: "/wallet", icon: Wallet }
     ],
     topbar: [
-      { label: "Live Races", to: "/spectator/live-races" },
+      { label: "Live Races", to: "/spectator-dashboard" },
       { label: "Predictions", to: "/spectator/predictions" },
-      { label: "Rewards", to: "/spectator/rewards" }
+      { label: "Rewards", to: "/spectator/rewards" },
+      { label: "Wallet", to: "/app/wallet" }
     ]
   }
 };
 
+ROLE_NAV.OWNER = ROLE_NAV.HORSE_OWNER;
+
 function roleWord(role) {
-  return role === "HORSE_OWNER" ? "Owner" : ROLE_LABELS[role];
+  return ROLE_LABELS[role] || ROLE_LABELS.HORSE_OWNER;
 }
 
-export { ROLE_NAV, roleWord };
+export {
+  ROLE_NAV,
+  roleWord
+};
