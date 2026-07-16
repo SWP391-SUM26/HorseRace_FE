@@ -1,6 +1,5 @@
 import { apiClient } from "@/common/lib/apiClient";
 import { formatDate } from "@/common/lib/format";
-import { STATIC_WORKOUTS } from "./static";
 function toArray(d) {
   if (Array.isArray(d)) return d;
   return d?.content ?? [];
@@ -82,7 +81,7 @@ async function fetchHorseProfile(id) {
     grade: stats?.grade ? humanize(stats.grade) : "",
     pedigree: pedigree ? mapPedigree(pedigree) : [],
     raceHistory: mapRaceHistory(history),
-    workouts: STATIC_WORKOUTS,
+    workouts: [],
     lifetimeEarnings: stats?.lifetimeEarnings ?? 0,
     starts: stats?.starts ?? 0,
     wins: stats?.wins ?? 0,
@@ -148,13 +147,23 @@ async function fetchMedicalRecords(horseId) {
   return Array.isArray(data.data) ? data.data : data.data.content ?? [];
 }
 async function addMedicalRecord(horseId, body) {
-  await apiClient.post(`/horses/${horseId}/medical-records`, body);
+  const { data } = await apiClient.post(`/horses/${horseId}/medical-records`, body);
+  return data.data;
 }
 async function updateMedicalRecord(horseId, recordId, body) {
-  await apiClient.put(`/horses/${horseId}/medical-records/${recordId}`, body);
+  const { data } = await apiClient.put(`/horses/${horseId}/medical-records/${recordId}`, body);
+  return data.data;
 }
 async function deleteMedicalRecord(horseId, recordId) {
   await apiClient.delete(`/horses/${horseId}/medical-records/${recordId}`);
+}
+async function uploadMedicalRecordFile(horseId, recordId, file) {
+  const form = new FormData();
+  form.append("file", file);
+  const { data } = await apiClient.post(`/horses/${horseId}/medical-records/${recordId}/file`, form, {
+    headers: { "Content-Type": "multipart/form-data" }
+  });
+  return data.data;
 }
 async function fetchEnterableRaces(horseId) {
   const races = await get(
@@ -179,5 +188,6 @@ export {
   toHorseRequest,
   updateHorse,
   updateMedicalRecord,
-  uploadHorseImage
+  uploadHorseImage,
+  uploadMedicalRecordFile
 };

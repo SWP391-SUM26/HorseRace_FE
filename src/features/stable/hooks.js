@@ -12,7 +12,8 @@ import {
   fetchMedicalRecords,
   addMedicalRecord,
   updateMedicalRecord,
-  deleteMedicalRecord
+  deleteMedicalRecord,
+  uploadMedicalRecordFile
 } from "./api";
 const HORSES_KEY = ["stable", "horses"];
 function useOwnerHorses() {
@@ -94,6 +95,13 @@ function useDeleteMedicalRecord(horseId) {
     onSuccess: () => qc.invalidateQueries({ queryKey: medKey(horseId) })
   });
 }
+function useUploadMedicalRecordFile(horseId) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ recordId, file }) => uploadMedicalRecordFile(horseId, recordId, file),
+    onSuccess: () => qc.invalidateQueries({ queryKey: medKey(horseId) })
+  });
+}
 export {
   useAddMedicalRecord,
   useCreateHorse,
@@ -106,5 +114,6 @@ export {
   useMedicalRecords,
   useOwnerHorses,
   useUpdateHorse,
-  useUpdateMedicalRecord
+  useUpdateMedicalRecord,
+  useUploadMedicalRecordFile
 };

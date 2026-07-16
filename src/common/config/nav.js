@@ -22,19 +22,22 @@ const HorseIcon = Rabbit;
 const ROLE_NAV = {
   HORSE_OWNER: {
     sidebar: [
-      { label: "Overview", to: "/owner/overview", icon: LayoutDashboard },
-      { label: "Stable Management", to: "/owner/stable", icon: HorseIcon },
-      { label: "Jockey Market", to: "/owner/jockey-market", icon: Users },
-      { label: "Race Schedule", to: "/owner/race-schedule", icon: CalendarDays },
-      { label: "Profile", to: "/profile", icon: UserCog }
+      { label: "Tournaments", to: "/app/owner/tournaments", icon: Trophy },
+      { label: "Stable Management", to: "/app/owner/stable", icon: HorseIcon },
+      { label: "Jockey Market", to: "/app/owner/jockeys", icon: Users },
+      { label: "Race Calendar", to: "/app/owner/races", icon: CalendarDays },
+      { label: "Race Results", to: "/app/owner/results", icon: FileText },
+      { label: "My Race Report", to: "/app/owner/race-report", icon: ClipboardList },
+      { label: "Financials", to: "/app/owner/financials", icon: Wallet },
+      { label: "Profile", to: "/app/owner/profile", icon: UserCog }
     ],
     topbar: [
-      { label: "Dashboard", to: "/owner/overview" },
-      { label: "Stable", to: "/owner/stable" },
-      { label: "Marketplace", to: "/owner/jockey-market" },
-      { label: "Schedule", to: "/owner/race-schedule" }
+      { label: "Tournaments", to: "/app/owner/tournaments" },
+      { label: "Stable", to: "/app/owner/stable" },
+      { label: "Marketplace", to: "/app/owner/jockeys" },
+      { label: "Schedule", to: "/app/owner/races" }
     ],
-    primaryAction: { label: "Register Horse", to: "/owner/stable" }
+    primaryAction: { label: "Register Horse", to: "/app/owner/stable" }
   },
   JOCKEY: {
     sidebar: [

@@ -52,6 +52,8 @@ import SpectatorLivePage from "@/features/spectator/pages/SpectatorLivePage";
 import AdminDashboardPage from "@/features/admin/pages/AdminDashboardPage";
 import NotificationsPage from "@/features/notifications/pages/NotificationsPage";
 import ConfirmParticipationPage from "@/features/owner/pages/ConfirmParticipationPage";
+import WalletPage from "@/features/wallet/pages/WalletPage";
+import WalletReturnPage from "@/features/wallet/pages/WalletReturnPage";
 function NotificationsRoute() {
   const { user } = useAuth();
   if (!user) return null;
@@ -74,6 +76,13 @@ const router = createBrowserRouter([
     children: [
       // Shared across all roles — renders in the caller's own shell (see NotificationsRoute).
       { path: "notifications", element: <NotificationsRoute /> },
+      {
+        element: <DashboardLayout />,
+        children: [
+          { path: "wallet", element: <WalletPage /> },
+          { path: "wallet/return", element: <WalletReturnPage /> }
+        ]
+      },
       {
         element: <DashboardLayout />,
         children: [
