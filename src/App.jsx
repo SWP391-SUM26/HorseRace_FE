@@ -63,6 +63,9 @@ import SpectatorHubPage from '@/features/spectator/pages/SpectatorHubPage';
 import PredictionsPage from '@/features/spectator/pages/PredictionsPage';
 import RewardsPage from '@/features/spectator/pages/RewardsPage';
 import SpectatorLivePage from '@/features/spectator/pages/SpectatorLivePage';
+import WalletPage from '@/features/wallet/pages/WalletPage';
+import WalletReturnPage from '@/features/wallet/pages/WalletReturnPage';
+import NotificationsPage from '@/features/notifications/pages/NotificationsPage';
 
 
 const OwnerPlaceholder = ({ title }) => (
