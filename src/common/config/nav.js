@@ -58,7 +58,6 @@ const ROLE_NAV = {
       { label: "Applicant Approval", to: "/referee/applications", icon: ClipboardList },
       { label: "Tournament Invitations", to: "/referee/invitations", icon: Mail },
       { label: "My Race Assignments", to: "/referee/race-assignments", icon: CalendarDays },
-      { label: "Live Monitor", to: "/referee/live-monitor", icon: Radio }
     ],
     topbar: []
   },

@@ -2,13 +2,9 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { fetchRaceEntries, fetchHorseMedical } from "@/features/admin/api";
 import {
   confirmParticipation,
-  fetchHorseDocuments,
   fetchHorseStandings,
-  fetchOwnerDocuments,
   fetchOwnerOverview,
   fetchOwnerRaceRegistrations,
-  uploadHorseDocument,
-  uploadOwnerDocument,
 } from "./api";
 
 export function useOwnerOverview() {
@@ -18,41 +14,9 @@ export function useOwnerOverview() {
   });
 }
 
-// ---------- Documents (CN2) ----------
-export function useOwnerDocuments() {
-  return useQuery({
-    queryKey: ["owner", "documents", "owner"],
-    queryFn: fetchOwnerDocuments,
-  });
-}
 
-export function useHorseDocuments(horseId) {
-  return useQuery({
-    queryKey: ["owner", "documents", "horse", horseId],
-    queryFn: () => fetchHorseDocuments(horseId),
-    enabled: !!horseId,
-  });
-}
 
-export function useUploadOwnerDocument() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: (file) => uploadOwnerDocument(file),
-    onSuccess: () =>
-      qc.invalidateQueries({ queryKey: ["owner", "documents", "owner"] }),
-  });
-}
 
-export function useUploadHorseDocument(horseId) {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: (file) => uploadHorseDocument(horseId, file),
-    onSuccess: () =>
-      qc.invalidateQueries({
-        queryKey: ["owner", "documents", "horse", horseId],
-      }),
-  });
-}
 
 // ---------- Confirm participation (FR-10) ----------
 export function useConfirmRaceEntries(raceId) {

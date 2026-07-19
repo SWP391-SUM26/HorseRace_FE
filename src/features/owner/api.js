@@ -50,44 +50,9 @@ export async function fetchOwnerOverview() {
 }
 
 // ---------- Owner / horse documents (CN2 document review) ----------
-/** Upload a document scoped to the signed-in owner (auto-scoped by the BE). */
-export async function uploadOwnerDocument(file) {
-  const form = new FormData();
-  form.append("file", file);
-  form.append("ownerType", "OWNER");
-  const { data } = await apiClient.post("/owner/documents", form, {
-    headers: { "Content-Type": "multipart/form-data" },
-  });
-  return data.data;
-}
 
-/** Upload a document for one of the owner's horses. */
-export async function uploadHorseDocument(horseId, file) {
-  const form = new FormData();
-  form.append("file", file);
-  form.append("ownerType", "HORSE");
-  form.append("horseId", horseId);
-  const { data } = await apiClient.post("/owner/documents", form, {
-    headers: { "Content-Type": "multipart/form-data" },
-  });
-  return data.data;
-}
 
-/** List the owner's own documents. */
-export async function fetchOwnerDocuments() {
-  // Owner/horse docs are RESTRICTED — listed via the ownership-checked owner
-  // endpoint, not /attachments.
-  const { data } = await apiClient.get("/owner/documents");
-  return data.data ?? [];
-}
 
-/** List the documents attached to one of the owner's horses (ownership-checked). */
-export async function fetchHorseDocuments(horseId) {
-  const { data } = await apiClient.get(
-    `/owner/documents/horse/${horseId}`,
-  );
-  return data.data ?? [];
-}
 
 // ---------- Confirm participation (FR-10) — readiness for the owner's entry ----------
 /**

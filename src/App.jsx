@@ -7,7 +7,7 @@ import {
   Navigate,
 } from 'react-router-dom';
 
-import HomePage from './pages/HomePage';
+import HomePage from '@/features/home/pages/HomePage';
 import LoginPage from '@/features/auth/pages/LoginPage';
 import JockeyRegistrationPage from '@/features/auth/pages/JockeyRegistrationPage';
 import OwnerRegistrationPage from '@/features/auth/pages/OwnerRegistrationPage';
@@ -26,7 +26,6 @@ import AdminHorseManagement from '@/features/admin/pages/HorseManagementPage';
 import AdminJockeyManagement from '@/features/admin/pages/JockeyManagementPage';
 import AdminTournamentOrchestration from '@/features/admin/pages/TournamentOrchestrationPage';
 import AdminTournamentDetail from '@/features/admin/pages/TournamentDetailPage';
-import AdminRaceManagement from '@/features/admin/pages/RaceManagementPage';
 import AdminRaceCalendar from '@/features/admin/pages/AdminRaceCalendarPage';
 import AdminRegistrationApproval from '@/features/admin/pages/RegistrationApprovalPage';
 import AdminStaffingV2 from '@/features/admin/pages/StaffingPage';
@@ -42,19 +41,15 @@ import JockeyMarketPage from '@/features/jockeys/pages/JockeyMarketPage';
 import RaceCalendarPage from '@/features/races/pages/RaceCalendarPage';
 import ConfirmParticipationPage from '@/features/owner/pages/ConfirmParticipationPage';
 import OwnerRaceReportPage from '@/features/races/pages/OwnerRaceReportPage';
-import UploadDocumentsPage from '@/features/owner/pages/UploadDocumentsPage';
 import FinancesPage from '@/features/finances/pages/FinancesPage';
-import MyInvitationsPage from '@/features/jockey/pages/MyInvitationsPage'; // For Owner
 import JockeyDashboardPage from '@/features/jockey/pages/JockeyDashboardPage';
 import JockeyInvitationsPage from '@/features/jockey/pages/JockeyInvitationsPage';
 import JockeyProfilePage from '@/features/jockey/pages/JockeyProfilePage';
 import PerformancePage from '@/features/jockey/pages/PerformancePage';
 import RaceSchedulePage from '@/features/jockey/pages/RaceSchedulePage';
 // ---------------------------------------
-import RegistrationManagement from '@/features/referee/pages/RegistrationManagementPage';
 import PreRaceInspection from '@/features/referee/pages/PreRaceInspectionPage';
 import RefereeDashboard from '@/features/referee/pages/RefereeDashboardPage';
-import LiveRaceMonitor from '@/features/referee/pages/LiveRaceMonitorPage';
 import ProfilePage from '@/features/profile/pages/ProfilePage';
 import ViolationManagement from '@/features/referee/pages/ViolationsPage';
 import RaceResultRecording from '@/features/referee/pages/RaceResultsPage';
@@ -62,7 +57,6 @@ import MyRaceAssignmentsPage from '@/features/referee/pages/MyRaceAssignmentsPag
 import RefereeRegistrationApproval from '@/features/referee/pages/RegistrationApprovalPage';
 import TournamentInvitationsPage from '@/features/referee/pages/TournamentInvitationsPage';
 import RaceReportPage from '@/features/races/pages/RaceReportPage';
-import Settings from './pages/Admin/Settings';
 import { SpectatorLayout } from '@/common/layouts/SpectatorLayout';
 import SpectatorHubPage from '@/features/spectator/pages/SpectatorHubPage';
 import PredictionsPage from '@/features/spectator/pages/PredictionsPage';
@@ -114,7 +108,10 @@ export default function App() {
             <Route path="/owner/stable/:horseId" element={<StableManagementPage />} />
             <Route path="/owner/stable/:horseId/edit" element={<HorseFormPage mode="edit" />} />
             <Route path="/owner/jockey-market" element={<JockeyMarketPage />} />
-            <Route path="/owner/invitations" element={<MyInvitationsPage />} />
+            <Route
+              path="/owner/invitations"
+              element={<Navigate to="/owner/jockey-market" replace />}
+            />
             <Route path="/owner/race-schedule" element={<RaceCalendarPage />} />
             <Route
               path="/owner/race-schedule/:raceId/confirm"
@@ -122,7 +119,6 @@ export default function App() {
             />
             <Route path="/owner/results" element={<AdminRaceReports scope="owner" />} />
             <Route path="/owner/race-report" element={<OwnerRaceReportPage />} />
-            <Route path="/owner/documents" element={<UploadDocumentsPage />} />
             <Route path="/owner/financials" element={<FinancesPage />} />
             <Route
               path="/owner/registrations"
@@ -184,12 +180,8 @@ export default function App() {
             <Route path="/referee/reports" element={<RaceReportPage scope="referee" />} />
             <Route path="/referee/invitations" element={<TournamentInvitationsPage />} />
             <Route path="/referee/race-assignments" element={<MyRaceAssignmentsPage />} />
-            <Route path="/referee/live-monitor" element={<LiveRaceMonitor />} />
-            <Route path="/referee/live-monitor/:raceId" element={<LiveRaceMonitor />} />
             <Route path="/referee/notifications" element={<Navigate to="/app/notifications" replace />} />
-            <Route path="/referee/registration" element={<RegistrationManagement />} />
             <Route path="/referee/applications" element={<RefereeRegistrationApproval />} />
-            <Route path="/referee/settings" element={<Settings />} />
           </Route>
         </Route>
 
@@ -204,7 +196,6 @@ export default function App() {
             <Route path="/admin/tournaments" element={<AdminTournamentOrchestration />} />
             <Route path="/admin/tournaments/:tournamentId" element={<AdminTournamentDetail />} />
             <Route path="/admin/races" element={<AdminRaceCalendar />} />
-            <Route path="/admin/race-management" element={<AdminRaceManagement />} />
             <Route path="/admin/race-calendar" element={<AdminRaceCalendar />} />
             <Route path="/admin/race-approval" element={<AdminRegistrationApproval />} />
             <Route path="/admin/registration-approval" element={<AdminRegistrationApproval />} />
@@ -215,7 +206,6 @@ export default function App() {
             <Route path="/admin/staffing/:raceId" element={<AdminStaffingDetail />} />
             <Route path="/admin/withdrawals" element={<AdminWithdrawals />} />
             <Route path="/admin/predictions" element={<AdminPredictionManagement />} />
-            <Route path="/admin/settings" element={<Settings />} />
           </Route>
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />

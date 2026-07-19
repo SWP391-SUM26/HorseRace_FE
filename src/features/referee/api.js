@@ -278,10 +278,6 @@ export async function rejectRegistration(id, reason) {
   await apiClient.patch(`/registrations/${id}/reject`, { reason });
 }
 
-/** DELETE /registrations/{id} — referee/admin soft-remove (sets status REMOVED). */
-export async function deleteRegistration(id) {
-  await apiClient.delete(`/registrations/${id}`);
-}
 
 /** Digital Passport for the Pre-Race Inspection panel (from /horses/{id} + pedigree). */
 export async function fetchHorsePassport(horseId) {
@@ -327,52 +323,6 @@ export async function fetchHorsePassport(horseId) {
   };
 }
 
-/** Assemble the Horse Verification panel from /horses/{id} (+pedigree, +medical-status). */
-export async function fetchHorseVerification(horseId) {
-  const [horse, pedigree, medical] = await Promise.all([
-    apiClient
-      .get(`/horses/${horseId}`)
-      .then((r) => r.data.data)
-      .catch(() => ({})),
-    apiClient
-      .get(`/horses/${horseId}/pedigree`)
-      .then((r) => r.data.data)
-      .catch(() => ({})),
-    apiClient
-      .get(`/horses/${horseId}/medical-status`)
-      .then((r) => r.data.data)
-      .catch(() => ({})),
-  ]);
-  const dob = horse?.dateOfBirth ? new Date(horse.dateOfBirth) : null;
-  const ageYears = dob
-    ? Math.max(0, new Date().getUTCFullYear() - dob.getUTCFullYear())
-    : null;
-  const g = (horse?.gender ?? "").toUpperCase();
-  const genderWord =
-    g === "MALE"
-      ? "Stallion"
-      : g === "FEMALE"
-        ? "Mare"
-        : g === "GELDING"
-          ? "Gelding"
-          : g
-            ? humanize(g)
-            : "—";
-  return {
-    horseId,
-    name: horse?.name ?? horse?.fullName ?? "—",
-    microchipNo: horse?.microchipNo ?? null,
-    ageYears,
-    genderWord,
-    breed: horse?.breed ?? null,
-    sireName: pedigree?.sireName ?? null,
-    damName: pedigree?.damName ?? null,
-    vaccinationsUpToDate: medical?.vaccinationsUpToDate ?? null,
-    fitnessCertified: horse?.fitnessCertified ?? null,
-    passportScanStatus: horse?.passportScanStatus ?? null,
-    healthStatus: medical?.healthStatus ?? null,
-  };
-}
 
 // ---------- Referee — Applicant onboarding (Registration Approval) ----------
 // NOTE: SPEC-ONLY endpoints (docs/be-referee-onboarding-contracts-todo.md). They 404 until the BE
