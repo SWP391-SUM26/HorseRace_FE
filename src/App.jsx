@@ -197,6 +197,28 @@ export default function App() {
         {/* ADMIN */}
         <Route element={<ProtectedRoute roles={['Admin']} />}>
           <Route element={<AdminLayout />}>
+            {/* V2 admin routes used by the migrated Admin sidebar/dashboard */}
+            <Route path="/app/admin" element={<AdminDashboardV2 />} />
+            <Route path="/app/admin/dashboard" element={<AdminDashboardV2 />} />
+            <Route path="/app/admin/users" element={<AdminUserManagement />} />
+            <Route path="/app/admin/horses" element={<AdminHorseManagement />} />
+            <Route path="/app/admin/jockeys" element={<AdminJockeyManagement />} />
+            <Route path="/app/admin/tournaments" element={<AdminTournamentOrchestration />} />
+            <Route path="/app/admin/tournaments/:tournamentId" element={<AdminTournamentDetail />} />
+            <Route path="/app/admin/races" element={<AdminRaceCalendar />} />
+            <Route path="/app/admin/race-management" element={<AdminRaceManagement />} />
+            <Route path="/app/admin/race-calendar" element={<AdminRaceCalendar />} />
+            <Route path="/app/admin/race-approval" element={<AdminRegistrationApproval />} />
+            <Route path="/app/admin/registration-approval" element={<AdminRegistrationApproval />} />
+            <Route path="/app/admin/registrations" element={<AdminRegistrationApproval />} />
+            <Route path="/app/admin/reports" element={<AdminRaceReports scope="admin" />} />
+            <Route path="/app/admin/results" element={<AdminRaceReports scope="admin" />} />
+            <Route path="/app/admin/staffing" element={<AdminStaffingV2 />} />
+            <Route path="/app/admin/staffing/:raceId" element={<AdminStaffingDetail />} />
+            <Route path="/app/admin/withdrawals" element={<AdminWithdrawals />} />
+            <Route path="/app/admin/settings" element={<Settings />} />
+
+            {/* Backward-compatible admin routes */}
             <Route path="/admin" element={<AdminDashboardV2 />} />
             <Route path="/admin/dashboard" element={<AdminDashboardV2 />} />
             <Route path="/admin/users" element={<AdminUserManagement />} />
