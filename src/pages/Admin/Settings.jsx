@@ -1,8 +1,11 @@
 import { useState } from 'react';
-import PageHeader from '../../components/ui/PageHeader';
-import Button from '../../components/ui/Button';
-import { Card } from '../../components/ui/StatCard';
-import { ShieldIcon, SettingsIcon, TrophyIcon } from '../../components/ui/Icons';
+import { PageHeader } from '@/common/components/PageHeader';
+import { Button, Card } from '@/common/ui';
+import {
+  Settings as SettingsIcon,
+  Shield as ShieldIcon,
+  Trophy as TrophyIcon,
+} from 'lucide-react';
 import styles from './Settings.module.css';
 
 export default function Settings() {

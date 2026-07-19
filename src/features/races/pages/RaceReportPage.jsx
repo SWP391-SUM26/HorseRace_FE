@@ -5,6 +5,7 @@ import { cn } from "@/common/lib/cn";
 import { formatDate } from "@/common/lib/format";
 import { useOwnerRaceIds, useRaceCalendar, useRefereeRaceIds } from "../hooks";
 import { RaceReportView } from "../components/RaceReportView";
+import { HorseStandings } from "@/features/owner/components/HorseStandings";
 
 const REPORTABLE = new Set(["FINISHED", "OFFICIAL"]);
 
@@ -84,6 +85,11 @@ export default function RaceReportPage({ scope }) {
           </div>
         </div>
       )}
+
+      {/* Owners follow their horses' standings alongside the results. GET /standings/horses had
+          worked all along with no page calling it — jockeys and predictors had a league table,
+          horses did not. */}
+      {scope === "owner" && <HorseStandings />}
     </div>
   );
 }

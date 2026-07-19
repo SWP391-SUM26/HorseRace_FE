@@ -4,6 +4,7 @@ import {
   BrowserRouter,
   Routes,
   Route,
+  Navigate,
 } from 'react-router-dom';
 
 import HomePage from './pages/HomePage';
@@ -19,7 +20,6 @@ import ProtectedRoute from './components/ProtectedRoute';
 import { DashboardLayout } from '@/common/layouts/DashboardLayout';
 import OwnerLayout from './layouts/OwnerLayout';
 import AdminLayout from './layouts/AdminLayout';
-import DashboardHome from './pages/dashboard/DashboardHome';
 import AdminDashboardV2 from '@/features/admin/pages/AdminDashboardPage';
 import AdminUserManagement from '@/features/admin/pages/UserManagementPage';
 import AdminHorseManagement from '@/features/admin/pages/HorseManagementPage';
@@ -32,13 +32,18 @@ import AdminRegistrationApproval from '@/features/admin/pages/RegistrationApprov
 import AdminStaffingV2 from '@/features/admin/pages/StaffingPage';
 import AdminStaffingDetail from '@/features/admin/pages/StaffingDetailPage';
 import AdminWithdrawals from '@/features/admin/pages/WithdrawalsPage';
+import AdminPredictionManagement from '@/features/admin/pages/PredictionManagementPage';
 import AdminRaceReports from '@/features/races/pages/RaceReportPage';
-import Overview from './pages/Owner/Overview';
-import StableManagement from './pages/Owner/StableManagement';
-import JockeyMarket from './pages/Owner/JockeyMarket';
-import JockeyDetail from './pages/Owner/JockeyDetail';
-import OwnerRegistrations from './pages/Owner/OwnerRegistrations';
-import OwnerRaceSchedule from './pages/Owner/RaceSchedule';
+import OwnerTournamentCatalogPage from '@/features/tournaments/pages/TournamentCatalogPage';
+import StableListPage from '@/features/stable/pages/StableListPage';
+import StableManagementPage from '@/features/stable/pages/StableManagementPage';
+import HorseFormPage from '@/features/stable/pages/HorseFormPage';
+import JockeyMarketPage from '@/features/jockeys/pages/JockeyMarketPage';
+import RaceCalendarPage from '@/features/races/pages/RaceCalendarPage';
+import ConfirmParticipationPage from '@/features/owner/pages/ConfirmParticipationPage';
+import OwnerRaceReportPage from '@/features/races/pages/OwnerRaceReportPage';
+import UploadDocumentsPage from '@/features/owner/pages/UploadDocumentsPage';
+import FinancesPage from '@/features/finances/pages/FinancesPage';
 import MyInvitationsPage from '@/features/jockey/pages/MyInvitationsPage'; // For Owner
 import JockeyDashboardPage from '@/features/jockey/pages/JockeyDashboardPage';
 import JockeyInvitationsPage from '@/features/jockey/pages/JockeyInvitationsPage';
@@ -50,11 +55,11 @@ import RegistrationManagement from '@/features/referee/pages/RegistrationManagem
 import PreRaceInspection from '@/features/referee/pages/PreRaceInspectionPage';
 import RefereeDashboard from '@/features/referee/pages/RefereeDashboardPage';
 import LiveRaceMonitor from '@/features/referee/pages/LiveRaceMonitorPage';
-import NotificationsCenter from './pages/shared/NotificationsCenter';
-import UserProfile from './pages/shared/UserProfile';
+import ProfilePage from '@/features/profile/pages/ProfilePage';
 import ViolationManagement from '@/features/referee/pages/ViolationsPage';
 import RaceResultRecording from '@/features/referee/pages/RaceResultsPage';
 import MyRaceAssignmentsPage from '@/features/referee/pages/MyRaceAssignmentsPage';
+import RefereeRegistrationApproval from '@/features/referee/pages/RegistrationApprovalPage';
 import TournamentInvitationsPage from '@/features/referee/pages/TournamentInvitationsPage';
 import RaceReportPage from '@/features/races/pages/RaceReportPage';
 import Settings from './pages/Admin/Settings';
@@ -67,13 +72,6 @@ import WalletPage from '@/features/wallet/pages/WalletPage';
 import WalletReturnPage from '@/features/wallet/pages/WalletReturnPage';
 import NotificationsPage from '@/features/notifications/pages/NotificationsPage';
 
-
-const OwnerPlaceholder = ({ title }) => (
-  <div style={{ padding: '40px', textAlign: 'center', backgroundColor: '#ffffff', borderRadius: '12px', border: '1px solid #e2e8f0', boxShadow: '0 1px 3px rgba(0,0,0,0.02)' }}>
-    <h2 style={{ fontSize: '20px', fontWeight: '700', color: '#0f172a', marginBottom: '12px' }}>{title}</h2>
-    <p style={{ color: '#64748b' }}>Đường dẫn Router hoạt động tốt! Nội dung đang được cập nhật.</p>
-  </div>
-);
 
 export default function App() {
   return (
@@ -97,7 +95,7 @@ export default function App() {
         <Route path="/verify-email" element={<VerifyEmailPage />} />
         <Route element={<ProtectedRoute />}>
           <Route element={<DashboardLayout />}>
-            <Route path="/profile" element={<UserProfile />} />
+            <Route path="/profile" element={<ProfilePage />} />
             <Route path="/app/notifications" element={<NotificationsPage />} />
             <Route path="/wallet" element={<WalletPage />} />
             <Route path="/wallet/return" element={<WalletReturnPage />} />
@@ -107,21 +105,49 @@ export default function App() {
         {/* DASHBOARDS */}
         <Route element={<ProtectedRoute roles={['Owner']} />}>
           <Route element={<OwnerLayout />}>
-            <Route path="/owner/overview" element={<Overview />} />
-            <Route path="/owner/stable" element={<StableManagement />} />
-            <Route path="/owner/jockey-market" element={<JockeyMarket />} />
-            <Route path="/owner/jockey-market/:jockeyId" element={<JockeyDetail />} />
-            <Route path="/owner/registrations" element={<OwnerRegistrations />} />
-            <Route path="/owner/race-schedule" element={<OwnerRaceSchedule />} />
+            {/* Owner home is the tournament catalogue (there is no separate overview page). */}
+            <Route path="/owner" element={<Navigate to="/owner/tournaments" replace />} />
+            <Route path="/owner/overview" element={<Navigate to="/owner/tournaments" replace />} />
+            <Route path="/owner/tournaments" element={<OwnerTournamentCatalogPage />} />
+            <Route path="/owner/stable" element={<StableListPage />} />
+            <Route path="/owner/stable/new" element={<HorseFormPage mode="create" />} />
+            <Route path="/owner/stable/:horseId" element={<StableManagementPage />} />
+            <Route path="/owner/stable/:horseId/edit" element={<HorseFormPage mode="edit" />} />
+            <Route path="/owner/jockey-market" element={<JockeyMarketPage />} />
+            <Route path="/owner/invitations" element={<MyInvitationsPage />} />
+            <Route path="/owner/race-schedule" element={<RaceCalendarPage />} />
+            <Route
+              path="/owner/race-schedule/:raceId/confirm"
+              element={<ConfirmParticipationPage />}
+            />
+            <Route path="/owner/results" element={<AdminRaceReports scope="owner" />} />
+            <Route path="/owner/race-report" element={<OwnerRaceReportPage />} />
+            <Route path="/owner/documents" element={<UploadDocumentsPage />} />
+            <Route path="/owner/financials" element={<FinancesPage />} />
+            <Route
+              path="/owner/registrations"
+              element={<Navigate to="/owner/tournaments" replace />}
+            />
 
             {/* Backward-compatible owner routes */}
-            <Route path="/owner-dashboard" element={<Overview />} />
-            <Route path="/owner-dashboard/stable" element={<StableManagement />} />
-            <Route path="/owner-dashboard/notifications" element={<NotificationsCenter />} />
-            <Route path="/owner-dashboard/jockeys" element={<JockeyMarket />} />
-            <Route path="/owner/invitations" element={<MyInvitationsPage />} />
-            <Route path="/owner-dashboard/calendar" element={<OwnerRaceSchedule />} />
-            <Route path="/owner-dashboard/financials" element={<OwnerPlaceholder title="💵 Financials" />} />
+            <Route path="/owner-dashboard" element={<Navigate to="/owner/tournaments" replace />} />
+            <Route path="/owner-dashboard/stable" element={<Navigate to="/owner/stable" replace />} />
+            <Route
+              path="/owner-dashboard/notifications"
+              element={<Navigate to="/app/notifications" replace />}
+            />
+            <Route
+              path="/owner-dashboard/jockeys"
+              element={<Navigate to="/owner/jockey-market" replace />}
+            />
+            <Route
+              path="/owner-dashboard/calendar"
+              element={<Navigate to="/owner/race-schedule" replace />}
+            />
+            <Route
+              path="/owner-dashboard/financials"
+              element={<Navigate to="/owner/financials" replace />}
+            />
           </Route>
         </Route>
 
@@ -132,7 +158,7 @@ export default function App() {
             <Route path="/jockey/invitations" element={<JockeyInvitationsPage />} />
             <Route path="/jockey/schedule" element={<RaceSchedulePage />} />
             <Route path="/jockey/performance" element={<PerformancePage />} />
-            <Route path="/jockey/notifications" element={<NotificationsCenter />} />
+            <Route path="/jockey/notifications" element={<Navigate to="/app/notifications" replace />} />
           </Route>
         </Route>
 
@@ -142,7 +168,7 @@ export default function App() {
             <Route path="/spectator/live-races" element={<SpectatorLivePage />} />
             <Route path="/spectator/predictions" element={<PredictionsPage />} />
             <Route path="/spectator/rewards" element={<RewardsPage />} />
-            <Route path="/spectator/notifications" element={<NotificationsCenter />} />
+            <Route path="/spectator/notifications" element={<Navigate to="/app/notifications" replace />} />
             <Route path="/app/wallet" element={<WalletPage />} />
             <Route path="/app/wallet/return" element={<WalletReturnPage />} />  
           </Route>
@@ -160,8 +186,9 @@ export default function App() {
             <Route path="/referee/race-assignments" element={<MyRaceAssignmentsPage />} />
             <Route path="/referee/live-monitor" element={<LiveRaceMonitor />} />
             <Route path="/referee/live-monitor/:raceId" element={<LiveRaceMonitor />} />
-            <Route path="/referee/notifications" element={<NotificationsCenter />} />
+            <Route path="/referee/notifications" element={<Navigate to="/app/notifications" replace />} />
             <Route path="/referee/registration" element={<RegistrationManagement />} />
+            <Route path="/referee/applications" element={<RefereeRegistrationApproval />} />
             <Route path="/referee/settings" element={<Settings />} />
           </Route>
         </Route>
@@ -187,9 +214,11 @@ export default function App() {
             <Route path="/admin/staffing" element={<AdminStaffingV2 />} />
             <Route path="/admin/staffing/:raceId" element={<AdminStaffingDetail />} />
             <Route path="/admin/withdrawals" element={<AdminWithdrawals />} />
+            <Route path="/admin/predictions" element={<AdminPredictionManagement />} />
             <Route path="/admin/settings" element={<Settings />} />
           </Route>
         </Route>
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>
   );

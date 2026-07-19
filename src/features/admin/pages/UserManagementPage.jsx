@@ -4,7 +4,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { FileText, Pencil, Trash2, UserPlus } from "lucide-react";
 import { PageHeader } from "@/common/components/PageHeader";
-import { Avatar, Badge, Button, Card, CardBody, EmptyState, Input, Modal, Select, Skeleton, StatCard } from "@/common/ui";
+import { RolePermissionMatrix } from "../components/RolePermissionMatrix";
+import { Avatar, Badge, Button, Card, CardBody, EmptyState, Input, Modal, Select, Skeleton, StatCard, Tabs } from "@/common/ui";
 import { useToast } from "@/common/providers/ToastProvider";
 import { downloadCsv } from "@/common/lib/csv";
 import { formatDate } from "@/common/lib/format";
@@ -21,6 +22,7 @@ function UserManagementPage() {
   const [editing, setEditing] = useState(null);
   const [viewing, setViewing] = useState(null);
   const [provisioning, setProvisioning] = useState(false);
+  const [tab, setTab] = useState("users");
   const usersQuery = useUsers();
   const all = usersQuery.data ?? [];
   const filtered = useMemo(() => {
@@ -62,6 +64,18 @@ function UserManagementPage() {
           </div>}
   />
 
+      <div className="mb-4">
+        <Tabs
+          tabs={[
+            { key: "users", label: "Users" },
+            { key: "permissions", label: "Roles & Permissions" },
+          ]}
+          active={tab}
+          onChange={setTab}
+        />
+      </div>
+
+      {tab === "permissions" ? <RolePermissionMatrix /> : <>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {usersQuery.isPending ? Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-24 w-full rounded-2xl" />) : <>
             <StatCard label="Total Users" value={all.length} />
@@ -131,6 +145,8 @@ function UserManagementPage() {
           <span className="text-sm text-muted">Page {page + 1} / {totalPages}</span>
           <Button variant="secondary" size="sm" disabled={page >= totalPages - 1} onClick={() => setPage((p) => p + 1)}>Next</Button>
         </div>}
+
+      </>}
 
       {viewing && <UserDetailModal user={viewing} onClose={() => setViewing(null)} />}
       {editing && <EditUserModal user={editing} onClose={() => setEditing(null)} />}
