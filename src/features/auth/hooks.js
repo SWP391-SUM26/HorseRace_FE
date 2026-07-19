@@ -1,62 +1,48 @@
 import { useMutation } from "@tanstack/react-query";
-import {
-  forgotPassword,
-  loginWithCredentials,
-  registerJockey,
-  registerOwner,
-  registerSpectator,
-  requestEmailVerification,
-  resendAuthCode,
-  resetPassword,
-  verifyCode,
-  verifyEmail,
-} from "@/services/auth";
+import { authApi } from "./api";
 
 export function useLogin() {
-  return useMutation({
-    mutationFn: ({ email, password, rememberMe = false }) =>
-      loginWithCredentials(email, password, rememberMe),
-  });
+  return useMutation({ mutationFn: authApi.login });
 }
-
-export function useRegisterOwner() {
-  return useMutation({ mutationFn: registerOwner, meta: { skipGlobalErrorToast: true } });
-}
-
-export function useRegisterJockey() {
-  return useMutation({ mutationFn: registerJockey, meta: { skipGlobalErrorToast: true } });
-}
-
 export function useRegisterSpectator() {
-  return useMutation({ mutationFn: registerSpectator, meta: { skipGlobalErrorToast: true } });
-}
-
-export function useForgotPassword() {
-  return useMutation({ mutationFn: ({ email }) => forgotPassword(email) });
-}
-
-export function useResendCode() {
-  return useMutation({ mutationFn: ({ email }) => resendAuthCode(email) });
-}
-
-export function useVerifyCode() {
-  return useMutation({ mutationFn: verifyCode });
-}
-
-export function useResetPassword() {
+  // Self-renders errors via applyApiErrorToForm (toast + setError) → opt out of the global toast.
   return useMutation({
-    mutationFn: ({ email, code, newPassword, confirmPassword }) =>
-      resetPassword(email, code, newPassword, confirmPassword),
-  });
-}
-
-export function useRequestEmailVerification() {
-  return useMutation({
-    mutationFn: ({ email }) => requestEmailVerification(email),
+    mutationFn: authApi.registerSpectator,
     meta: { skipGlobalErrorToast: true },
   });
 }
-
+export function useRegisterOwner() {
+  return useMutation({
+    mutationFn: authApi.registerOwner,
+    meta: { skipGlobalErrorToast: true },
+  });
+}
+export function useRegisterJockey() {
+  return useMutation({
+    mutationFn: authApi.registerJockey,
+    meta: { skipGlobalErrorToast: true },
+  });
+}
+export function useForgotPassword() {
+  return useMutation({ mutationFn: authApi.forgotPassword });
+}
+export function useResendCode() {
+  return useMutation({ mutationFn: authApi.resendCode });
+}
+export function useVerifyCode() {
+  return useMutation({ mutationFn: authApi.verifyCode });
+}
+export function useResetPassword() {
+  return useMutation({ mutationFn: authApi.resetPassword });
+}
+export function useRequestEmailVerification() {
+  // Fire-and-forget after register (the page already toasts "code sent" + navigates). Stay silent on
+  // error so the global handler doesn't pop a contradictory error toast right after the success one.
+  return useMutation({
+    mutationFn: authApi.requestEmailVerification,
+    meta: { skipGlobalErrorToast: true },
+  });
+}
 export function useVerifyEmail() {
-  return useMutation({ mutationFn: ({ email, code }) => verifyEmail(email, code) });
+  return useMutation({ mutationFn: authApi.verifyEmail });
 }

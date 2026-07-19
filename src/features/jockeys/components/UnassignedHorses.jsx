@@ -23,12 +23,14 @@ export function UnassignedHorses({ entries, selectedId, onSelect }) {
                     "flex w-full items-center gap-3 rounded-xl border p-3 text-left transition-colors",
                     selected
                       ? "border-brand-700 bg-brand-50 ring-2 ring-brand-500"
-                      : "border-border hover:bg-subtle"
+                      : "border-border hover:bg-subtle",
                   )}
                 >
                   <Avatar name={entry.name} size={40} />
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium text-ink">{entry.name}</p>
+                    <p className="truncate text-sm font-medium text-ink">
+                      {entry.name}
+                    </p>
                     <p className="truncate text-xs text-muted">
                       {entry.race} · {formatDate(entry.date)}
                     </p>
