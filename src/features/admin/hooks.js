@@ -48,6 +48,7 @@ import {
   removeAssignment,
   revokeTournamentAssignment,
   scheduleRace,
+  closeRace,
   startRace,
   finishRace,
   updateRace,
@@ -292,6 +293,10 @@ function useStartRace() {
   const qc = useQueryClient();
   return useMutation({ mutationFn: (id) => startRace(id), onSuccess: () => invalidateRaces(qc) });
 }
+function useCloseRace() {
+  const qc = useQueryClient();
+  return useMutation({ mutationFn: (id) => closeRace(id), onSuccess: () => invalidateRaces(qc) });
+}
 function useFinishRace() {
   const qc = useQueryClient();
   return useMutation({ mutationFn: (id) => finishRace(id), onSuccess: () => invalidateRaces(qc) });
@@ -410,6 +415,7 @@ export {
   useStaff,
   useStaffingDashboard,
   useStartRace,
+  useCloseRace,
   useStartTournament,
   useTournament,
   useTournamentAssignments,

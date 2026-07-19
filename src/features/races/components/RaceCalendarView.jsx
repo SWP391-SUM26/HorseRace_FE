@@ -367,7 +367,7 @@ function EventCard({ race, index, clickable, onClick, confirmHref }) {
     className={cn("block w-full overflow-hidden rounded-2xl border border-border bg-surface text-left", clickable && "transition-shadow hover:shadow-md")}
   >
         <div className="relative h-24 w-full">
-          <img src={imageFor(index)} alt="" className="h-24 w-full object-cover" />
+          <img src={race.tournamentImageUrl || imageFor(index)} alt="" className="h-24 w-full object-cover" />
           <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent" />
         </div>
         <div className="p-4">

@@ -15,7 +15,8 @@ import {
   Coins,
   Radio,
   BarChart3,
-  FileText
+  FileText,
+  UserSquare
 } from "lucide-react";
 const HorseIcon = Rabbit;
 
@@ -64,14 +65,16 @@ const ROLE_NAV = {
   },
   ADMIN: {
     sidebar: [
-      { label: "Dashboard", to: "/admin/dashboard", icon: LayoutDashboard },
-      { label: "User Management", to: "/admin/users", icon: Users },
-      { label: "Tournaments", to: "/admin/tournaments", icon: Trophy },
-      { label: "Race Calendar", to: "/admin/races", icon: CalendarDays },
-      { label: "Race Reports", to: "/admin/reports", icon: FileText },
-      { label: "Registration Approval", to: "/admin/registrations", icon: ClipboardList },
-      { label: "Staffing", to: "/admin/staffing", icon: UserCog },
-      { label: "Withdrawals", to: "/admin/withdrawals", icon: Wallet }
+      { label: "Dashboard", to: "/app/admin", icon: LayoutDashboard },
+      { label: "User Management", to: "/app/admin/users", icon: Users },
+      { label: "Horses", to: "/app/admin/horses", icon: HorseIcon },
+      { label: "Jockeys", to: "/app/admin/jockeys", icon: UserSquare },
+      { label: "Tournaments", to: "/app/admin/tournaments", icon: Trophy },
+      { label: "Race Calendar", to: "/app/admin/races", icon: CalendarDays },
+      { label: "Race Reports", to: "/app/admin/reports", icon: FileText },
+      { label: "Registration Approval", to: "/app/admin/registrations", icon: ClipboardList },
+      { label: "Staffing", to: "/app/admin/staffing", icon: UserCog },
+      { label: "Withdrawals", to: "/app/admin/withdrawals", icon: Wallet }
     ],
     topbar: []
   },

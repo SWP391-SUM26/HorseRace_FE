@@ -4,6 +4,7 @@ import {
   BrowserRouter,
   Routes,
   Route,
+  Navigate,
 } from 'react-router-dom';
 
 import HomePage from './pages/HomePage';
@@ -32,17 +33,12 @@ import AdminStaffingV2 from '@/features/admin/pages/StaffingPage';
 import AdminStaffingDetail from '@/features/admin/pages/StaffingDetailPage';
 import AdminWithdrawals from '@/features/admin/pages/WithdrawalsPage';
 import AdminRaceReports from '@/features/races/pages/RaceReportPage';
-import Overview from './pages/Owner/Overview';
-import StableManagement from './pages/Owner/StableManagement';
-import JockeyMarket from './pages/Owner/JockeyMarket';
-import JockeyDetail from './pages/Owner/JockeyDetail';
-import OwnerRegistrations from './pages/Owner/OwnerRegistrations';
-import OwnerRaceSchedule from './pages/Owner/RaceSchedule';
+import OwnerOverviewPage from '@/features/owner/pages/OwnerOverviewPage';
+import OwnerTournamentCatalogPage from '@/features/tournaments/pages/TournamentCatalogPage';
 import StableListPage from '@/features/stable/pages/StableListPage';
 import StableManagementPage from '@/features/stable/pages/StableManagementPage';
 import HorseFormPage from '@/features/stable/pages/HorseFormPage';
 import JockeyMarketPage from '@/features/jockeys/pages/JockeyMarketPage';
-import OwnerTournamentCatalogPage from '@/features/tournaments/pages/TournamentCatalogPage';
 import RaceCalendarPage from '@/features/races/pages/RaceCalendarPage';
 import OwnerRaceReportPage from '@/features/races/pages/OwnerRaceReportPage';
 import RaceReportPage from '@/features/races/pages/RaceReportPage';
@@ -68,14 +64,14 @@ import RaceResultRecording from '@/features/referee/pages/RaceResultsPage';
 import MyRaceAssignmentsPage from '@/features/referee/pages/MyRaceAssignmentsPage';
 import TournamentInvitationsPage from '@/features/referee/pages/TournamentInvitationsPage';
 import Settings from './pages/Admin/Settings';
+import NotificationsPage from '@/features/notifications/pages/NotificationsPage';
+import WalletPage from '@/features/wallet/pages/WalletPage';
+import WalletReturnPage from '@/features/wallet/pages/WalletReturnPage';
 import { SpectatorLayout } from '@/common/layouts/SpectatorLayout';
 import SpectatorHubPage from '@/features/spectator/pages/SpectatorHubPage';
 import PredictionsPage from '@/features/spectator/pages/PredictionsPage';
 import RewardsPage from '@/features/spectator/pages/RewardsPage';
 import SpectatorLivePage from '@/features/spectator/pages/SpectatorLivePage';
-import NotificationsPage from '@/features/notifications/pages/NotificationsPage';
-import WalletPage from '@/features/wallet/pages/WalletPage';
-import WalletReturnPage from '@/features/wallet/pages/WalletReturnPage';
 
 
 const OwnerPlaceholder = ({ title }) => (
@@ -117,8 +113,9 @@ export default function App() {
         {/* DASHBOARDS */}
         <Route element={<ProtectedRoute roles={['Owner']} />}>
           <Route element={<OwnerLayout />}>
-            {/* V2 owner routes used by the shared sidebar/topbar */}
-            <Route path="/app/owner" element={<OwnerTournamentCatalogPage />} />
+            {/* V2 owner routes */}
+            <Route path="/app/owner" element={<Navigate to="/app/owner/tournaments" replace />} />
+            <Route path="/app/owner/overview" element={<OwnerOverviewPage />} />
             <Route path="/app/owner/tournaments" element={<OwnerTournamentCatalogPage />} />
             <Route path="/app/owner/stable" element={<StableListPage />} />
             <Route path="/app/owner/stable/new" element={<HorseFormPage mode="create" />} />
@@ -126,7 +123,7 @@ export default function App() {
             <Route path="/app/owner/stable/:horseId/edit" element={<HorseFormPage mode="edit" />} />
             <Route path="/app/owner/jockeys" element={<JockeyMarketPage />} />
             <Route path="/app/owner/invitations" element={<MyInvitationsPage />} />
-            <Route path="/app/owner/registrations" element={<OwnerTournamentCatalogPage />} />
+            <Route path="/app/owner/registrations" element={<Navigate to="/app/owner/tournaments" replace />} />
             <Route path="/app/owner/profile" element={<ProfilePage />} />
             <Route path="/app/owner/races" element={<RaceCalendarPage />} />
             <Route path="/app/owner/races/:raceId/confirm" element={<ConfirmParticipationPage />} />
@@ -135,21 +132,22 @@ export default function App() {
             <Route path="/app/owner/financials" element={<FinancesPage />} />
             <Route path="/app/owner/documents" element={<UploadDocumentsPage />} />
 
-            <Route path="/owner/overview" element={<Overview />} />
-            <Route path="/owner/stable" element={<StableManagement />} />
-            <Route path="/owner/jockey-market" element={<JockeyMarket />} />
-            <Route path="/owner/jockey-market/:jockeyId" element={<JockeyDetail />} />
-            <Route path="/owner/registrations" element={<OwnerRegistrations />} />
-            <Route path="/owner/race-schedule" element={<OwnerRaceSchedule />} />
+            {/* Backward-compatible owner routes redirect to the V2 Owner shell */}
+            <Route path="/owner/overview" element={<Navigate to="/app/owner/tournaments" replace />} />
+            <Route path="/owner/stable" element={<Navigate to="/app/owner/stable" replace />} />
+            <Route path="/owner/jockey-market" element={<Navigate to="/app/owner/jockeys" replace />} />
+            <Route path="/owner/jockey-market/:jockeyId" element={<Navigate to="/app/owner/jockeys" replace />} />
+            <Route path="/owner/registrations" element={<Navigate to="/app/owner/tournaments" replace />} />
+            <Route path="/owner/race-schedule" element={<Navigate to="/app/owner/races" replace />} />
+            <Route path="/owner/invitations" element={<Navigate to="/app/owner/jockeys" replace />} />
 
             {/* Backward-compatible owner routes */}
-            <Route path="/owner-dashboard" element={<Overview />} />
-            <Route path="/owner-dashboard/stable" element={<StableManagement />} />
+            <Route path="/owner-dashboard" element={<Navigate to="/app/owner/tournaments" replace />} />
+            <Route path="/owner-dashboard/stable" element={<Navigate to="/app/owner/stable" replace />} />
             <Route path="/owner-dashboard/notifications" element={<NotificationsCenter />} />
-            <Route path="/owner-dashboard/jockeys" element={<JockeyMarket />} />
-            <Route path="/owner/invitations" element={<MyInvitationsPage />} />
-            <Route path="/owner-dashboard/calendar" element={<OwnerRaceSchedule />} />
-            <Route path="/owner-dashboard/financials" element={<OwnerPlaceholder title="💵 Financials" />} />
+            <Route path="/owner-dashboard/jockeys" element={<Navigate to="/app/owner/jockeys" replace />} />
+            <Route path="/owner-dashboard/calendar" element={<Navigate to="/app/owner/races" replace />} />
+            <Route path="/owner-dashboard/financials" element={<Navigate to="/app/owner/financials" replace />} />
           </Route>
         </Route>
 
@@ -197,6 +195,28 @@ export default function App() {
         {/* ADMIN */}
         <Route element={<ProtectedRoute roles={['Admin']} />}>
           <Route element={<AdminLayout />}>
+            {/* V2 admin routes used by the migrated Admin sidebar/dashboard */}
+            <Route path="/app/admin" element={<AdminDashboardV2 />} />
+            <Route path="/app/admin/dashboard" element={<AdminDashboardV2 />} />
+            <Route path="/app/admin/users" element={<AdminUserManagement />} />
+            <Route path="/app/admin/horses" element={<AdminHorseManagement />} />
+            <Route path="/app/admin/jockeys" element={<AdminJockeyManagement />} />
+            <Route path="/app/admin/tournaments" element={<AdminTournamentOrchestration />} />
+            <Route path="/app/admin/tournaments/:tournamentId" element={<AdminTournamentDetail />} />
+            <Route path="/app/admin/races" element={<AdminRaceCalendar />} />
+            <Route path="/app/admin/race-management" element={<AdminRaceManagement />} />
+            <Route path="/app/admin/race-calendar" element={<AdminRaceCalendar />} />
+            <Route path="/app/admin/race-approval" element={<AdminRegistrationApproval />} />
+            <Route path="/app/admin/registration-approval" element={<AdminRegistrationApproval />} />
+            <Route path="/app/admin/registrations" element={<AdminRegistrationApproval />} />
+            <Route path="/app/admin/reports" element={<AdminRaceReports scope="admin" />} />
+            <Route path="/app/admin/results" element={<AdminRaceReports scope="admin" />} />
+            <Route path="/app/admin/staffing" element={<AdminStaffingV2 />} />
+            <Route path="/app/admin/staffing/:raceId" element={<AdminStaffingDetail />} />
+            <Route path="/app/admin/withdrawals" element={<AdminWithdrawals />} />
+            <Route path="/app/admin/settings" element={<Settings />} />
+
+            {/* Backward-compatible admin routes */}
             <Route path="/admin" element={<AdminDashboardV2 />} />
             <Route path="/admin/dashboard" element={<AdminDashboardV2 />} />
             <Route path="/admin/users" element={<AdminUserManagement />} />

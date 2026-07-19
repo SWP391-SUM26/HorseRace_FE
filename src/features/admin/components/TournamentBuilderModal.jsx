@@ -8,11 +8,10 @@ import { getApiErrorMessage } from "@/common/lib/apiError";
 import { useCreateTournament, useUpdateTournament, useUploadTournamentImage } from "../hooks";
 const CIRCUIT_TIER_OPTIONS = [
   { value: "", label: "Select circuit tier\u2026" },
-  { value: "GROUP_1_ELITE", label: "Group 1 (Elite)" },
+  { value: "GROUP_1", label: "Group 1 (Elite)" },
   { value: "GROUP_2", label: "Group 2" },
   { value: "GROUP_3", label: "Group 3" },
-  { value: "LISTED", label: "Listed" },
-  { value: "UNGRADED", label: "Ungraded" }
+  { value: "LISTED", label: "Listed" }
 ];
 function toIsoDateTime(v) {
   if (!v) return void 0;
@@ -33,7 +32,7 @@ function makeSchema(isEdit) {
     location: opt(reqStr("Nh\u1EADp \u0111\u1ECBa \u0111i\u1EC3m")),
     startDate: opt(reqStr("Ch\u1ECDn ng\xE0y b\u1EAFt \u0111\u1EA7u")),
     endDate: opt(reqStr("Ch\u1ECDn ng\xE0y k\u1EBFt th\xFAc")),
-    circuitTier: isEdit ? z.string() : reqStr("Ch\u1ECDn h\u1EA1ng gi\u1EA3i"),
+    circuitTier: z.string(),
     totalPurse: isEdit ? lenientNum : posNum("Nh\u1EADp t\u1ED5ng gi\u1EA3i th\u01B0\u1EDFng"),
     entryCap: isEdit ? lenientInt : posInt("Nh\u1EADp gi\u1EDBi h\u1EA1n s\u1ED1 ng\u1EF1a"),
     registrationOpenAt: isEdit ? z.string() : reqStr("Ch\u1ECDn th\u1EDDi \u0111i\u1EC3m m\u1EDF \u0111\u0103ng k\xFD"),
@@ -48,8 +47,11 @@ function makeSchema(isEdit) {
     (v) => !v.registrationOpenAt || !v.registrationCloseAt || new Date(v.registrationCloseAt) >= new Date(v.registrationOpenAt),
     { path: ["registrationCloseAt"], message: "\u0110\xF3ng \u0111\u0103ng k\xFD ph\u1EA3i sau khi m\u1EDF" }
   ).refine(
-    (v) => !v.registrationOpenAt || !v.startDate || new Date(v.registrationOpenAt) <= new Date(v.startDate),
-    { path: ["registrationOpenAt"], message: "\u0110\u0103ng k\xFD ph\u1EA3i m\u1EDF tr\u01B0\u1EDBc khi gi\u1EA3i b\u1EAFt \u0111\u1EA7u" }
+    (v) => !v.registrationOpenAt || !v.startDate || new Date(v.registrationOpenAt) >= new Date(v.startDate),
+    { path: ["registrationOpenAt"], message: "Mở đăng ký phải nằm trong hoặc sau ngày bắt đầu giải" }
+  ).refine(
+    (v) => !v.registrationCloseAt || !v.endDate || new Date(v.registrationCloseAt) <= new Date(v.endDate),
+    { path: ["registrationCloseAt"], message: "Đóng đăng ký phải nằm trong hoặc trước ngày kết thúc giải" }
   );
 }
 function toDefaults(t) {

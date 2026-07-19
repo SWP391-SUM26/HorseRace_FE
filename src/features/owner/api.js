@@ -37,6 +37,14 @@ async function fetchOwnerOverview() {
     upcomingRaces
   };
 }
+async function fetchOwnerRaceRegistrations(params) {
+  const { data } = await apiClient.get(
+    "/registrations",
+    { params: { ownerUserId: params.ownerUserId, raceId: params.raceId, size: 100 } }
+  );
+  const d = data.data;
+  return Array.isArray(d) ? d : d?.content ?? [];
+}
 async function uploadOwnerDocument(file) {
   const form = new FormData();
   form.append("file", file);
@@ -63,14 +71,6 @@ async function fetchOwnerDocuments() {
 async function fetchHorseDocuments(horseId) {
   const { data } = await apiClient.get(`/owner/documents/horse/${horseId}`);
   return data.data ?? [];
-}
-async function fetchOwnerRaceRegistrations(params) {
-  const { data } = await apiClient.get(
-    "/registrations",
-    { params: { ownerUserId: params.ownerUserId, raceId: params.raceId, size: 100 } }
-  );
-  const d = data.data;
-  return Array.isArray(d) ? d : d?.content ?? [];
 }
 export {
   fetchHorseDocuments,

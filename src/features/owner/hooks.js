@@ -1,12 +1,12 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { fetchRaceEntries, fetchHorseMedical } from "@/features/admin/api";
 import {
+  fetchHorseDocuments,
   fetchOwnerOverview,
   fetchOwnerDocuments,
-  fetchHorseDocuments,
   fetchOwnerRaceRegistrations,
-  uploadOwnerDocument,
-  uploadHorseDocument
+  uploadHorseDocument,
+  uploadOwnerDocument
 } from "./api";
 function useOwnerOverview() {
   return useQuery({
@@ -28,17 +28,17 @@ function useHorseDocuments(horseId) {
   });
 }
 function useUploadOwnerDocument() {
-  const qc = useQueryClient();
+  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (file) => uploadOwnerDocument(file),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["owner", "documents", "owner"] })
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["owner", "documents", "owner"] })
   });
 }
 function useUploadHorseDocument(horseId) {
-  const qc = useQueryClient();
+  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (file) => uploadHorseDocument(horseId, file),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["owner", "documents", "horse", horseId] })
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["owner", "documents", "horse", horseId] })
   });
 }
 function useConfirmRaceEntries(raceId) {
@@ -64,11 +64,11 @@ function useOwnerRaceRegistrations(ownerUserId, raceId) {
   });
 }
 export {
+  useHorseDocuments,
   useConfirmHorseMedical,
   useConfirmRaceEntries,
-  useHorseDocuments,
-  useOwnerDocuments,
   useOwnerOverview,
+  useOwnerDocuments,
   useOwnerRaceRegistrations,
   useUploadHorseDocument,
   useUploadOwnerDocument

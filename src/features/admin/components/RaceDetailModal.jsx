@@ -4,7 +4,7 @@ import { Badge, Button, Modal, Skeleton } from "@/common/ui";
 import { cn } from "@/common/lib/cn";
 import { useToast } from "@/common/providers/ToastProvider";
 import { formatDate } from "@/common/lib/format";
-import { useCancelRace, useDeleteRace, useFinishRace, useHorse, useRace, useRaceEntries, useScheduleRace, useStartRace, useUser } from "../hooks";
+import { useCancelRace, useDeleteRace, useFinishRace, useHorse, useRace, useRaceEntries, useScheduleRace, useStartRace, useCloseRace, useUser } from "../hooks";
 import { humanize } from "../api";
 import { RACE_STATUS_LABEL, RACE_STATUS_TONE } from "../constants";
 import { RaceFormModal } from "./RaceFormModal";
@@ -102,6 +102,7 @@ function RaceDetailModal({ raceId, fallback, tournaments, onClose }) {
   const query = useRace(raceId);
   const entriesQuery = useRaceEntries(raceId);
   const schedule = useScheduleRace();
+  const close = useCloseRace();
   const start = useStartRace();
   const finish = useFinishRace();
   const cancel = useCancelRace();
@@ -123,6 +124,9 @@ function RaceDetailModal({ raceId, fallback, tournaments, onClose }) {
       { id: raceId, scheduledStartAt: race.scheduledStartAt },
       { onSuccess: () => toast.success("Race opened for entries") }
     );
+  }
+  function onCloseRace() {
+    close.mutate(raceId, { onSuccess: () => toast.success("Race closed \u2014 betting is now open") });
   }
   function onStart() {
     start.mutate(raceId, { onSuccess: () => toast.success("Race started \u2014 entries are now locked") });
@@ -165,6 +169,7 @@ function RaceDetailModal({ raceId, fallback, tournaments, onClose }) {
                 <Trash2 size={15} /> Delete
               </Button>
               {race.status === "SCHEDULED" && <Button variant="secondary" loading={schedule.isPending} onClick={onOpen}>Publish (open registration)</Button>}
+              {race.status === "OPEN" && <Button variant="secondary" loading={close.isPending} onClick={onCloseRace}>Close registration (open betting)</Button>}
               {(race.status === "OPEN" || race.status === "CLOSED") && <Button loading={start.isPending} onClick={onStart}>Start race</Button>}
               {race.status === "RUNNING" && <Button loading={finish.isPending} onClick={onFinish}>End race</Button>}
               {canCancel && <Button
