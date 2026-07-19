@@ -1,15 +1,16 @@
 // lucide ships no "Horse"; reuse the project's stand-in alias for the stable.
-import { Rabbit as HorseIcon, Wallet, Clock, TrendingUp } from 'lucide-react';
-import { StatCard } from '@/common/ui';
-import { usd } from '../format';
-import type { OverviewKpis } from '../types';
+import { Rabbit as HorseIcon, Wallet, Clock, TrendingUp } from "lucide-react";
+import { StatCard } from "@/common/ui";
+import { usd } from "../format";
 
-export function OverviewKpiGrid({ kpis }: { kpis: OverviewKpis }) {
+export function OverviewKpiGrid({ kpis }) {
   return (
     <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
       <div className="rounded-2xl border border-brand-700 bg-brand-800 p-6 text-white shadow-sm">
         <p className="text-sm text-white/70">Lifetime Earnings</p>
-        <p className="mt-1 text-3xl font-semibold">{usd(kpis.lifetimeEarnings)}</p>
+        <p className="mt-1 text-3xl font-semibold">
+          {usd(kpis.lifetimeEarnings)}
+        </p>
         <p className="mt-2 text-xs text-white/70">
           Starts {kpis.starts} · Wins {kpis.wins} · Top 3 {kpis.top3}
         </p>

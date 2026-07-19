@@ -24,6 +24,7 @@ export default function RaceReportPage({ scope }) {
   const refereeIds = useRefereeRaceIds({ enabled: scope === "referee" });
   const [selectedId, setSelectedId] = useState(null);
 
+  // owner = their horses' races; referee = admin-assigned races; admin = all.
   const restricted = scope === "owner" || scope === "referee";
   const restrictIds = scope === "owner" ? ownerIds.data : scope === "referee" ? refereeIds.data : undefined;
   const restrictedPending = restricted && restrictIds === undefined;
@@ -57,6 +58,7 @@ export default function RaceReportPage({ scope }) {
         </Card>
       ) : (
         <div className="grid gap-6 lg:grid-cols-3">
+          {/* Race picker */}
           <div className="flex flex-col gap-3 lg:col-span-1">
             {races.map((race) => (
               <RaceRow
@@ -68,6 +70,7 @@ export default function RaceReportPage({ scope }) {
             ))}
           </div>
 
+          {/* Report */}
           <div className="lg:col-span-2">
             {selected ? (
               <RaceReportView raceId={selected.raceId} canCertify={scope === "admin"} />

@@ -37,6 +37,11 @@ function humanize(value = "") {
 const PODIUM = ["bg-amber-50 text-warning", "bg-subtle text-muted", "bg-orange-50 text-orange-600"];
 const PLACE = ["1st", "2nd", "3rd"];
 
+/**
+ * Read-only race report: results sheet + stewards' report + logged violations.
+ * When `canCertify` is set (admin), an admin can publish provisional results
+ * as OFFICIAL.
+ */
 export function RaceReportView({ raceId, canCertify = false }) {
   const { data: results, isPending, isError } = useRaceResultSheet(raceId);
   const { data: violations } = useRaceReportViolations(raceId);
@@ -69,6 +74,7 @@ export function RaceReportView({ raceId, canCertify = false }) {
 
   return (
     <div className="flex flex-col gap-6">
+      {/* Status + conditions */}
       <Card>
         <CardBody className="flex flex-col gap-4">
           <div className="flex items-center justify-between">
@@ -79,6 +85,7 @@ export function RaceReportView({ raceId, canCertify = false }) {
         </CardBody>
       </Card>
 
+      {/* Podium */}
       <div className="grid gap-4 sm:grid-cols-3">
         {podium.map((row, index) => (
           <div key={row.resultId} className="flex items-center gap-3 rounded-2xl border border-border bg-surface p-4 shadow-sm">
@@ -94,6 +101,7 @@ export function RaceReportView({ raceId, canCertify = false }) {
         ))}
       </div>
 
+      {/* Full finishing order */}
       <Card>
         <CardHeader>
           <h3 className="font-semibold text-ink">Finishing Order</h3>
@@ -117,6 +125,7 @@ export function RaceReportView({ raceId, canCertify = false }) {
         </CardBody>
       </Card>
 
+      {/* Stewards' report */}
       <Card>
         <CardHeader className="flex items-center gap-2">
           <FileText className="h-4 w-4 text-muted" />
@@ -131,6 +140,7 @@ export function RaceReportView({ raceId, canCertify = false }) {
         </CardBody>
       </Card>
 
+      {/* Violations / incidents */}
       <Card>
         <CardHeader className="flex items-center justify-between">
           <span className="flex items-center gap-2">
@@ -182,6 +192,10 @@ function ResultRow({ row }) {
   );
 }
 
+/**
+ * Admin-only publish control: certify the referee's provisional results as
+ * OFFICIAL.
+ */
 function CertifyControl({ raceId }) {
   const toast = useToast();
   const certify = useCertifyRaceResults(raceId);
