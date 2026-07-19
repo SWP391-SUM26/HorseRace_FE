@@ -51,8 +51,7 @@ function OwnerRegistrationsPanel() {
     reg={reg}
     withdrawing={withdraw.isPending}
     onWithdraw={() => withdraw.mutate(reg.id, {
-      onSuccess: () => toast.success("Registration withdrawn"),
-      onError: () => toast.error("Could not withdraw registration")
+      onSuccess: () => toast.success("Registration withdrawn")
     })}
   />)}
       </div>
