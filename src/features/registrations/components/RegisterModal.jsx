@@ -1,9 +1,7 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
 import { Modal, Button, Select, Spinner } from "@/common/ui";
 import { useToast } from "@/common/providers/ToastProvider";
-import { formatMoney, formatDate } from "@/common/lib/format";
-import { useWallet } from "@/features/wallet/hooks";
+import { formatDate } from "@/common/lib/format";
 import { registrationAvailability } from "../api";
 import {
   useOpenTournaments,
@@ -75,15 +73,6 @@ export function RegisterModal({
   const noOpenRaces =
     !!effectiveTournamentId && !races.isPending && raceOptions.length === 0;
 
-  // The fee is charged when this form is submitted, so the owner has to see it first — and must be
-  // stopped here rather than by a 400 from the server.
-  const wallet = useWallet();
-  const selectedRace = raceOptions.find((r) => r.value === raceId);
-  const fee = selectedRace?.entryFee ?? 0;
-  const balance = wallet.data?.balance ?? 0;
-  const shortfall = fee - balance;
-  const insufficient = fee > 0 && !wallet.isPending && shortfall > 0;
-
   const selectedTournament = (tournaments.data ?? []).find(
     (t) => t.value === effectiveTournamentId,
   );
@@ -118,9 +107,7 @@ export function RegisterModal({
               !horseId ||
               !raceId ||
               files.length === 0 ||
-              insufficient ||
-              !availability.ok ||
-              wallet.isPending
+              !availability.ok
             }
             onClick={submit}
           >
@@ -188,38 +175,6 @@ export function RegisterModal({
             </p>
           )}
 
-          {raceId && (
-            <div className="rounded-lg border border-border bg-subtle px-3 py-2 text-sm">
-              {fee > 0 ? (
-                <>
-                  <Row label="Entry fee" value={formatMoney(fee)} />
-                  <Row
-                    label="Your balance"
-                    value={wallet.isPending ? "…" : formatMoney(balance)}
-                  />
-                  <Row
-                    label="Balance after"
-                    value={
-                      wallet.isPending ? "…" : formatMoney(balance - fee)
-                    }
-                    tone={insufficient ? "danger" : undefined}
-                  />
-                </>
-              ) : (
-                <Row label="Entry fee" value="Free" />
-              )}
-            </div>
-          )}
-
-          {insufficient && (
-            <p className="rounded-lg bg-danger/10 px-3 py-2 text-sm text-danger">
-              Not enough balance — you need {formatMoney(shortfall)} more to
-              enter this race.{" "}
-              <Link to="/wallet" className="font-medium underline">
-                Top up your wallet →
-              </Link>
-            </p>
-          )}
 
           <div className="flex flex-col gap-1">
             <label className="text-sm font-medium text-ink">
@@ -247,19 +202,3 @@ export function RegisterModal({
   );
 }
 
-function Row({ label, value, tone }) {
-  return (
-    <div className="flex items-center justify-between py-0.5">
-      <span className="text-muted">{label}</span>
-      <span
-        className={
-          tone === "danger"
-            ? "font-semibold text-danger"
-            : "font-medium text-ink"
-        }
-      >
-        {value}
-      </span>
-    </div>
-  );
-}

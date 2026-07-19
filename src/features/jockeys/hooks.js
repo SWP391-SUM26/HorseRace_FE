@@ -61,12 +61,15 @@ function invalidateInviteState(qc) {
   qc.invalidateQueries({ queryKey: ["invitations"] });
   qc.invalidateQueries({ queryKey: ["jockeys", "unassigned-entries"] });
   qc.invalidateQueries({ queryKey: ["jockeys", "suggestions"] });
+  // Hiring escrows the fee and cancelling releases it, so the balance on screen is stale the
+  // moment either lands.
+  qc.invalidateQueries({ queryKey: ["wallet"] });
 }
 
 export function useSendInvitation() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (v) => sendInvitation(v.entryId, v.jockeyUserId),
+    mutationFn: (v) => sendInvitation(v.entryId, v.jockeyUserId, v.agreedBaseFee),
     onSuccess: () => invalidateInviteState(qc),
   });
 }
@@ -85,7 +88,7 @@ export function useReassignInvitation() {
   return useMutation({
     mutationFn: async (v) => {
       await cancelInvitation(v.assignmentId);
-      await sendInvitation(v.entryId, v.jockeyUserId);
+      await sendInvitation(v.entryId, v.jockeyUserId, v.agreedBaseFee);
     },
     onSuccess: () => invalidateInviteState(qc),
   });

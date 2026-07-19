@@ -35,6 +35,9 @@ function mapJockey(j) {
       j.baseFee != null
         ? `${Math.round(j.baseFee).toLocaleString("vi-VN")}₫`
         : "—",
+    // The raw number as well as the label: this is the amount escrowed from the owner when they
+    // hire, so the invite call and the affordability check both need it un-formatted.
+    baseFeeAmount: j.baseFee != null ? Number(j.baseFee) : null,
     prizePct: j.prizePercent != null ? `${j.prizePercent}% of Purse` : "—",
     trophyCabinet: j.lastTrophy ?? "—",
   };
@@ -115,8 +118,18 @@ export async function resolveEntryId(raceId, horseId) {
   return findEntryId(entries, horseId);
 }
 
-export async function sendInvitation(entryId, jockeyUserId) {
-  await apiClient.post("/assignments/invitations", { entryId, jockeyUserId });
+/**
+ * Hire a jockey. `agreedBaseFee` is the wage the owner commits to: the backend locks it out of
+ * their wallet immediately and pays it to the rider once the race is certified. Omitting it makes
+ * the backend fall back to the jockey's advertised rate, which is what this used to do — silently,
+ * so the owner never saw what they were agreeing to.
+ */
+export async function sendInvitation(entryId, jockeyUserId, agreedBaseFee) {
+  await apiClient.post("/assignments/invitations", {
+    entryId,
+    jockeyUserId,
+    ...(agreedBaseFee != null ? { agreedBaseFee } : {}),
+  });
 }
 
 /** The invitations THIS owner has sent (scoped to ownerUserId, not the whole system). */
