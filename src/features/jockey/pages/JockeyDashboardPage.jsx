@@ -13,7 +13,7 @@ import {
 } from "@/common/ui";
 import { useAuth } from "@/common/hooks/useAuth";
 import { useToast } from "@/common/providers/ToastProvider";
-import { formatDate } from "@/common/lib/format";
+import { formatDate, formatMoney } from "@/common/lib/format";
 import {
   useAcceptInvitation,
   useJockeyInvitations,
@@ -23,10 +23,6 @@ import {
 } from "../hooks";
 
 /** USD-shaped earnings; render with a $ prefix. */
-function formatUsd(amount) {
-  return `$${Math.round(amount).toLocaleString("en-US")}`;
-}
-
 /**
  * The BE invitation shape carries no race grade, so we derive a stable
  * GROUP/MAIDEN-style chip from the assignment id purely for visual variety.
@@ -104,12 +100,17 @@ export default function JockeyDashboardPage() {
 
             {/* dark emerald card — NOT <Card> (bg override loses class-order) */}
             <div className="rounded-2xl border border-brand-700 bg-brand-800 p-6 text-white shadow-sm">
-              <p className="text-sm text-white/70">Current Season Earnings</p>
+              <p className="text-sm text-white/70">Your Earnings</p>
               <p className="mt-1 text-3xl font-semibold">
-                {formatUsd(stats.seasonEarnings)}
+                {formatMoney(stats.seasonEarnings ?? 0)}
               </p>
+              {/* The rider's cut and the horse's purse are different numbers. Showing only one of
+                  them (the horse's, as this card used to) makes the agreed share look unpaid. */}
               <p className="mt-2 text-xs text-white/70">
-                Career: {formatUsd(stats.careerEarnings)}
+                Horses you rode won {formatMoney(stats.horseEarnings ?? 0)} in total
+              </p>
+              <p className="mt-1 text-xs text-white/70">
+                Career: {formatMoney(stats.careerEarnings ?? 0)}
               </p>
             </div>
           </>

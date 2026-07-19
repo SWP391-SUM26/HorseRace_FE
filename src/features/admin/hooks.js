@@ -56,7 +56,13 @@ import {
   fetchUsers,
   fetchWithdrawals,
   approveWithdrawal,
-  rejectWithdrawal
+  rejectWithdrawal,
+  fetchAdminPredictions,
+  fetchPredictionStats,
+  voidPrediction,
+  fetchRoles,
+  fetchPermissions,
+  updateRolePermissions
 } from "./api";
 function useWithdrawals(query = {}) {
   return useQuery({ queryKey: ["admin", "withdrawals", query], queryFn: () => fetchWithdrawals(query) });
@@ -365,6 +371,54 @@ function useRevokeTournamentAssignment() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ["admin", "tournament-assignments"] })
   });
 }
+
+// ---------- Prediction moderation (Req 32) ----------
+export function useAdminPredictions(query) {
+  return useQuery({
+    queryKey: ["admin", "predictions", query],
+    queryFn: () => fetchAdminPredictions(query),
+  });
+}
+
+export function usePredictionStats() {
+  return useQuery({
+    queryKey: ["admin", "prediction-stats"],
+    queryFn: fetchPredictionStats,
+  });
+}
+
+export function useVoidPrediction() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, reason }) => voidPrediction(id, reason),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["admin", "predictions"] });
+      qc.invalidateQueries({ queryKey: ["admin", "prediction-stats"] });
+    },
+  });
+}
+
+// ---------- Role / permission matrix (Req 26) ----------
+export function useRoles() {
+  return useQuery({ queryKey: ["admin", "roles"], queryFn: fetchRoles });
+}
+
+export function usePermissions() {
+  return useQuery({
+    queryKey: ["admin", "permissions"],
+    queryFn: fetchPermissions,
+  });
+}
+
+export function useUpdateRolePermissions() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ roleId, permissionCodes }) =>
+      updateRolePermissions(roleId, permissionCodes),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["admin", "roles"] }),
+  });
+}
+
 export {
   useAdminHorse,
   useAdminHorses,

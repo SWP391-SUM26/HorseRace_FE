@@ -278,6 +278,43 @@ async function inviteTournamentReferee(body) {
 async function revokeTournamentAssignment(id) {
   await apiClient.delete(`/staffing/tournament-assignments/${id}`);
 }
+
+// ---------- Prediction moderation (Req 32) ----------
+export async function fetchAdminPredictions(query) {
+  const { data } = await apiClient.get("/admin/predictions", {
+    params: { size: 10, ...query },
+  });
+  return toPage(data.data);
+}
+
+export async function fetchPredictionStats() {
+  const { data } = await apiClient.get("/admin/predictions/stats");
+  return data.data;
+}
+
+/** Void an unsettled bet; the backend refunds the stake two-sided and notifies
+ *  the bettor. */
+export async function voidPrediction(id, reason) {
+  await apiClient.patch(`/admin/predictions/${id}/void`, { reason });
+}
+
+// ---------- Role / permission matrix (Req 26) ----------
+export async function fetchRoles() {
+  const { data } = await apiClient.get("/roles");
+  return toArray(data.data);
+}
+
+export async function fetchPermissions() {
+  const { data } = await apiClient.get("/permissions");
+  return toArray(data.data);
+}
+
+/** Replaces the role's whole permission set — the BE rejects unknown codes
+ *  outright. */
+export async function updateRolePermissions(roleId, permissionCodes) {
+  await apiClient.put(`/roles/${roleId}/permissions`, { permissionCodes });
+}
+
 export {
   approveJockey,
   approveRegistration,
