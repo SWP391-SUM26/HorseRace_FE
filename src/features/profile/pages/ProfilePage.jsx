@@ -23,8 +23,7 @@ function ProfilePage() {
     values: { fullName: user?.fullName ?? "", phone: user?.phone ?? "" }
   });
   const onSubmit = (data) => update.mutate(data, {
-    onSuccess: () => toast.success("\u0110\xE3 c\u1EADp nh\u1EADt h\u1ED3 s\u01A1"),
-    onError: () => toast.error("C\u1EADp nh\u1EADt th\u1EA5t b\u1EA1i")
+    onSuccess: () => toast.success("\u0110\xE3 c\u1EADp nh\u1EADt h\u1ED3 s\u01A1")
   });
   const onUpload = () => {
     if (!file) {
@@ -35,8 +34,7 @@ function ProfilePage() {
       onSuccess: () => {
         toast.success("\u0110\xE3 c\u1EADp nh\u1EADt \u1EA3nh \u0111\u1EA1i di\u1EC7n");
         setFile(null);
-      },
-      onError: () => toast.error("T\u1EA3i \u1EA3nh th\u1EA5t b\u1EA1i")
+      }
     });
   };
   return <div className="mx-auto max-w-2xl">

@@ -7,19 +7,31 @@ import { ChevronLeft } from "lucide-react";
 import { Button, Card, CardBody, Input, Select } from "@/common/ui";
 import { useToast } from "@/common/providers/ToastProvider";
 import { useCreateHorse, useUpdateHorse, useHorse } from "../hooks";
-const schema = z.object({
-  name: z.string().min(1, "Nh\u1EADp t\xEAn ng\u1EF1a"),
-  gender: z.enum(["MALE", "FEMALE", "GELDING"]),
-  breed: z.string().optional().default(""),
-  color: z.string().optional().default(""),
-  dateOfBirth: z.string().optional().default(""),
-  weight: z.string().optional().default(""),
-  originCountry: z.string().optional().default(""),
-  microchipNo: z.string().optional().default(""),
-  healthStatus: z.string().optional().default(""),
-  registrationStatus: z.string().optional().default(""),
-  status: z.string().optional().default("")
-});
+function makeSchema(isEdit) {
+  const reqStr = (msg) => z.string().trim().min(1, msg);
+  const lenient = z.string().optional().default("");
+  const validWeight = (s) => Number(s) > 0 && Number(s) <= 9999.99;
+  const notFuture = (s) => new Date(s) <= /* @__PURE__ */ new Date();
+  return z.object({
+    name: reqStr("Nh\u1EADp t\xEAn ng\u1EF1a"),
+    gender: z.enum(["MALE", "FEMALE", "GELDING"], { message: "Ch\u1ECDn gi\u1EDBi t\xEDnh" }),
+    breed: isEdit ? lenient : reqStr("Nh\u1EADp gi\u1ED1ng"),
+    color: isEdit ? lenient : reqStr("Nh\u1EADp m\xE0u l\xF4ng"),
+    dateOfBirth: (isEdit ? lenient : reqStr("Ch\u1ECDn ng\xE0y sinh")).refine(
+      (s) => !s || notFuture(s),
+      "Ng\xE0y sinh kh\xF4ng th\u1EC3 \u1EDF t\u01B0\u01A1ng lai"
+    ),
+    weight: (isEdit ? lenient : reqStr("Nh\u1EADp c\xE2n n\u1EB7ng")).refine(
+      (s) => isEdit && s === "" || validWeight(s),
+      "C\xE2n n\u1EB7ng ph\u1EA3i trong kho\u1EA3ng 0\u20139999.99"
+    ),
+    originCountry: isEdit ? lenient : reqStr("Nh\u1EADp qu\u1ED1c gia"),
+    microchipNo: isEdit ? lenient : reqStr("Nh\u1EADp m\xE3 chip"),
+    healthStatus: isEdit ? lenient : reqStr("Ch\u1ECDn t\xECnh tr\u1EA1ng s\u1EE9c kho\u1EBB"),
+    registrationStatus: isEdit ? lenient : reqStr("Nh\u1EADp t\xECnh tr\u1EA1ng \u0111\u0103ng k\xFD"),
+    status: isEdit ? lenient : reqStr("Ch\u1ECDn tr\u1EA1ng th\xE1i")
+  });
+}
 const GENDER_OPTS = [
   { value: "MALE", label: "\u0110\u1EF1c (Male)" },
   { value: "FEMALE", label: "C\xE1i (Female)" },
@@ -48,7 +60,7 @@ function HorseFormPage({ mode }) {
   const createM = useCreateHorse();
   const updateM = useUpdateHorse(horseId);
   const { register, handleSubmit, formState: { errors } } = useForm({
-    resolver: zodResolver(schema),
+    resolver: zodResolver(makeSchema(editing)),
     values: editing && raw.data ? {
       name: raw.data.name,
       gender: raw.data.gender ?? "MALE",
@@ -70,16 +82,14 @@ function HorseFormPage({ mode }) {
         onSuccess: () => {
           toast.success("\u0110\xE3 c\u1EADp nh\u1EADt ng\u1EF1a");
           navigate(`/app/owner/stable/${horseId}`);
-        },
-        onError: () => toast.error("C\u1EADp nh\u1EADt th\u1EA5t b\u1EA1i")
+        }
       });
     } else {
       createM.mutate({ values: data, image }, {
         onSuccess: () => {
           toast.success("\u0110\xE3 \u0111\u0103ng k\xFD ng\u1EF1a");
           navigate("/app/owner/stable");
-        },
-        onError: () => toast.error("\u0110\u0103ng k\xFD th\u1EA5t b\u1EA1i")
+        }
       });
     }
   };
@@ -95,15 +105,15 @@ function HorseFormPage({ mode }) {
             <Input label="Tên ngựa" {...register("name")} error={errors.name?.message} />
             <div className="grid gap-4 sm:grid-cols-2">
               <Select label="Giới tính" options={GENDER_OPTS} {...register("gender")} error={errors.gender?.message} />
-              <Input label="Giống (breed)" {...register("breed")} />
-              <Input label="Màu lông" {...register("color")} />
-              <Input label="Ngày sinh" type="date" {...register("dateOfBirth")} />
-              <Input label="Cân nặng (kg)" type="number" step="0.1" {...register("weight")} />
-              <Input label="Quốc gia" {...register("originCountry")} />
-              <Input label="Mã chip" {...register("microchipNo")} />
-              <Select label="Tình trạng sức khoẻ" options={HEALTH_OPTS} {...register("healthStatus")} />
-              <Select label="Trạng thái" options={STATUS_OPTS} {...register("status")} />
-              <Input label="Tình trạng đăng ký" {...register("registrationStatus")} />
+              <Input label="Giống (breed)" {...register("breed")} error={errors.breed?.message} />
+              <Input label="Màu lông" {...register("color")} error={errors.color?.message} />
+              <Input label="Ngày sinh" type="date" {...register("dateOfBirth")} error={errors.dateOfBirth?.message} />
+              <Input label="Cân nặng (kg)" type="number" step="0.1" {...register("weight")} error={errors.weight?.message} />
+              <Input label="Quốc gia" {...register("originCountry")} error={errors.originCountry?.message} />
+              <Input label="Mã chip" {...register("microchipNo")} error={errors.microchipNo?.message} />
+              <Select label="Tình trạng sức khoẻ" options={HEALTH_OPTS} {...register("healthStatus")} error={errors.healthStatus?.message} />
+              <Select label="Trạng thái" options={STATUS_OPTS} {...register("status")} error={errors.status?.message} />
+              <Input label="Tình trạng đăng ký" {...register("registrationStatus")} error={errors.registrationStatus?.message} />
             </div>
             {!editing && <div className="flex flex-col gap-1">
                 <label className="text-sm font-medium text-ink">Ảnh ngựa (tuỳ chọn)</label>

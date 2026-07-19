@@ -169,10 +169,11 @@ async function fetchEnterableRaces(horseId) {
   const races = await get(
     `/horses/${horseId}/enterable-races`
   ).then(toArray);
-  return races.map((r) => ({
-    id: r.raceId,
-    label: r.tournamentName ? `${r.name ?? r.raceCode} \u2014 ${r.tournamentName}` : r.name ?? r.raceCode
-  }));
+  return races.map((r) => {
+    const base = r.tournamentName ? `${r.name ?? r.raceCode} \u2014 ${r.tournamentName}` : r.name ?? r.raceCode;
+    const label = r.entryFee != null && r.entryFee > 0 ? `${base} \xB7 Fee ${r.entryFee.toLocaleString("vi-VN")}\u20AB` : base;
+    return { id: r.raceId, label };
+  });
 }
 export {
   addMedicalRecord,

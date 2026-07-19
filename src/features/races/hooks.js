@@ -1,62 +1,55 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
-  certifyRaceResults,
-  fetchOwnerRaceIds,
-  fetchOwnerRaceReport,
   fetchRaceCalendar,
-  fetchRaceReportViolations,
-  fetchRaceResultSheet,
+  fetchOwnerRaceIds,
   fetchRefereeRaceIds,
+  fetchRaceResultSheet,
+  fetchRaceReportViolations,
+  certifyRaceResults,
+  fetchOwnerRaceReport
 } from "./api";
-
-export function useRaceCalendar() {
+function useRaceCalendar() {
   return useQuery({ queryKey: ["races", "calendar"], queryFn: fetchRaceCalendar });
 }
-
-export function useOwnerRaceIds(options = {}) {
-  return useQuery({
-    queryKey: ["owner", "race-ids"],
-    queryFn: fetchOwnerRaceIds,
-    ...options,
-  });
+function useOwnerRaceIds() {
+  return useQuery({ queryKey: ["owner", "race-ids"], queryFn: fetchOwnerRaceIds });
 }
-
-export function useOwnerRaceReport() {
+function useOwnerRaceReport() {
   return useQuery({ queryKey: ["owner", "race-report"], queryFn: fetchOwnerRaceReport });
 }
-
-export function useRefereeRaceIds(options = {}) {
-  return useQuery({
-    queryKey: ["referee", "race-ids"],
-    queryFn: fetchRefereeRaceIds,
-    ...options,
-  });
+function useRefereeRaceIds() {
+  return useQuery({ queryKey: ["referee", "race-ids"], queryFn: fetchRefereeRaceIds });
 }
-
-export function useRaceResultSheet(raceId) {
+function useRaceResultSheet(raceId) {
   return useQuery({
     queryKey: ["races", "result-sheet", raceId],
     queryFn: () => fetchRaceResultSheet(raceId),
-    enabled: !!raceId,
+    enabled: !!raceId
   });
 }
-
-export function useRaceReportViolations(raceId) {
+function useRaceReportViolations(raceId) {
   return useQuery({
     queryKey: ["races", "report-violations", raceId],
     queryFn: () => fetchRaceReportViolations(raceId),
-    enabled: !!raceId,
+    enabled: !!raceId
   });
 }
-
-export function useCertifyRaceResults(raceId) {
-  const queryClient = useQueryClient();
-
+function useCertifyRaceResults(raceId) {
+  const qc = useQueryClient();
   return useMutation({
     mutationFn: (stewardsReport) => certifyRaceResults(raceId, stewardsReport),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["races", "result-sheet", raceId] });
-      queryClient.invalidateQueries({ queryKey: ["races", "calendar"] });
-    },
+      qc.invalidateQueries({ queryKey: ["races", "result-sheet", raceId] });
+      qc.invalidateQueries({ queryKey: ["races", "calendar"] });
+    }
   });
 }
+export {
+  useCertifyRaceResults,
+  useOwnerRaceIds,
+  useOwnerRaceReport,
+  useRaceCalendar,
+  useRaceReportViolations,
+  useRaceResultSheet,
+  useRefereeRaceIds
+};
