@@ -86,16 +86,17 @@ function parseDate(iso) {
 }
 const ymd = (d) => `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
 const sameYmd = (a, b) => ymd(a) === ymd(b);
-const purse = (n) => (n != null ? `$${n.toLocaleString()}` : "—");
+const purse = (n) =>
+  n != null ? `${Math.round(n).toLocaleString("vi-VN")}₫` : "—";
 function fmtTime(d) {
   return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 }
 function fmtCompactMoney(n) {
   if (n >= 1_000_000) {
-    return `$${(n / 1_000_000).toFixed(1).replace(/\.0$/, "")}M`;
+    return `${(n / 1_000_000).toFixed(1).replace(/\.0$/, "")}tr₫`;
   }
-  if (n >= 1_000) return `$${Math.round(n / 1_000)}K`;
-  return `$${n}`;
+  if (n >= 1_000) return `${Math.round(n / 1_000)}k₫`;
+  return `${n}₫`;
 }
 
 /**

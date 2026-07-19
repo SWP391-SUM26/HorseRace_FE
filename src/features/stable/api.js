@@ -1,5 +1,6 @@
 import { apiClient } from "@/common/lib/apiClient";
 import { formatDate } from "@/common/lib/format";
+import { usd } from "./format";
 
 /** Unwrap a list payload that may be a bare array or a Spring Page object. */
 function toArray(d) {
@@ -48,7 +49,7 @@ function mapPedigree(p) {
       detail: joinDetail([
         p.sire.wins != null ? `${p.sire.wins} Wins` : null,
         p.sire.earnings != null
-          ? `$${p.sire.earnings.toLocaleString()}`
+          ? usd(p.sire.earnings)
           : null,
       ]),
     });

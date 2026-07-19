@@ -1,5 +1,6 @@
 import { FileText, AlertTriangle } from "lucide-react";
 import { Card, CardBody } from "@/common/ui";
+import { usd } from "../format";
 
 export function FinanceAlerts() {
   return (
@@ -34,8 +35,8 @@ export function FinanceAlerts() {
             <h3 className="font-semibold text-ink">Upcoming Expense Alert</h3>
           </div>
           <p className="text-sm text-muted">
-            Maintenance for 'Thunderbolt Dash' is due in 3 days. Estimated cost:
-            $1,250.00.
+            Maintenance for 'Thunderbolt Dash' is due in 3 days. Estimated cost:{" "}
+            {usd(1_250_000)}.
           </p>
           <div className="flex items-center gap-4">
             <button

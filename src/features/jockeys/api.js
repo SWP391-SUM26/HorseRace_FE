@@ -32,7 +32,9 @@ function mapJockey(j) {
     winRate2km: j.winRate ?? 0,
     last5: (j.recentForm ?? []).map((f) => f === "W"),
     baseFee:
-      j.baseFee != null ? `$${j.baseFee.toLocaleString("en-US")}` : "—",
+      j.baseFee != null
+        ? `${Math.round(j.baseFee).toLocaleString("vi-VN")}₫`
+        : "—",
     prizePct: j.prizePercent != null ? `${j.prizePercent}% of Purse` : "—",
     trophyCabinet: j.lastTrophy ?? "—",
   };

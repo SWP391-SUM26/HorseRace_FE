@@ -1,6 +1,10 @@
-/** Stable analytics are denominated in USD (matching the Figma). */
+/**
+ * Stable analytics are VND, like every other money value in the app. These used to render `$`
+ * with en-US grouping (matching an early Figma) while the wallet, prizes and finance screens
+ * showed `₫` — the same earnings appeared as two different currencies depending on the page.
+ */
 export function usd(amount) {
-  return `$${amount.toLocaleString("en-US")}`;
+  return `${Math.round(amount).toLocaleString("vi-VN")}₫`;
 }
 
 const ORDINAL_SUFFIX = { 1: "st", 2: "nd", 3: "rd" };
