@@ -99,13 +99,13 @@ export default function SpectatorHubPage() {
               </div>
               <div className="mt-6 flex flex-wrap gap-3">
                 <button
-                  onClick={() => navigate("/app/spectator/predictions")}
+                  onClick={() => navigate("/spectator/predictions")}
                   className="h-11 rounded-xl bg-brand-600 px-5 text-sm font-semibold text-white hover:bg-brand-700"
                 >
                   Place Prediction
                 </button>
                 <Link
-                  to="/app/spectator/predictions"
+                  to="/spectator/predictions"
                   className="flex h-11 items-center rounded-xl border border-white/30 px-5 text-sm font-semibold text-white hover:bg-white/10"
                 >
                   View Field
@@ -146,8 +146,8 @@ export default function SpectatorHubPage() {
                   live={r.status === "RUNNING"}
                   to={
                     r.status === "RUNNING"
-                      ? `/app/spectator/races/${r.raceId}/live`
-                      : "/app/spectator/predictions"
+                      ? `/spectator/live-races/${r.raceId}`
+                      : "/spectator/predictions"
                   }
                 />
               ))}
@@ -160,7 +160,7 @@ export default function SpectatorHubPage() {
           )}
         </div>
 
-        {/* (c) Top Predictors — STATIC showcase (no BE endpoint) */}
+        {/* (c) Top Predictors — real ranking from GET /standings/predictors */}
         <Card>
           <CardBody>
             <h3 className="flex items-center gap-2 text-sm font-semibold text-ink">
@@ -211,7 +211,7 @@ export default function SpectatorHubPage() {
               Tournament at a Glance
             </h3>
             <Link
-              to="/app/spectator/predictions"
+              to="/spectator/predictions"
               className="text-sm font-medium text-brand-700 hover:underline"
             >
               Full Calendar

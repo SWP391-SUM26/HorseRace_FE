@@ -7,7 +7,7 @@ import { Avatar } from "@/common/ui/Avatar";
 import { ROLE_NAV } from "@/common/config/nav";
 import { ROLE_LABELS } from "@/common/config/roles";
 import { cn } from "@/common/lib/cn";
-const SPECTATOR_HOME = "/app/spectator";
+const SPECTATOR_HOME = "/spectator-dashboard";
 function Brand({ onClick }) {
   return <Link to={SPECTATOR_HOME} onClick={onClick} className="flex items-center gap-2">
       <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-700 text-white">

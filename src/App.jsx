@@ -162,6 +162,10 @@ export default function App() {
           <Route element={<SpectatorLayout />}>
             <Route path="/spectator-dashboard" element={<SpectatorHubPage />} />
             <Route path="/spectator/live-races" element={<SpectatorLivePage />} />
+            <Route
+              path="/spectator/live-races/:raceId"
+              element={<SpectatorLivePage />}
+            />
             <Route path="/spectator/predictions" element={<PredictionsPage />} />
             <Route path="/spectator/rewards" element={<RewardsPage />} />
             <Route path="/spectator/notifications" element={<Navigate to="/app/notifications" replace />} />

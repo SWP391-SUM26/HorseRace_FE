@@ -22,7 +22,6 @@ import {
   useRejectInvitation,
 } from "../hooks";
 
-/** USD-shaped earnings; render with a $ prefix. */
 /**
  * The BE invitation shape carries no race grade, so we derive a stable
  * GROUP/MAIDEN-style chip from the assignment id purely for visual variety.
@@ -123,7 +122,7 @@ export default function JockeyDashboardPage() {
           <div className="mb-3 flex items-center justify-between">
             <h2 className="font-semibold text-ink">Active Invitations</h2>
             <Link
-              to="/app/jockey/invitations"
+              to="/jockey/invitations"
               className="text-sm font-medium text-brand-700 hover:text-brand-800"
             >
               View History →

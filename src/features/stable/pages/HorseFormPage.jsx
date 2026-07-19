@@ -83,7 +83,7 @@ export default function HorseFormPage({ mode }) {
       updateM.mutate(data, {
         onSuccess: () => {
           toast.success("Đã cập nhật ngựa");
-          navigate(`/app/owner/stable/${horseId}`);
+          navigate(`/owner/stable/${horseId}`);
         },
         onError: () => toast.error("Cập nhật thất bại"),
       });
@@ -93,7 +93,7 @@ export default function HorseFormPage({ mode }) {
         {
           onSuccess: () => {
             toast.success("Đã đăng ký ngựa");
-            navigate("/app/owner/stable");
+            navigate("/owner/stable");
           },
           onError: () => toast.error("Đăng ký thất bại"),
         },
