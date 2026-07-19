@@ -19,7 +19,6 @@ import ProtectedRoute from './components/ProtectedRoute';
 import { DashboardLayout } from '@/common/layouts/DashboardLayout';
 import OwnerLayout from './layouts/OwnerLayout';
 import AdminLayout from './layouts/AdminLayout';
-import DashboardHome from './pages/dashboard/DashboardHome';
 import AdminDashboardV2 from '@/features/admin/pages/AdminDashboardPage';
 import AdminUserManagement from '@/features/admin/pages/UserManagementPage';
 import AdminHorseManagement from '@/features/admin/pages/HorseManagementPage';
@@ -39,6 +38,18 @@ import JockeyMarket from './pages/Owner/JockeyMarket';
 import JockeyDetail from './pages/Owner/JockeyDetail';
 import OwnerRegistrations from './pages/Owner/OwnerRegistrations';
 import OwnerRaceSchedule from './pages/Owner/RaceSchedule';
+import StableListPage from '@/features/stable/pages/StableListPage';
+import StableManagementPage from '@/features/stable/pages/StableManagementPage';
+import HorseFormPage from '@/features/stable/pages/HorseFormPage';
+import JockeyMarketPage from '@/features/jockeys/pages/JockeyMarketPage';
+import OwnerTournamentCatalogPage from '@/features/tournaments/pages/TournamentCatalogPage';
+import RaceCalendarPage from '@/features/races/pages/RaceCalendarPage';
+import OwnerRaceReportPage from '@/features/races/pages/OwnerRaceReportPage';
+import RaceReportPage from '@/features/races/pages/RaceReportPage';
+import ConfirmParticipationPage from '@/features/owner/pages/ConfirmParticipationPage';
+import FinancesPage from '@/features/finances/pages/FinancesPage';
+import ProfilePage from '@/features/profile/pages/ProfilePage';
+import UploadDocumentsPage from '@/features/owner/pages/UploadDocumentsPage';
 import MyInvitationsPage from '@/features/jockey/pages/MyInvitationsPage'; // For Owner
 import JockeyDashboardPage from '@/features/jockey/pages/JockeyDashboardPage';
 import JockeyInvitationsPage from '@/features/jockey/pages/JockeyInvitationsPage';
@@ -56,16 +67,15 @@ import ViolationManagement from '@/features/referee/pages/ViolationsPage';
 import RaceResultRecording from '@/features/referee/pages/RaceResultsPage';
 import MyRaceAssignmentsPage from '@/features/referee/pages/MyRaceAssignmentsPage';
 import TournamentInvitationsPage from '@/features/referee/pages/TournamentInvitationsPage';
-import RaceReportPage from '@/features/races/pages/RaceReportPage';
 import Settings from './pages/Admin/Settings';
 import { SpectatorLayout } from '@/common/layouts/SpectatorLayout';
 import SpectatorHubPage from '@/features/spectator/pages/SpectatorHubPage';
 import PredictionsPage from '@/features/spectator/pages/PredictionsPage';
 import RewardsPage from '@/features/spectator/pages/RewardsPage';
 import SpectatorLivePage from '@/features/spectator/pages/SpectatorLivePage';
+import NotificationsPage from '@/features/notifications/pages/NotificationsPage';
 import WalletPage from '@/features/wallet/pages/WalletPage';
 import WalletReturnPage from '@/features/wallet/pages/WalletReturnPage';
-import NotificationsPage from '@/features/notifications/pages/NotificationsPage';
 
 
 const OwnerPlaceholder = ({ title }) => (
@@ -107,6 +117,24 @@ export default function App() {
         {/* DASHBOARDS */}
         <Route element={<ProtectedRoute roles={['Owner']} />}>
           <Route element={<OwnerLayout />}>
+            {/* V2 owner routes used by the shared sidebar/topbar */}
+            <Route path="/app/owner" element={<OwnerTournamentCatalogPage />} />
+            <Route path="/app/owner/tournaments" element={<OwnerTournamentCatalogPage />} />
+            <Route path="/app/owner/stable" element={<StableListPage />} />
+            <Route path="/app/owner/stable/new" element={<HorseFormPage mode="create" />} />
+            <Route path="/app/owner/stable/:horseId" element={<StableManagementPage />} />
+            <Route path="/app/owner/stable/:horseId/edit" element={<HorseFormPage mode="edit" />} />
+            <Route path="/app/owner/jockeys" element={<JockeyMarketPage />} />
+            <Route path="/app/owner/invitations" element={<MyInvitationsPage />} />
+            <Route path="/app/owner/registrations" element={<OwnerTournamentCatalogPage />} />
+            <Route path="/app/owner/profile" element={<ProfilePage />} />
+            <Route path="/app/owner/races" element={<RaceCalendarPage />} />
+            <Route path="/app/owner/races/:raceId/confirm" element={<ConfirmParticipationPage />} />
+            <Route path="/app/owner/results" element={<RaceReportPage scope="owner" />} />
+            <Route path="/app/owner/race-report" element={<OwnerRaceReportPage />} />
+            <Route path="/app/owner/financials" element={<FinancesPage />} />
+            <Route path="/app/owner/documents" element={<UploadDocumentsPage />} />
+
             <Route path="/owner/overview" element={<Overview />} />
             <Route path="/owner/stable" element={<StableManagement />} />
             <Route path="/owner/jockey-market" element={<JockeyMarket />} />
