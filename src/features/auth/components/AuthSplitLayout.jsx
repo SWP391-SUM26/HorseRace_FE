@@ -9,17 +9,26 @@ export function AuthSplitLayout({
 }) {
   const visual = (
     <div
-      className="relative hidden bg-cover bg-center md:block"
+      className="relative hidden md:block bg-cover bg-center"
       style={{ backgroundImage: `url(${image})` }}
     >
       <div className="absolute inset-0 bg-gradient-to-b from-brand-900/70 to-brand-900/80" />
-      {panel && <div className="relative z-10 flex h-full flex-col p-12 text-white">{panel}</div>}
+      {panel && (
+        <div className="relative z-10 flex h-full flex-col p-12 text-white">
+          {panel}
+        </div>
+      )}
     </div>
   );
 
   const form = (
     <div className="flex min-h-screen flex-col overflow-y-auto bg-bg px-6 py-12">
-      <div className={cn("mx-auto w-full", formMaxWidth === "xl" ? "max-w-xl" : "max-w-md")}>
+      <div
+        className={cn(
+          "mx-auto w-full",
+          formMaxWidth === "xl" ? "max-w-xl" : "max-w-md",
+        )}
+      >
         {children}
       </div>
     </div>

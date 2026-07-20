@@ -1,91 +1,181 @@
 import { useState } from "react";
-import { Button, EmptyState } from "@/common/ui";
+import { Check, Flag, X } from "lucide-react";
+import { PageHeader } from "@/common/components/PageHeader";
+import {
+  Badge,
+  Button,
+  Card,
+  CardBody,
+  EmptyState,
+  Skeleton,
+  Textarea,
+} from "@/common/ui";
+import { useToast } from "@/common/providers/ToastProvider";
+import { formatDate } from "@/common/lib/format";
+import { humanize } from "../api";
 import {
   useAcceptRaceAssignment,
   useDeclineRaceAssignment,
   useMyRaceAssignments,
 } from "../hooks";
 
+const STATUS_TONE = {
+  ASSIGNED: "warning",
+  CONFIRMED: "success",
+  DECLINED: "danger",
+};
+
+/** Referee inbox for PER-RACE officiating assignments (CN1): accept or decline each. */
 export default function MyRaceAssignmentsPage() {
-  const { data = [], isLoading, isError, refetch } = useMyRaceAssignments();
+  const toast = useToast();
+  const query = useMyRaceAssignments();
   const accept = useAcceptRaceAssignment();
   const decline = useDeclineRaceAssignment();
-  const [declineReason, setDeclineReason] = useState("");
+  const rows = query.data ?? [];
 
-  const assignments = Array.isArray(data) ? data : [];
+  const [decliningId, setDecliningId] = useState(null);
+  const [reason, setReason] = useState("");
 
-  if (isLoading) {
-    return <EmptyState title="Loading assignments..." description="Please wait while we load your race assignments." />;
+  function onAccept(id) {
+    accept.mutate(id, {
+      onSuccess: () => toast.success("Assignment accepted"),
+    });
   }
-
-  if (isError) {
-    return (
-      <EmptyState
-        title="Could not load assignments"
-        description="Please reload the page."
-        action={<Button onClick={() => refetch()}>Reload</Button>}
-      />
+  function confirmDecline(id) {
+    decline.mutate(
+      { id, reason: reason.trim() || undefined },
+      {
+        onSuccess: () => {
+          toast.success("Assignment declined");
+          setDecliningId(null);
+          setReason("");
+        },
+      },
     );
   }
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold text-ink">My Race Assignments</h1>
-        <p className="mt-1 text-sm text-muted">Races an admin assigned you to officiate.</p>
-      </div>
+    <>
+      <PageHeader
+        title="My Race Assignments"
+        subtitle="Races an admin assigned you to officiate. Accept to confirm, or decline with a reason."
+      />
 
-      {assignments.length === 0 ? (
-        <EmptyState title="No assignments" description="No race assignments are currently assigned to you." />
+      {query.isPending ? (
+        <div className="flex flex-col gap-3">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <Skeleton key={i} className="h-24 w-full rounded-2xl" />
+          ))}
+        </div>
+      ) : query.isError ? (
+        <EmptyState
+          title="Couldn't load assignments"
+          description="Please reload the page."
+        />
+      ) : rows.length === 0 ? (
+        <EmptyState
+          title="No race assignments"
+          description="When an admin assigns you to officiate a race, it appears here."
+        />
       ) : (
-        <div className="overflow-hidden rounded-2xl border border-border bg-surface">
-          <table className="w-full text-left text-sm">
-            <thead className="bg-subtle text-xs uppercase text-muted">
-              <tr>
-                <th className="px-4 py-3">Race</th>
-                <th className="px-4 py-3">Role</th>
-                <th className="px-4 py-3">Code</th>
-                <th className="px-4 py-3">Status</th>
-                <th className="px-4 py-3">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {assignments.map((item) => {
-                const id = item.id ?? item.assignmentId ?? item.refAssignmentId;
-                return (
-                  <tr key={id} className="border-t border-border">
-                    <td className="px-4 py-3 font-medium text-ink">{item.raceName ?? item.raceCode ?? id}</td>
-                    <td className="px-4 py-3">{item.panelRole ?? item.role ?? "-"}</td>
-                    <td className="px-4 py-3">{item.refCode ?? "-"}</td>
-                    <td className="px-4 py-3">{item.status ?? "-"}</td>
-                    <td className="flex flex-wrap gap-2 px-4 py-3">
-                      <Button size="sm" onClick={() => accept.mutate(id)} loading={accept.isPending}>Accept</Button>
-                      <Button
-                        size="sm"
-                        variant="secondary"
-                        onClick={() => decline.mutate({ id, reason: declineReason || "Declined by referee" })}
-                        loading={decline.isPending}
-                      >
-                        Decline
-                      </Button>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-          <div className="border-t border-border p-4">
-            <label className="text-sm font-medium text-ink" htmlFor="decline-reason">Decline reason</label>
-            <input
-              id="decline-reason"
-              className="mt-2 h-10 w-full rounded-lg border border-border px-3 text-sm"
-              value={declineReason}
-              onChange={(event) => setDeclineReason(event.target.value)}
-              placeholder="Optional reason used when declining an assignment"
-            />
-          </div>
+        <div className="flex flex-col gap-3">
+          {rows.map((a) => {
+            const busy = accept.isPending || decline.isPending;
+            const pending = a.status === "ASSIGNED";
+            const isDeclining = decliningId === a.refAssignmentId;
+            return (
+              <Card key={a.refAssignmentId}>
+                <CardBody className="flex flex-col gap-3">
+                  <div className="flex flex-wrap items-center gap-4">
+                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-brand-50 text-brand-700">
+                      <Flag size={20} />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <p className="font-semibold text-ink">
+                          {a.raceName ?? a.raceCode ?? "Race"}
+                        </p>
+                        {a.panelRole && (
+                          <Badge tone="neutral">{humanize(a.panelRole)}</Badge>
+                        )}
+                        {a.status && (
+                          <Badge tone={STATUS_TONE[a.status] ?? "neutral"}>
+                            {humanize(a.status)}
+                          </Badge>
+                        )}
+                      </div>
+                      <p className="mt-0.5 text-xs text-muted">
+                        {a.scheduledStartAt
+                          ? `Starts ${formatDate(a.scheduledStartAt)}`
+                          : "Start time TBD"}
+                        {a.status === "DECLINED" && a.declineReason
+                          ? ` · Reason: ${a.declineReason}`
+                          : ""}
+                      </p>
+                    </div>
+                    {pending && !isDeclining && (
+                      <div className="flex gap-2">
+                        <Button
+                          size="sm"
+                          variant="secondary"
+                          disabled={busy}
+                          onClick={() => {
+                            setDecliningId(a.refAssignmentId);
+                            setReason("");
+                          }}
+                        >
+                          <X size={15} /> Decline
+                        </Button>
+                        <Button
+                          size="sm"
+                          loading={accept.isPending}
+                          disabled={decline.isPending}
+                          onClick={() => onAccept(a.refAssignmentId)}
+                        >
+                          <Check size={15} /> Accept
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+
+                  {isDeclining && (
+                    <div className="flex flex-col gap-2 rounded-xl border border-border p-3">
+                      <Textarea
+                        label="Reason (optional)"
+                        rows={2}
+                        value={reason}
+                        onChange={(e) => setReason(e.target.value)}
+                        placeholder="e.g. Scheduling clash"
+                      />
+
+                      <div className="flex justify-end gap-2">
+                        <Button
+                          size="sm"
+                          variant="secondary"
+                          disabled={decline.isPending}
+                          onClick={() => {
+                            setDecliningId(null);
+                            setReason("");
+                          }}
+                        >
+                          Cancel
+                        </Button>
+                        <Button
+                          size="sm"
+                          loading={decline.isPending}
+                          onClick={() => confirmDecline(a.refAssignmentId)}
+                        >
+                          Confirm decline
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                </CardBody>
+              </Card>
+            );
+          })}
         </div>
       )}
-    </div>
+    </>
   );
 }

@@ -7,17 +7,20 @@ import {
   fetchRaceDetail,
   fetchUnassignedEntries,
   resolveEntryId,
-  sendInvitation
+  sendInvitation,
 } from "./api";
 
 export function useJockeys() {
-  return useQuery({ queryKey: ["jockeys", "market"], queryFn: fetchJockeys });
+  return useQuery({
+    queryKey: ["jockeys", "market"],
+    queryFn: fetchJockeys,
+  });
 }
 
 export function useUnassignedEntries() {
   return useQuery({
     queryKey: ["jockeys", "unassigned-entries"],
-    queryFn: fetchUnassignedEntries
+    queryFn: fetchUnassignedEntries,
   });
 }
 
@@ -25,7 +28,7 @@ export function useJockeySuggestions(raceId, horseId) {
   return useQuery({
     queryKey: ["jockeys", "suggestions", raceId, horseId],
     queryFn: () => fetchJockeySuggestions(raceId, horseId),
-    enabled: Boolean(raceId && horseId)
+    enabled: !!raceId && !!horseId,
   });
 }
 
@@ -33,7 +36,7 @@ export function useRaceDetail(raceId) {
   return useQuery({
     queryKey: ["jockeys", "race-detail", raceId],
     queryFn: () => fetchRaceDetail(raceId),
-    enabled: Boolean(raceId)
+    enabled: !!raceId,
   });
 }
 
@@ -41,7 +44,7 @@ export function useEntryId(raceId, horseId) {
   return useQuery({
     queryKey: ["races", raceId, "entry-of", horseId],
     queryFn: () => resolveEntryId(raceId, horseId),
-    enabled: Boolean(raceId && horseId)
+    enabled: !!raceId && !!horseId,
   });
 }
 
@@ -49,39 +52,41 @@ export function useMyInvitations(ownerUserId) {
   return useQuery({
     queryKey: ["invitations", ownerUserId],
     queryFn: () => fetchMyInvitations(ownerUserId),
-    enabled: Boolean(ownerUserId)
+    enabled: !!ownerUserId,
   });
 }
 
-function invalidateInviteState(queryClient) {
-  queryClient.invalidateQueries({ queryKey: ["invitations"] });
-  queryClient.invalidateQueries({ queryKey: ["jockeys", "unassigned-entries"] });
-  queryClient.invalidateQueries({ queryKey: ["jockeys", "suggestions"] });
+/** Refresh invitations, the unassigned-horse rail, and the suggestion lists (eligibility changes). */
+function invalidateInviteState(qc) {
+  qc.invalidateQueries({ queryKey: ["invitations"] });
+  qc.invalidateQueries({ queryKey: ["jockeys", "unassigned-entries"] });
+  qc.invalidateQueries({ queryKey: ["jockeys", "suggestions"] });
 }
 
 export function useSendInvitation() {
-  const queryClient = useQueryClient();
+  const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ entryId, jockeyUserId }) => sendInvitation(entryId, jockeyUserId),
-    onSuccess: () => invalidateInviteState(queryClient)
+    mutationFn: (v) => sendInvitation(v.entryId, v.jockeyUserId),
+    onSuccess: () => invalidateInviteState(qc),
   });
 }
 
 export function useCancelInvitation() {
-  const queryClient = useQueryClient();
+  const qc = useQueryClient();
   return useMutation({
     mutationFn: (id) => cancelInvitation(id),
-    onSuccess: () => invalidateInviteState(queryClient)
+    onSuccess: () => invalidateInviteState(qc),
   });
 }
 
+/** Edit an invitation = cancel the current one, then invite a different jockey to the same entry. */
 export function useReassignInvitation() {
-  const queryClient = useQueryClient();
+  const qc = useQueryClient();
   return useMutation({
-    mutationFn: async ({ assignmentId, entryId, jockeyUserId }) => {
-      await cancelInvitation(assignmentId);
-      await sendInvitation(entryId, jockeyUserId);
+    mutationFn: async (v) => {
+      await cancelInvitation(v.assignmentId);
+      await sendInvitation(v.entryId, v.jockeyUserId);
     },
-    onSuccess: () => invalidateInviteState(queryClient)
+    onSuccess: () => invalidateInviteState(qc),
   });
 }

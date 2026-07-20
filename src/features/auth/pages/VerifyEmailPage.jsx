@@ -1,90 +1,144 @@
-import { useEffect } from "react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
+import { useEffect, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import { ArrowLeft, ShieldCheck } from "lucide-react";
-import { Button, Input } from "@/common/ui";
+import { MailCheck } from "lucide-react";
+import { Button } from "@/common/ui";
 import { useToast } from "@/common/providers/ToastProvider";
+import { useAuth } from "@/common/hooks/useAuth";
+import { ROLE_HOME } from "@/common/config/roles";
 import horse from "@/assets/auth-horse.jpg";
-import { useRequestEmailVerification, useVerifyEmail } from "../hooks";
-import { emailField } from "../validation";
+import { useVerifyEmail, useRequestEmailVerification } from "../hooks";
 import { AuthSplitLayout } from "../components/AuthSplitLayout";
+import { CodeInput } from "../components/CodeInput";
 
-const schema = z.object({
-  email: emailField,
-  code: z.string().min(1, "Please enter the verification code"),
-});
+const RESEND_COOLDOWN = 30;
 
 export default function VerifyEmailPage() {
   const [params] = useSearchParams();
-  const navigate = useNavigate();
-  const toast = useToast();
-  const verifyMutation = useVerifyEmail();
-  const requestMutation = useRequestEmailVerification();
-  const { register, handleSubmit, watch, formState: { errors } } = useForm({
-    resolver: zodResolver(schema),
-    defaultValues: {
-      email: params.get("email") ?? "",
-      code: params.get("code") ?? "",
-    },
-  });
+  const email = params.get("email") ?? "";
+  const [code, setCode] = useState("");
+  const [cooldown, setCooldown] = useState(0);
 
-  const email = watch("email");
+  const verify = useVerifyEmail();
+  const requestCode = useRequestEmailVerification();
+  const toast = useToast();
+  const navigate = useNavigate();
+  const { user } = useAuth();
 
   useEffect(() => {
-    const code = params.get("code");
-    const queryEmail = params.get("email");
-    if (queryEmail && code) {
-      verifyMutation.mutate({ email: queryEmail, code }, {
+    if (cooldown <= 0) return;
+    const id = setTimeout(() => setCooldown((c) => c - 1), 1000);
+    return () => clearTimeout(id);
+  }, [cooldown]);
+
+  const onResend = () =>
+    requestCode.mutate(
+      { email },
+      {
         onSuccess: () => {
-          toast.success("Email verified successfully.");
-          navigate("/login");
+          setCooldown(RESEND_COOLDOWN);
+          toast.success("Đã gửi lại mã xác thực");
         },
-      });
-    }
-  }, []);
-
-  const onSubmit = (data) =>
-    verifyMutation.mutate(data, {
-      onSuccess: () => {
-        toast.success("Email verified successfully.");
-        navigate("/login");
       },
-      onError: (error) => toast.error(error.message || "Could not verify email."),
-    });
+    );
 
-  const resend = () => {
-    if (!email) {
-      toast.error("Please enter your email first.");
+  const onSubmit = () => {
+    if (code.length !== 6) {
+      toast.error("Vui lòng nhập đủ 6 chữ số");
       return;
     }
-    requestMutation.mutate({ email }, {
-      onSuccess: () => toast.success("Verification code sent."),
-      onError: (error) => toast.error(error.message || "Could not resend code."),
-    });
+    verify.mutate(
+      { email, code },
+      {
+        onSuccess: () => {
+          toast.success("Xác thực email thành công");
+          // Post-registration the user is already logged in → send them to their role dashboard,
+          // not the public home. If somehow unauthenticated (email link), fall back to login.
+          navigate(user ? (ROLE_HOME[user.role] ?? "/") : "/login");
+        },
+      },
+    );
   };
 
+  if (!email) {
+    return (
+      <AuthSplitLayout imageSide="left" image={horse}>
+        <div>
+          <h1 className="text-2xl font-semibold text-ink">
+            Thiếu thông tin email
+          </h1>
+          <p className="mt-2 text-sm text-muted">
+            Không tìm thấy email cần xác thực. Vui lòng đăng ký lại.
+          </p>
+          <Link
+            to="/register"
+            className="mt-6 inline-block font-medium text-brand-700 hover:underline"
+          >
+            ← Về trang đăng ký
+          </Link>
+        </div>
+      </AuthSplitLayout>
+    );
+  }
+
   return (
-    <AuthSplitLayout imageSide="right" image={horse}>
+    <AuthSplitLayout
+      imageSide="left"
+      image={horse}
+      panel={
+        <div className="mt-auto">
+          <h2 className="text-xl font-semibold">Xác thực để hoàn tất</h2>
+          <p className="mt-3 max-w-sm text-white/70">
+            Một mã xác thực 6 chữ số đã được gửi tới email của bạn. Xác thực
+            email giúp bảo vệ tài khoản và mở khóa toàn bộ tính năng của Equine
+            Elite.
+          </p>
+        </div>
+      }
+    >
       <div>
-        <Link to="/login" className="inline-flex items-center gap-2 text-sm text-muted hover:text-brand-700">
-          <ArrowLeft size={16} /> Back to login
-        </Link>
-        <h1 className="mt-6 text-3xl font-semibold text-ink">Verify Your Email</h1>
-        <p className="mt-2 text-sm text-muted">Enter the verification code sent to your email.</p>
+        <h1 className="text-2xl font-semibold text-ink">Xác thực Email</h1>
+        <p className="mt-2 text-sm text-muted">
+          Chúng tôi đã gửi mã 6 chữ số tới{" "}
+          <span className="font-medium text-ink">{email}</span>. Nhập mã bên
+          dưới để hoàn tất đăng ký.
+        </p>
       </div>
 
-      <form onSubmit={handleSubmit(onSubmit)} className="mt-8 flex flex-col gap-4">
-        <Input label="Email Address" type="email" {...register("email")} error={errors.email?.message} />
-        <Input label="Verification Code" {...register("code")} error={errors.code?.message} />
-        <Button type="submit" size="lg" className="w-full" loading={verifyMutation.isPending}>
-          Verify Email <ShieldCheck size={18} />
+      <div className="mt-8 flex flex-col gap-5">
+        <div className="flex flex-col gap-2">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+            <label className="text-xs uppercase tracking-wide text-muted">
+              Mã xác thực
+            </label>
+            <button
+              type="button"
+              onClick={onResend}
+              disabled={requestCode.isPending || cooldown > 0}
+              className="text-sm text-brand-700 hover:underline disabled:opacity-50"
+            >
+              {cooldown > 0 ? `Gửi lại sau ${cooldown}s` : "Gửi lại mã"}
+            </button>
+          </div>
+          <CodeInput value={code} onChange={setCode} />
+        </div>
+
+        <Button
+          type="button"
+          size="lg"
+          className="w-full"
+          loading={verify.isPending}
+          onClick={onSubmit}
+        >
+          <MailCheck size={18} />
+          Xác thực Email
         </Button>
-        <Button type="button" variant="secondary" onClick={resend} loading={requestMutation.isPending}>
-          Resend Code
-        </Button>
-      </form>
+      </div>
+
+      <div className="mt-6 text-center text-sm">
+        <Link to="/login" className="text-muted hover:text-ink">
+          ← Về trang đăng nhập
+        </Link>
+      </div>
     </AuthSplitLayout>
   );
 }

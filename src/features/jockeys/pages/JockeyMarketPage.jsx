@@ -10,68 +10,86 @@ import {
   useMyInvitations,
   useRaceDetail,
   useSendInvitation,
-  useUnassignedEntries
+  useUnassignedEntries,
 } from "../hooks";
 import { JockeyCard } from "../components/JockeyCard";
-import { OwnerInvitationsPanel } from "../components/OwnerInvitationsPanel";
 import { RaceDetails } from "../components/RaceDetails";
 import { UnassignedHorses } from "../components/UnassignedHorses";
+import { OwnerInvitationsPanel } from "../components/OwnerInvitationsPanel";
 
 const TABS = [
   { key: "find", label: "Find Jockeys" },
-  { key: "invitations", label: "My Invitations" }
+  { key: "invitations", label: "My Invitations" },
 ];
 
 export default function JockeyMarketPage() {
   const toast = useToast();
   const [tab, setTab] = useState("find");
+
   const { user } = useAuth();
   const { data: entries, isPending: entriesPending } = useUnassignedEntries();
   const { data: invitations } = useMyInvitations(user?.id ?? "");
   const [selectedId, setSelectedId] = useState(null);
 
+  // An entry can hold only one active invitation (BE: ENTRY_ALREADY_ASSIGNED). Once a horse
+  // has an INVITED/ACCEPTED jockey it can't take another invite, so it disappears from the
+  // rail — reappearing only if that invitation is later cancelled or declined.
   const invitedEntryKeys = useMemo(() => {
     if (!invitations) return new Set();
     return new Set(
       invitations
-        .filter((invitation) => invitation.status === "INVITED" || invitation.status === "ACCEPTED")
-        .map((invitation) => `${invitation.raceId}:${invitation.horseId}`)
+        .filter((i) => i.status === "INVITED" || i.status === "ACCEPTED")
+        .map((i) => `${i.raceId}:${i.horseId}`),
     );
   }, [invitations]);
 
   const availableEntries = useMemo(
-    () => (entries ?? []).filter((entry) => !invitedEntryKeys.has(`${entry.raceId}:${entry.horseId}`)),
-    [entries, invitedEntryKeys]
+    () =>
+      (entries ?? []).filter(
+        (e) => !invitedEntryKeys.has(`${e.raceId}:${e.horseId}`),
+      ),
+    [entries, invitedEntryKeys],
   );
 
   const selectedEntry = useMemo(() => {
     if (availableEntries.length === 0) return undefined;
-    return availableEntries.find((entry) => entry.id === selectedId) ?? availableEntries[0];
+    return (
+      availableEntries.find((e) => e.id === selectedId) ?? availableEntries[0]
+    );
   }, [availableEntries, selectedId]);
 
   const raceId = selectedEntry?.raceId ?? "";
   const horseId = selectedEntry?.horseId ?? "";
 
-  const { data: jockeys, isPending: jockeysPending, isError: jockeysError } = useJockeys();
+  const {
+    data: jockeys,
+    isPending: jockeysPending,
+    isError: jockeysError,
+  } = useJockeys();
   const { data: suggestions } = useJockeySuggestions(raceId, horseId);
   const { data: raceDetail } = useRaceDetail(raceId);
+
   const entryId = useEntryId(raceId, horseId);
   const invite = useSendInvitation();
 
+  /**
+   * Merge BE suggestions (compatibility + eligibility) into the jockey list. When a horse is
+   * selected, show only the eligible jockeys who can still receive an invitation for it.
+   */
   const jockeyCards = useMemo(() => {
     if (!jockeys) return [];
-    const byId = new Map((suggestions ?? []).map((suggestion) => [suggestion.jockeyUserId, suggestion]));
-    const merged = jockeys.map((jockey) => {
-      const suggestion = byId.get(jockey.userId);
+    const byId = new Map((suggestions ?? []).map((s) => [s.jockeyUserId, s]));
+    const merged = jockeys.map((j) => {
+      const s = byId.get(j.userId);
       return {
-        ...jockey,
-        compatibility: suggestion?.compatibility ?? null,
-        eligible: suggestion?.eligible ?? true
+        ...j,
+        compatibility: s?.compatibility ?? null,
+        eligible: s?.eligible ?? true,
       };
     });
-    const horseSelected = Boolean(raceId && horseId);
+    const horseSelected = !!raceId && !!horseId;
     return horseSelected && suggestions
-      ? merged.filter((card) => byId.has(card.userId) && card.eligible)
+      ? merged.filter((c) => byId.has(c.userId) && c.eligible)
       : merged;
   }, [jockeys, suggestions, raceId, horseId]);
 
@@ -82,7 +100,9 @@ export default function JockeyMarketPage() {
     }
     invite.mutate(
       { entryId: entryId.data, jockeyUserId },
-      { onSuccess: () => toast.success(`Invitation sent to ${name}`) }
+      {
+        onSuccess: () => toast.success(`Invitation sent to ${name}`),
+      },
     );
   };
 
@@ -91,12 +111,16 @@ export default function JockeyMarketPage() {
       toast.error("No data available to quick-assign");
       return;
     }
-    const best = [...jockeyCards].sort((a, b) => (b.compatibility ?? 0) - (a.compatibility ?? 0))[0];
+    // invite the highest-compatibility jockey to the selected entry
+    const best = [...jockeyCards].sort(
+      (a, b) => (b.compatibility ?? 0) - (a.compatibility ?? 0),
+    )[0];
     handleInvite(best.userId, best.fullName);
   };
 
   return (
     <div className="flex flex-col gap-6">
+      {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <nav className="flex items-center gap-1 text-sm text-muted">
@@ -104,13 +128,20 @@ export default function JockeyMarketPage() {
             <ChevronRight className="h-4 w-4" />
             <span>Assign Jockeys</span>
           </nav>
-          <h1 className="mt-1 text-3xl font-semibold text-ink">Jockey Selection</h1>
+          <h1 className="mt-1 text-3xl font-semibold text-ink">
+            Jockey Selection
+          </h1>
           <p className="mt-1 max-w-2xl text-sm text-muted">
-            Review open race entries and invite elite jockeys to ride your stable&apos;s champions.
+            Review open race entries and invite elite jockeys to ride your
+            stable&apos;s champions.
           </p>
         </div>
         {tab === "find" && (
-          <Button leftIcon={<Zap className="h-4 w-4" />} onClick={handleQuickAssign} className="shrink-0">
+          <Button
+            leftIcon={<Zap className="h-4 w-4" />}
+            onClick={handleQuickAssign}
+            className="shrink-0"
+          >
             Quick Assign All
           </Button>
         )}
@@ -122,11 +153,15 @@ export default function JockeyMarketPage() {
         <OwnerInvitationsPanel />
       ) : (
         <div className="grid gap-6 lg:grid-cols-3">
+          {/* Left rail */}
           <div className="flex flex-col gap-6">
             {entriesPending ? (
               <Skeleton className="h-56 w-full rounded-2xl" />
             ) : availableEntries.length === 0 ? (
-              <EmptyState title="No horses awaiting a jockey" description="Every entered horse already has a jockey invited." />
+              <EmptyState
+                title="No horses awaiting a jockey"
+                description="Every entered horse already has a jockey invited."
+              />
             ) : (
               <UnassignedHorses
                 entries={availableEntries}
@@ -137,23 +172,36 @@ export default function JockeyMarketPage() {
             {raceDetail && <RaceDetails detail={raceDetail} />}
           </div>
 
+          {/* Right column */}
           <div className="flex flex-col gap-4 lg:col-span-2">
+            {/* Filter bar */}
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex flex-wrap items-center gap-2">
-                <Button variant="secondary" size="sm" leftIcon={<SlidersHorizontal className="h-3.5 w-3.5" />}>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  leftIcon={<SlidersHorizontal className="h-3.5 w-3.5" />}
+                >
                   Sort: Best Match
                 </Button>
-                <Button variant="ghost" size="sm">Distance</Button>
+                <Button variant="ghost" size="sm">
+                  Distance
+                </Button>
               </div>
               <p className="text-sm text-muted">
-                Showing {jockeysPending ? "—" : jockeyCards.length} available jockeys
+                Showing {jockeysPending ? "—" : jockeyCards.length} available
+                jockeys
               </p>
             </div>
 
+            {/* Jockey cards */}
             {jockeysPending ? (
               <JockeyListSkeleton />
             ) : jockeysError ? (
-              <EmptyState title="Couldn't load jockeys" description="Please try again later." />
+              <EmptyState
+                title="Couldn't load jockeys"
+                description="Please try again later."
+              />
             ) : jockeyCards.length === 0 ? (
               <EmptyState title="No jockeys available" />
             ) : (
@@ -176,8 +224,8 @@ export default function JockeyMarketPage() {
 function JockeyListSkeleton() {
   return (
     <div className="flex flex-col gap-4">
-      {[0, 1].map((index) => (
-        <Skeleton key={index} className="h-56 w-full rounded-2xl" />
+      {[0, 1].map((i) => (
+        <Skeleton key={i} className="h-56 w-full rounded-2xl" />
       ))}
     </div>
   );

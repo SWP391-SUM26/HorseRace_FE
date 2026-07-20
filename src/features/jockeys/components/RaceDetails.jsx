@@ -2,21 +2,25 @@ import { Card, CardBody } from "@/common/ui";
 
 export function RaceDetails({ detail }) {
   const rows = [
-    ["Course", detail.course],
-    ["Distance", detail.distance],
-    ["Grade", detail.grade],
-    ["Purse", detail.purse]
+    { label: "Course", value: detail.course },
+    { label: "Distance", value: detail.distance },
+    { label: "Grade", value: detail.grade },
+    { label: "Purse", value: detail.purse },
   ];
-
   return (
     <Card>
-      <CardBody>
-        <h2 className="text-sm font-semibold text-ink">Selected Race Details</h2>
-        <dl className="mt-4 flex flex-col gap-3">
-          {rows.map(([label, value]) => (
-            <div key={label} className="flex items-center justify-between gap-4 text-sm">
-              <dt className="text-muted">{label}</dt>
-              <dd className="font-medium text-ink">{value}</dd>
+      <CardBody className="bg-subtle rounded-2xl">
+        <h2 className="text-sm font-semibold text-ink">
+          Selected Race Details
+        </h2>
+        <dl className="mt-3 flex flex-col gap-2.5">
+          {rows.map((row) => (
+            <div
+              key={row.label}
+              className="flex items-center justify-between text-sm"
+            >
+              <dt className="text-muted">{row.label}</dt>
+              <dd className="font-medium text-ink">{row.value}</dd>
             </div>
           ))}
         </dl>

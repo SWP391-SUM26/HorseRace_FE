@@ -213,6 +213,9 @@ async function deleteRace(id) {
 async function scheduleRace(id, scheduledStartAt) {
   await apiClient.patch(`/races/${id}/schedule`, { scheduledStartAt });
 }
+async function closeRace(id) {
+  await apiClient.patch(`/races/${id}/close`);
+}
 async function startRace(id) {
   await apiClient.patch(`/races/${id}/start`);
 }
@@ -301,6 +304,7 @@ export {
   fetchHorses,
   fetchRace,
   fetchRaceEntries,
+  closeRace,
   fetchRacePanel,
   fetchRaceStats,
   fetchRaces,
