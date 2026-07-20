@@ -9,6 +9,7 @@ import {
   uploadAvatar,
   deleteUser,
   getUserPermissions,
+  provisionUser,
 } from "../../services/user";
 import { MoreVertical, Edit2, Trash2, Ban } from 'lucide-react';
 
@@ -20,6 +21,13 @@ import PageHeader from '../../components/ui/PageHeader';
 import SearchFilterBar from '../../components/ui/SearchFilterBar';
 import DataTable from '../../components/ui/DataTable';
 import { DownloadIcon, UserPlusIcon, TrendingUpIcon, OwnerIcon, JockeyIcon, RefereeIcon, EyeIcon, CameraIcon } from '../../components/ui/Icons';
+
+function userStatusVariant(status) {
+  if (status === "ACTIVE") return "success";
+  if (status === "PENDING") return "warning";
+  if (status === "SUSPENDED") return "suspended";
+  return "ghost";
+}
 
 // ==========================================
 // SUB-PAGES VIEW MANAGEMENT
@@ -45,6 +53,8 @@ const UserManagementView = () => {
   const [actionMenuOpenId, setActionMenuOpenId] = useState(null);
   const [deleteModalUser, setDeleteModalUser] = useState(null);
   const [suspendModalUser, setSuspendModalUser] = useState(null);
+  const [provisionModalOpen, setProvisionModalOpen] = useState(false);
+  const [provisionForm, setProvisionForm] = useState({ fullName: "", email: "", roleCode: "SPECTATOR", phone: "" });
 
   useEffect(() => {
     if (!actionMenuOpenId) return;
@@ -74,19 +84,38 @@ const UserManagementView = () => {
   };
 
   const handleSuspendUser = async () => {
-    if (!suspendModalUser) return;
     try {
-      // Mocked suspend action
-      const updatedStatus = suspendModalUser.status === "ACTIVE" ? "SUSPENDED" : "ACTIVE";
-      setUsers(users.map(u => u.id === suspendModalUser.id ? { ...u, status: updatedStatus } : u));
-      if (selectedUser?.id === suspendModalUser.id) {
-        setSelectedUser({ ...selectedUser, status: updatedStatus });
-      }
-      showToast(`User has been ${updatedStatus === "SUSPENDED" ? "suspended" : "activated"}`, "success");
-    } catch (err) {
-      showToast("Failed to change user status", "error");
-    } finally {
+      showToast(`${suspendModalUser.name} has been ${suspendModalUser.status === "ACTIVE" ? "suspended" : "activated"}.`, "success");
       setSuspendModalUser(null);
+    } catch (err) {
+      showToast("Gặp lỗi khi khóa người dùng", "error");
+    }
+  };
+
+  const handleProvisionUser = async () => {
+    if (!provisionForm.fullName || !provisionForm.email) {
+      showToast("Vui lòng điền đủ Tên và Email", "error");
+      return;
+    }
+    try {
+      await provisionUser({
+        fullName: provisionForm.fullName,
+        email: provisionForm.email,
+        roleCode: provisionForm.roleCode,
+        phone: provisionForm.phone,
+      });
+      showToast(`User provisioned — a password was emailed to ${provisionForm.email}`, "success");
+      setProvisionModalOpen(false);
+      setProvisionForm({ fullName: "", email: "", roleCode: "SPECTATOR", phone: "" });
+      // Refresh list
+      const data = await getAllUsers();
+      const processed = data.map((u) => ({
+        ...u,
+        roleIcon: u.role === "Owner" ? OwnerIcon : u.role === "Jockey" ? JockeyIcon : SpectatorIcon,
+      }));
+      setUsers(processed);
+    } catch (err) {
+      showToast("Gặp lỗi khi tạo người dùng", "error");
     }
   };
 
@@ -293,7 +322,7 @@ const UserManagementView = () => {
             <Button variant="ghost" icon={DownloadIcon}>
               Export CSV
             </Button>
-            <Button icon={UserPlusIcon} onClick={() => showToast("Tính năng thêm người dùng mới đang được phát triển!", "success")}>Provision User</Button>
+            <Button icon={UserPlusIcon} onClick={() => setProvisionModalOpen(true)}>Provision User</Button>
           </>
         }
       />
@@ -403,13 +432,7 @@ const UserManagementView = () => {
                   </span>
                 </Badge>
                 <Badge
-                  variant={
-                    selectedUser.status === "ACTIVE"
-                      ? "success"
-                      : selectedUser.status === "PENDING"
-                        ? "warning"
-                        : "suspended"
-                  }
+                  variant={userStatusVariant(selectedUser.status)}
                 >
                   {selectedUser.status}
                 </Badge>
@@ -544,13 +567,7 @@ const UserManagementView = () => {
                 </td>
                 <td className={styles.td}>
                   <Badge
-                    variant={
-                      u.status === "ACTIVE"
-                        ? "success"
-                        : u.status === "PENDING"
-                          ? "warning"
-                          : "suspended"
-                    }
+                    variant={userStatusVariant(u.status)}
                   >
                     {u.status}
                   </Badge>
@@ -674,6 +691,69 @@ const UserManagementView = () => {
             <div className={styles.modalActions}>
               <Button variant="ghost" onClick={() => setSuspendModalUser(null)}>Cancel</Button>
               <Button style={{ background: '#d97706', color: 'white', borderColor: '#d97706' }} onClick={handleSuspendUser}>Confirm</Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {provisionModalOpen && (
+        <div className={styles.modalOverlay}>
+          <div className={styles.modalBox} style={{ width: '600px', maxWidth: '90vw' }}>
+            <div className={styles.modalHeader} style={{ padding: '24px 32px 0 32px' }}>
+              <h3 className={styles.modalTitle}>Provision New User</h3>
+            </div>
+            <div className={styles.modalBody} style={{ display: 'flex', flexDirection: 'column', gap: '16px', padding: '24px 32px' }}>
+              <div>
+                <label style={{ display: 'block', fontSize: '13px', fontWeight: '500', marginBottom: '6px' }}>Full name</label>
+                <input 
+                  type="text" 
+                  value={provisionForm.fullName}
+                  onChange={e => setProvisionForm({...provisionForm, fullName: e.target.value})}
+                  className={styles.inputField} 
+                  style={{ width: '100%', padding: '8px 12px', border: '1px solid #e2e8f0', borderRadius: '6px' }} 
+                />
+              </div>
+              <div>
+                <label style={{ display: 'block', fontSize: '13px', fontWeight: '500', marginBottom: '6px' }}>Email</label>
+                <input 
+                  type="email" 
+                  value={provisionForm.email}
+                  onChange={e => setProvisionForm({...provisionForm, email: e.target.value})}
+                  className={styles.inputField} 
+                  style={{ width: '100%', padding: '8px 12px', border: '1px solid #e2e8f0', borderRadius: '6px' }} 
+                />
+              </div>
+              <div>
+                <label style={{ display: 'block', fontSize: '13px', fontWeight: '500', marginBottom: '6px' }}>Role</label>
+                <select 
+                  value={provisionForm.roleCode}
+                  onChange={e => setProvisionForm({...provisionForm, roleCode: e.target.value})}
+                  className={styles.inputField} 
+                  style={{ width: '100%', padding: '8px 12px', border: '1px solid #e2e8f0', borderRadius: '6px' }}
+                >
+                  <option value="SPECTATOR">Spectator</option>
+                  <option value="HORSE_OWNER">Owner</option>
+                  <option value="JOCKEY">Jockey</option>
+                  <option value="REFEREE">Referee</option>
+                </select>
+              </div>
+              <div>
+                <label style={{ display: 'block', fontSize: '13px', fontWeight: '500', marginBottom: '6px' }}>Phone (optional)</label>
+                <input 
+                  type="text" 
+                  value={provisionForm.phone}
+                  onChange={e => setProvisionForm({...provisionForm, phone: e.target.value})}
+                  className={styles.inputField} 
+                  style={{ width: '100%', padding: '8px 12px', border: '1px solid #e2e8f0', borderRadius: '6px' }} 
+                />
+              </div>
+              <p style={{ fontSize: '12px', color: '#64748b' }}>
+                A secure password is generated and emailed to the user.
+              </p>
+            </div>
+            <div className={styles.modalActions}>
+              <Button variant="ghost" onClick={() => setProvisionModalOpen(false)}>Cancel</Button>
+              <Button style={{ background: '#0284c7', color: 'white' }} onClick={handleProvisionUser}>Provision</Button>
             </div>
           </div>
         </div>

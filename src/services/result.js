@@ -31,6 +31,16 @@ export async function updateRaceResult(raceId, resultId, payload) {
 }
 
 export async function getPredictionList(params = {}) {
-  const response = await api.get("/api/v1/predictions/me", { params: cleanParams(params) });
-  return unwrap(response);
+  try {
+    const response = await api.get("/api/v1/predictions", { params: cleanParams(params) });
+    return unwrap(response);
+  } catch (error) {
+    const status = error?.response?.status;
+    const message = String(error?.response?.data?.message || error?.message || "");
+    const shouldFallback = [403, 404, 405].includes(status) || message.includes("HttpRequestMethodNotSupportedException");
+    if (!shouldFallback) throw error;
+
+    const response = await api.get("/api/v1/predictions/me", { params: cleanParams(params) });
+    return unwrap(response);
+  }
 }

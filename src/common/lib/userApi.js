@@ -1,13 +1,12 @@
 import { apiClient } from "./apiClient";
-import { normalizeBackendImageUrl } from "./imageUrl";
-
 function mapUser(raw) {
   return {
     id: raw.userId,
     email: raw.email,
     fullName: raw.fullName,
     role: raw.roleCode,
-    avatarUrl: normalizeBackendImageUrl(raw.avatarUrl, null)
+    phone: raw.phone ?? null,
+    avatarUrl: raw.avatarUrl ?? null
   };
 }
 async function fetchMe() {

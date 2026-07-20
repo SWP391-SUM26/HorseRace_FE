@@ -1,0 +1,150 @@
+import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { Link, useNavigate } from "react-router-dom";
+import { ArrowRight, Eye, EyeOff, Crown, Trophy, Users } from "lucide-react";
+import { Button, Input, Checkbox } from "@/common/ui";
+import { useAuth } from "@/common/hooks/useAuth";
+import { ROLE_HOME } from "@/common/config/roles";
+import { useToast } from "@/common/providers/ToastProvider";
+import horse from "@/assets/auth-horse.jpg";
+import { useLogin } from "../hooks";
+import { emailField } from "../validation";
+import { AuthSplitLayout } from "../components/AuthSplitLayout";
+
+const schema = z.object({
+  email: emailField,
+  password: z.string().min(1, "Vui lòng nhập mật khẩu"),
+});
+
+export default function LoginPage() {
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm({
+    resolver: zodResolver(schema),
+  });
+  const [showPassword, setShowPassword] = useState(false);
+  const mutation = useLogin();
+  const { login } = useAuth();
+  const toast = useToast();
+  const navigate = useNavigate();
+
+  const onSubmit = (data) =>
+    mutation.mutate(data, {
+      onSuccess: (s) => {
+        login(s.user, s.accessToken);
+        toast.success("Đăng nhập thành công");
+        navigate(ROLE_HOME[s.user.role] ?? "/");
+      },
+    });
+
+  return (
+    <AuthSplitLayout
+      imageSide="right"
+      image={horse}
+      panel={
+        <div className="flex h-full items-end">
+          <span className="text-2xl font-semibold text-white/80">
+            Equine Elite
+          </span>
+        </div>
+      }
+    >
+      <div>
+        <h1 className="text-xl font-semibold text-brand-800">Equine Elite</h1>
+        <p className="mt-1 text-sm text-muted">
+          Sign in to access Elite Management dashboard
+        </p>
+      </div>
+
+      <form
+        onSubmit={handleSubmit(onSubmit)}
+        className="mt-8 flex flex-col gap-4"
+      >
+        <Input
+          label="Email Address / Username"
+          type="email"
+          autoComplete="email"
+          {...register("email")}
+          error={errors.email?.message}
+        />
+
+        <div className="relative">
+          <Input
+            label="Password"
+            type={showPassword ? "text" : "password"}
+            autoComplete="current-password"
+            className="pr-10"
+            {...register("password")}
+            error={errors.password?.message}
+          />
+
+          <button
+            type="button"
+            onClick={() => setShowPassword((v) => !v)}
+            className="absolute right-3 top-[34px] text-muted hover:text-ink"
+            aria-label={showPassword ? "Ẩn mật khẩu" : "Hiện mật khẩu"}
+          >
+            {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+          </button>
+        </div>
+
+        <div className="flex items-center justify-between">
+          <Checkbox label="Remember Me" />
+          <Link to="/forgot" className="text-sm text-brand-700 hover:underline">
+            Forgot Password?
+          </Link>
+        </div>
+
+        <Button
+          type="submit"
+          size="lg"
+          className="w-full"
+          loading={mutation.isPending}
+        >
+          Login
+          <ArrowRight size={18} />
+        </Button>
+      </form>
+
+      <div className="my-6 flex items-center gap-3 text-xs text-muted">
+        <span className="h-px flex-1 bg-border" />
+        Or sign up as
+        <span className="h-px flex-1 bg-border" />
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <Link to="/register/owner">
+          <Button
+            variant="secondary"
+            className="w-full"
+            leftIcon={<Crown size={16} />}
+          >
+            Owner
+          </Button>
+        </Link>
+        <Link to="/register/jockey">
+          <Button
+            variant="secondary"
+            className="w-full"
+            leftIcon={<Trophy size={16} />}
+          >
+            Jockey
+          </Button>
+        </Link>
+        <Link to="/register/spectator">
+          <Button
+            variant="secondary"
+            className="w-full"
+            leftIcon={<Users size={16} />}
+          >
+            Spectator
+          </Button>
+        </Link>
+      </div>
+    </AuthSplitLayout>
+  );
+}

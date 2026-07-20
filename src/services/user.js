@@ -14,6 +14,32 @@ function normalizeOptionalImageUrl(value) {
   return normalizeBackendImageUrl(value, null);
 }
 
+function extractUserList(payload) {
+  const data = payload?.data ?? payload;
+
+  if (Array.isArray(data)) {
+    return data;
+  }
+
+  if (Array.isArray(data?.content)) {
+    return data.content;
+  }
+
+  if (Array.isArray(data?.items)) {
+    return data.items;
+  }
+
+  if (Array.isArray(data?.users)) {
+    return data.users;
+  }
+
+  if (Array.isArray(data?.data)) {
+    return data.data;
+  }
+
+  return [];
+}
+
 // Normalizes API UserResponse to application-wide user structures
 function normalizeUser(user) {
   if (!user) return null;
@@ -62,12 +88,15 @@ export async function getMyProfile() {
 // Fetch all users
 export async function getAllUsers() {
   try {
-    const response = await api.get("/api/v1/users");
-    const data = response.data?.data || response.data;
-    if (Array.isArray(data)) {
-      return data.map(u => normalizeUser(u));
-    }
-    return [];
+    const response = await api.get("/api/v1/users", {
+      params: {
+        page: 0,
+        size: 100,
+        sortBy: "createdAt",
+        sortDir: "desc",
+      },
+    });
+    return extractUserList(response.data).map(u => normalizeUser(u)).filter(Boolean);
   } catch (err) {
     console.error("API getAllUsers failed:", err.message);
     throw err;
@@ -194,4 +223,9 @@ export async function getMyPermissions() {
     console.error("API getMyPermissions failed:", err.message);
     return [];
   }
+}
+
+export async function provisionUser(data) {
+  const response = await api.post("/api/v1/users", data);
+  return normalizeUser(response.data?.data || response.data);
 }

@@ -1,338 +1,401 @@
-import { useEffect, useState } from "react";
-import { AlertCircle, Check, FileText, Scale, Stethoscope } from "lucide-react";
-import { isAxiosError } from "axios";
+import { useMemo, useState } from "react";
+import {
+  Check,
+  X,
+  FileText,
+  MapPin,
+  Calendar,
+  Trophy,
+  Download,
+} from "lucide-react";
 import { PageHeader } from "@/common/components/PageHeader";
 import {
+  DocumentViewerModal,
+  useDocumentViewer,
+} from "@/common/components/DocumentViewerModal";
+import {
+  Avatar,
   Badge,
   Button,
   Card,
   CardBody,
   EmptyState,
-  Select,
+  Modal,
   Skeleton,
-  Textarea
+  StatCard,
+  Textarea,
 } from "@/common/ui";
-import { useToast } from "@/common/providers/ToastProvider";
 import { cn } from "@/common/lib/cn";
 import { formatDate } from "@/common/lib/format";
+import { useToast } from "@/common/providers/ToastProvider";
+import { useRegistrationAttachments } from "@/features/registrations/hooks";
 import {
-  useHorsePassport,
-  useInspections,
-  useRecordInspection,
   useRefereeRaces,
-  useSubmitAllInspections
+  useRegistrations,
+  useRegistrationStats,
+  useApproveRegistration,
+  useRejectRegistration,
 } from "../hooks";
-const STATUS_TONE = {
-  CLEARED: "success",
-  PENDING: "warning",
-  VET_CHECK: "danger"
-};
-function PreRaceInspectionPage() {
+
+const PENDING = ["SUBMITTED", "UNDER_REVIEW"];
+
+/**
+ * Referee Pre-Race Inspection — review the HORSE registrations for the races an admin
+ * assigned to this referee, check the dossier + eligibility, and approve/reject (the
+ * approval gates the horse competing).
+ */
+export default function PreRaceInspectionPage() {
   const toast = useToast();
-  const racesQuery = useRefereeRaces();
-  const [raceId, setRaceId] = useState("");
-  const [selectedEntry, setSelectedEntry] = useState(null);
-  useEffect(() => {
-    if (!raceId && racesQuery.data && racesQuery.data.length > 0) {
-      setRaceId(racesQuery.data[0].raceId);
-    }
-  }, [racesQuery.data, raceId]);
-  const inspectionsQuery = useInspections(raceId || null);
-  const submitAll = useSubmitAllInspections(raceId);
-  const rows = inspectionsQuery.data ?? [];
-  const selected = rows.find((r) => r.entryId === selectedEntry) ?? rows[0] ?? null;
-  const race = racesQuery.data?.find((r) => r.raceId === raceId);
-  function handleSubmitAll() {
-    submitAll.mutate(void 0, {
-      onSuccess: (res) => res.blockedEntries.length > 0 ? toast.info(`${res.submittedCount} cleared \xB7 ${res.blockedEntries.length} blocked`) : toast.success(`Submitted ${res.submittedCount} clearances`),
-      onError: (err) => toast.error(errorMessage(err))
+  const racesQ = useRefereeRaces();
+  const regsQ = useRegistrations({ size: 200 });
+  const statsQ = useRegistrationStats();
+  const approve = useApproveRegistration();
+  const reject = useRejectRegistration();
+
+  const [selectedId, setSelectedId] = useState(null);
+  const [rejectOpen, setRejectOpen] = useState(false);
+  const [reason, setReason] = useState("");
+  const viewer = useDocumentViewer();
+
+  const assignedIds = useMemo(
+    () => new Set((racesQ.data ?? []).map((r) => r.raceId)),
+    [racesQ.data],
+  );
+  const queue = useMemo(
+    () =>
+      (regsQ.data?.rows ?? []).filter(
+        (r) =>
+          r.raceId && assignedIds.has(r.raceId) && PENDING.includes(r.status),
+      ),
+    [regsQ.data, assignedIds],
+  );
+  const selected =
+    queue.find((r) => r.registrationId === selectedId) ?? queue[0] ?? null;
+
+  function doApprove(id) {
+    approve.mutate(id, {
+      onSuccess: () => {
+        toast.success("Registration approved — horse cleared to compete");
+        setSelectedId(null);
+      },
     });
   }
-  return <>
+  function doReject() {
+    if (!selected || !reason.trim()) return;
+    reject.mutate(
+      { id: selected.registrationId, reason: reason.trim() },
+      {
+        onSuccess: () => {
+          toast.success("Registration rejected");
+          setRejectOpen(false);
+          setReason("");
+          setSelectedId(null);
+        },
+      },
+    );
+  }
+
+  const loading = racesQ.isPending || regsQ.isPending;
+  const noAssigned = !racesQ.isPending && assignedIds.size === 0;
+
+  return (
+    <>
       <PageHeader
-    title="Pre-Race Inspection"
-    subtitle={race ? `${race.name} \xB7 ${race.trackCondition ?? "Inspection"}` : "Official steward access"}
-    actions={<div className="flex items-center gap-2">
-            <Button variant="secondary" onClick={() => window.print()}>
-              Print Roster
-            </Button>
-            <Button loading={submitAll.isPending} disabled={!raceId} onClick={handleSubmitAll}>
-              Submit All Clearances
-            </Button>
-          </div>}
-  />
+        title="Pre-Race Inspection"
+        subtitle="Review horse registrations for the races assigned to you, then approve or reject before they compete."
+      />
 
-      <div className="mb-4 w-72">
-        <Select
-    label="Race"
-    value={raceId}
-    onChange={(e) => {
-      setRaceId(e.target.value);
-      setSelectedEntry(null);
-    }}
-    options={(racesQuery.data ?? []).map((r) => ({
-      value: r.raceId,
-      label: `${r.raceCode ?? r.raceId.slice(0, 6)} \xB7 ${r.name}`
-    }))}
-  />
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <StatCard
+          label="Pending (your races)"
+          value={loading ? "—" : queue.length}
+        />
+        <StatCard label="Approved" value={statsQ.data?.approved ?? "—"} />
+        <StatCard label="Rejected" value={statsQ.data?.rejected ?? "—"} />
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-3">
-        {
-    /* LEFT — inspection roster table */
-  }
-        <div className="lg:col-span-2">
-          <Card>
-            <CardBody className="p-0">
-              <div className="flex items-center justify-between border-b border-border px-4 py-3">
-                <h2 className="font-semibold text-ink">Inspection Roster</h2>
-                <Badge tone="neutral">{rows.length} entries</Badge>
+      {noAssigned ? (
+        <Card className="mt-6">
+          <CardBody>
+            <EmptyState
+              title="No assigned races"
+              description="An admin hasn't assigned you to any races yet. Once assigned, the horse registrations for those races appear here."
+            />
+          </CardBody>
+        </Card>
+      ) : (
+        <div className="mt-6 grid gap-6 lg:grid-cols-3">
+          {/* Queue */}
+          <div className="lg:col-span-1">
+            <div className="mb-3 flex items-center justify-between">
+              <h2 className="font-semibold text-ink">
+                Queue ({loading ? "…" : queue.length})
+              </h2>
+            </div>
+            {loading ? (
+              <div className="flex flex-col gap-3">
+                {Array.from({ length: 4 }).map((_, i) => (
+                  <Skeleton key={i} className="h-24 w-full rounded-2xl" />
+                ))}
               </div>
-              {inspectionsQuery.isPending ? <div className="flex flex-col gap-2 p-4">
-                  {Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-14 w-full rounded-xl" />)}
-                </div> : inspectionsQuery.isError ? <EmptyState title="Could not load inspections" description="Please reload the page." /> : rows.length === 0 ? <EmptyState title="No runners to inspect" /> : <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b border-border text-left text-xs uppercase tracking-wide text-muted">
-                      <th className="px-4 py-2">Gate</th>
-                      <th className="px-4 py-2">Horse / Jockey</th>
-                      <th className="px-4 py-2 text-center">Health Cert</th>
-                      <th className="px-4 py-2 text-center">Weight</th>
-                      <th className="px-4 py-2 text-center">Cleared</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {rows.map((row) => <RosterRow
-    key={row.entryId}
-    row={row}
-    active={selected?.entryId === row.entryId}
-    onSelect={() => setSelectedEntry(row.entryId)}
-  />)}
-                  </tbody>
-                </table>}
-            </CardBody>
-          </Card>
-        </div>
+            ) : queue.length === 0 ? (
+              <Card>
+                <CardBody>
+                  <EmptyState
+                    title="Queue clear"
+                    description="No registrations awaiting your review."
+                  />
+                </CardBody>
+              </Card>
+            ) : (
+              <ul className="flex flex-col gap-3">
+                {queue.map((r) => (
+                  <QueueCard
+                    key={r.registrationId}
+                    reg={r}
+                    active={selected?.registrationId === r.registrationId}
+                    busy={approve.isPending}
+                    onSelect={() => setSelectedId(r.registrationId)}
+                    onApprove={() => doApprove(r.registrationId)}
+                    onReject={() => {
+                      setSelectedId(r.registrationId);
+                      setRejectOpen(true);
+                    }}
+                  />
+                ))}
+              </ul>
+            )}
+          </div>
 
-        {
-    /* RIGHT — passport + vet clearance */
-  }
-        <aside>
-          {selected && raceId ? <ClearancePanel key={selected.entryId} raceId={raceId} row={selected} /> : <Card>
-              <CardBody>
-                <p className="text-sm text-muted">Select a runner to review its passport.</p>
-              </CardBody>
-            </Card>}
-        </aside>
+          {/* Detail */}
+          <div className="lg:col-span-2">
+            {selected ? (
+              <InspectionDetail
+                reg={selected}
+                approving={approve.isPending}
+                onApprove={() => doApprove(selected.registrationId)}
+                onReject={() => setRejectOpen(true)}
+                onView={viewer.view}
+              />
+            ) : (
+              <Card>
+                <CardBody>
+                  <EmptyState
+                    title="Select a registration"
+                    description="Pick a horse from the queue to inspect its dossier."
+                  />
+                </CardBody>
+              </Card>
+            )}
+          </div>
+        </div>
+      )}
+
+      <Modal
+        open={rejectOpen}
+        onClose={() => setRejectOpen(false)}
+        title="Reject registration"
+        footer={
+          <>
+            <Button
+              variant="secondary"
+              onClick={() => setRejectOpen(false)}
+              disabled={reject.isPending}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="danger"
+              loading={reject.isPending}
+              disabled={!reason.trim()}
+              onClick={doReject}
+            >
+              Reject
+            </Button>
+          </>
+        }
+      >
+        <Textarea
+          rows={3}
+          placeholder="Reason for rejection…"
+          value={reason}
+          onChange={(e) => setReason(e.target.value)}
+        />
+      </Modal>
+
+      <DocumentViewerModal {...viewer.modalProps} />
+    </>
+  );
+}
+
+function QueueCard({ reg, active, busy, onSelect, onApprove, onReject }) {
+  return (
+    <li>
+      <div
+        className={cn(
+          "rounded-2xl border bg-surface p-4",
+          active ? "border-brand-700 ring-1 ring-brand-700" : "border-border",
+        )}
+      >
+        <button
+          type="button"
+          onClick={onSelect}
+          className="block w-full text-left"
+        >
+          <div className="flex items-center justify-between gap-2">
+            <span className="font-semibold text-ink">
+              {reg.horseName ?? "—"}
+            </span>
+            <Badge tone={reg.status === "UNDER_REVIEW" ? "warning" : "info"}>
+              {reg.status === "UNDER_REVIEW" ? "Reviewing" : "New"}
+            </Badge>
+          </div>
+          <p className="mt-0.5 text-xs text-muted">
+            {reg.ownerName ?? "—"} · {reg.raceName ?? "—"}
+          </p>
+          <p className="mt-0.5 text-[11px] text-muted">
+            {reg.registrationCode}
+          </p>
+        </button>
+        <div className="mt-3 flex gap-2">
+          <Button
+            size="sm"
+            variant="ghost"
+            className="flex-1 text-danger hover:bg-danger/10"
+            onClick={onReject}
+          >
+            Reject
+          </Button>
+          <Button
+            size="sm"
+            className="flex-1"
+            loading={busy}
+            onClick={onApprove}
+          >
+            Approve
+          </Button>
+        </div>
       </div>
-    </>;
+    </li>
+  );
 }
-function RosterRow({
-  row,
-  active,
-  onSelect
-}) {
-  return <tr
-    onClick={onSelect}
-    className={cn("cursor-pointer border-b border-border/60 transition-colors", active ? "bg-brand-50" : "hover:bg-subtle/60")}
-  >
-      <td className="px-4 py-3">
-        <span className="inline-flex h-7 w-7 items-center justify-center rounded-md bg-subtle text-xs font-semibold text-muted">
-          {row.laneNo ?? "\u2014"}
-        </span>
-      </td>
-      <td className="px-4 py-3">
-        <p className="font-medium text-ink">{row.horseName}</p>
-        <p className="text-xs text-muted">J: {row.jockeyName ?? "\u2014"}</p>
-      </td>
-      <td className="px-4 py-3 text-center">
-        {row.healthCertPassed ? <Check size={18} className="mx-auto text-success" /> : <AlertCircle size={18} className="mx-auto text-danger" />}
-      </td>
-      <td className="px-4 py-3 text-center">
-        {row.weightVerified ? <Check size={18} className="mx-auto text-success" /> : <span className="text-muted">—</span>}
-      </td>
-      <td className="px-4 py-3 text-center">
-        <input
-    type="checkbox"
-    readOnly
-    checked={row.inspectionStatus === "CLEARED"}
-    className="h-4 w-4 rounded border-border text-brand-700"
-  />
-      </td>
-    </tr>;
-}
-function ClearancePanel({ raceId, row }) {
-  const toast = useToast();
-  const passport = useHorsePassport(row.horseId);
-  const record = useRecordInspection(raceId);
-  const [healthCert, setHealthCert] = useState(row.healthCertPassed);
-  const [weightVerified, setWeightVerified] = useState(row.weightVerified);
-  const [coggins, setCoggins] = useState(row.inspectionStatus === "CLEARED");
-  const [exam, setExam] = useState(row.inspectionStatus === "CLEARED");
-  const [status, setStatus] = useState(row.inspectionStatus);
-  const [note, setNote] = useState("");
-  function save() {
-    record.mutate(
-      {
-        entryId: row.entryId,
-        healthCertPassed: healthCert,
-        weightVerified,
-        cogginsTestPassed: coggins,
-        preRaceExamPassed: exam,
-        inspectionStatus: status,
-        stewardNote: note.trim() || void 0
-      },
-      {
-        onSuccess: () => toast.success("Clearance saved"),
-        onError: (err) => toast.error(errorMessage(err))
-      }
-    );
-  }
-  function flagForReview() {
-    setStatus("VET_CHECK");
-    record.mutate(
-      {
-        entryId: row.entryId,
-        healthCertPassed: healthCert,
-        weightVerified,
-        cogginsTestPassed: coggins,
-        preRaceExamPassed: exam,
-        inspectionStatus: "VET_CHECK",
-        stewardNote: note.trim() || "Flagged for vet review."
-      },
-      {
-        onSuccess: () => toast.info("Flagged for review"),
-        onError: (err) => toast.error(errorMessage(err))
-      }
-    );
-  }
-  const verifiedAt = row.inspectedAt ? formatDate(row.inspectedAt) : null;
-  return <Card>
+
+function InspectionDetail({ reg, approving, onApprove, onReject, onView }) {
+  const dossier = useRegistrationAttachments(reg.registrationId);
+
+  return (
+    <Card>
       <CardBody className="flex flex-col gap-5">
-        <div className="flex items-center justify-between">
-          <h2 className="font-semibold text-ink">{row.horseName}</h2>
-          <Badge tone={STATUS_TONE[row.inspectionStatus]}>
-            Gate {row.laneNo ?? "\u2014"}
-          </Badge>
-        </div>
-
-        {
-    /* Digital Passport */
-  }
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-wide text-muted">Digital Passport</p>
-          {passport.isPending ? <Skeleton className="mt-2 h-20 w-full rounded" /> : <div className="mt-2 grid grid-cols-2 gap-3 text-sm">
-              <Field label="Microchip ID" value={passport.data?.microchipNo ?? "\u2014"} />
-              <Field
-    label="Age / Sex"
-    value={passport.data?.ageYears != null ? `${passport.data.ageYears}yo ${passport.data.genderWord}` : passport.data?.genderWord ?? "\u2014"}
-  />
-              <Field label="Trainer" value={passport.data?.trainer ?? "\u2014"} />
-              <Field label="Owner" value={passport.data?.owner ?? "\u2014"} />
-            </div>}
-        </div>
-
-        {
-    /* Vet Clearance (editable) */
-  }
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-wide text-muted">Vet Clearance</p>
-          <div className="mt-2 flex flex-col gap-2.5">
-            <ClearanceToggle
-    icon={<Stethoscope size={16} />}
-    label="Health Certificate"
-    checked={healthCert}
-    onChange={setHealthCert}
-    verifiedAt={healthCert ? verifiedAt : null}
-  />
-            <ClearanceToggle
-    icon={<Scale size={16} />}
-    label="Weight Verified"
-    checked={weightVerified}
-    onChange={setWeightVerified}
-    verifiedAt={weightVerified ? verifiedAt : null}
-  />
-            <ClearanceToggle
-    icon={<FileText size={16} />}
-    label="Coggins Test"
-    checked={coggins}
-    onChange={setCoggins}
-    verifiedAt={coggins ? verifiedAt : null}
-  />
-            <ClearanceToggle
-    icon={<Check size={16} />}
-    label="Pre-Race Exam"
-    checked={exam}
-    onChange={setExam}
-    verifiedAt={exam ? verifiedAt : null}
-  />
+        {/* Header */}
+        <div className="flex flex-col gap-3 border-b border-border pb-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-3">
+            <Avatar name={reg.horseName ?? "—"} size={56} />
+            <div>
+              <h2 className="text-xl font-bold text-ink">
+                {reg.horseName ?? "—"}
+              </h2>
+              <p className="text-sm text-muted">
+                #{reg.horseCode ?? "—"} · Owner: {reg.ownerName ?? "—"}
+              </p>
+              <div className="mt-1 flex flex-wrap gap-2">
+                <Badge tone="info">{reg.tournamentName ?? "—"}</Badge>
+                <Badge tone="neutral">{reg.raceName ?? "—"}</Badge>
+              </div>
+            </div>
           </div>
         </div>
 
-        <Select
-    label="Inspection status"
-    value={status}
-    onChange={(e) => setStatus(e.target.value)}
-    options={[
-      { value: "PENDING", label: "Pending" },
-      { value: "CLEARED", label: "Cleared" },
-      { value: "VET_CHECK", label: "Vet Check" }
-    ]}
-  />
+        <div className="grid gap-5 sm:grid-cols-2">
+          {/* Identity / race details + eligibility */}
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wide text-muted">
+              Registration Details
+            </p>
+            <dl className="mt-2 flex flex-col gap-2 text-sm">
+              <Row
+                icon={<Trophy className="h-3.5 w-3.5" />}
+                label="Tournament"
+                value={reg.tournamentName ?? "—"}
+              />
+              <Row
+                icon={<MapPin className="h-3.5 w-3.5" />}
+                label="Race"
+                value={reg.raceName ?? "—"}
+              />
+              <Row
+                icon={<Calendar className="h-3.5 w-3.5" />}
+                label="Submitted"
+                value={reg.submittedAt ? formatDate(reg.submittedAt) : "—"}
+              />
+            </dl>
+          </div>
 
-        <Textarea
-    label="Steward notes"
-    rows={3}
-    placeholder="Add inspection notes here…"
-    value={note}
-    onChange={(e) => setNote(e.target.value)}
-  />
+          {/* Dossier */}
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wide text-muted">
+              Submitted Dossier
+            </p>
+            {dossier.isPending ? (
+              <Skeleton className="mt-2 h-24 w-full rounded-xl" />
+            ) : !dossier.data || dossier.data.length === 0 ? (
+              <p className="mt-2 text-sm text-muted">
+                No dossier files attached.
+              </p>
+            ) : (
+              <ul className="mt-2 flex flex-col gap-1.5">
+                {dossier.data.map((f) => (
+                  <li key={f.attachmentId}>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        onView(
+                          `/attachments/${f.attachmentId}/download`,
+                          f.fileName,
+                        )
+                      }
+                      className="flex w-full items-center gap-2 rounded-lg border border-border px-3 py-2 text-left text-sm text-brand-700 hover:bg-subtle"
+                    >
+                      <FileText size={14} />{" "}
+                      <span className="truncate">{f.fileName}</span>{" "}
+                      <Download size={13} className="ml-auto shrink-0" />
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        </div>
 
-        <div className="flex flex-col gap-2 border-t border-border pt-4">
-          <Button leftIcon={<Check size={16} />} loading={record.isPending} onClick={save}>
-            Save clearance
+        {/* Action bar */}
+        <div className="flex gap-3 border-t border-border pt-4">
+          <Button
+            variant="danger"
+            className="flex-1"
+            leftIcon={<X size={16} />}
+            onClick={onReject}
+          >
+            Reject
           </Button>
-          <Button variant="ghost" className="text-danger hover:bg-danger/10" onClick={flagForReview}>
-            Flag for Review
+          <Button
+            className="flex-1"
+            leftIcon={<Check size={16} />}
+            loading={approving}
+            onClick={onApprove}
+          >
+            Approve &amp; Clear to Compete
           </Button>
         </div>
       </CardBody>
-    </Card>;
+    </Card>
+  );
 }
-function Field({ label, value }) {
-  return <div>
-      <p className="text-xs text-muted">{label}</p>
-      <p className="font-medium text-ink">{value}</p>
-    </div>;
+
+function Row({ icon, label, value }) {
+  return (
+    <div className="flex items-center gap-2">
+      <span className="text-muted">{icon}</span>
+      <span className="text-muted">{label}</span>
+      <span className="ml-auto truncate font-medium text-ink">{value}</span>
+    </div>
+  );
 }
-function ClearanceToggle({
-  icon,
-  label,
-  checked,
-  onChange,
-  verifiedAt
-}) {
-  return <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-border px-3 py-2">
-      <span className={cn("shrink-0", checked ? "text-success" : "text-muted")}>{icon}</span>
-      <span className="min-w-0 flex-1">
-        <span className="block text-sm font-medium text-ink">{label}</span>
-        {checked && verifiedAt && <span className="text-xs text-muted">Verified {verifiedAt}</span>}
-      </span>
-      <input
-    type="checkbox"
-    checked={checked}
-    onChange={(e) => onChange(e.target.checked)}
-    className="h-4 w-4 rounded border-border text-brand-700 focus:ring-brand-500"
-  />
-    </label>;
-}
-function errorMessage(err) {
-  if (isAxiosError(err)) {
-    const s = err.response?.status;
-    if (s === 403) return "You are not authorized to inspect.";
-    if (s === 400) return "Invalid inspection data.";
-  }
-  return "Something went wrong. Please try again.";
-}
-export {
-  PreRaceInspectionPage as default
-};

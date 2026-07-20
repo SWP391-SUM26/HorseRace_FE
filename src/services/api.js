@@ -40,8 +40,12 @@ function updateStoredSession(authData) {
 api.interceptors.request.use(
   (config) => {
     const session = getStoredSession();
-    if (session?.accessToken) {
-      config.headers.Authorization = `Bearer ${session.accessToken}`;
+    const fallbackToken = localStorage.getItem("ee_access_token");
+    const token = session?.accessToken || fallbackToken;
+
+    // Only inject token if not already explicitly provided (e.g. during login/fetchMyProfile)
+    if (token && !config.headers.Authorization) {
+      config.headers.Authorization = `Bearer ${token}`;
     }
     return config;
   },

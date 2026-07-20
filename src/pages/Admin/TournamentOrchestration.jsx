@@ -1,12 +1,22 @@
 import React, { useRef, useState, useEffect } from 'react';
 import styles from './TournamentOrchestration.module.css';
-import { getTournaments, createTournament, updateTournament, getTournamentById } from '../../services/tournament';
+import { getTournaments, createTournament, updateTournament, getTournamentById, uploadTournamentImage } from '../../services/tournament';
 import { getRaceList } from '../../services/race';
 
 import PageHeader from '../../components/ui/PageHeader';
 import Button from '../../components/ui/Button';
 import DataTable from '../../components/ui/DataTable';
 import { PlusIcon, CalendarIcon, AlertTriangleIcon, MoreHorizontalIcon, LayoutIcon } from '../../components/ui/Icons';
+
+function generateTournamentCode(name) {
+  const slug = String(name || "TOURNAMENT")
+    .trim()
+    .toUpperCase()
+    .replace(/[^A-Z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 24) || "TOURNAMENT";
+  return `TRN-${slug}-${Date.now().toString(36).toUpperCase()}`.slice(0, 50);
+}
 
 export default function TournamentOrchestration() {
   const [tournaments, setTournaments] = useState([]);
@@ -18,7 +28,6 @@ export default function TournamentOrchestration() {
   const [totalPages, setTotalPages] = useState(1);
   const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
   const builderRef = useRef(null);
-  const codeInputRef = useRef(null);
 
   const showToast = (message, type = 'success') => {
     setToast({ show: true, message, type });
@@ -34,8 +43,10 @@ export default function TournamentOrchestration() {
     endDate: '',
     registrationOpenAt: '',
     registrationCloseAt: '',
-    status: 'DRAFT'
+    status: 'DRAFT',
+    imageUrl: ''
   });
+  const [coverImage, setCoverImage] = useState(null);
 
   const loadData = async () => {
     setLoading(true);
@@ -93,8 +104,8 @@ export default function TournamentOrchestration() {
       registrationCloseAt: '',
       status: 'DRAFT'
     });
+    setCoverImage(null);
     builderRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    setTimeout(() => codeInputRef.current?.focus(), 250);
   };
 
   const handleSelect = async (item) => {
@@ -112,8 +123,10 @@ export default function TournamentOrchestration() {
         endDate: detailData.endDate ? new Date(detailData.endDate).toISOString().slice(0, 16) : '',
         registrationOpenAt: detailData.registrationOpenAt ? new Date(detailData.registrationOpenAt).toISOString().slice(0, 16) : '',
         registrationCloseAt: detailData.registrationCloseAt ? new Date(detailData.registrationCloseAt).toISOString().slice(0, 16) : '',
-        status: detailData.status || 'DRAFT'
+        status: detailData.status || 'DRAFT',
+        imageUrl: detailData.imageUrl || ''
       });
+      setCoverImage(null);
     } catch (err) {
       showToast("Error loading tournament details", "error");
     }
@@ -121,9 +134,17 @@ export default function TournamentOrchestration() {
 
   const handleSave = async (overrideStatus) => {
     try {
+      if (!formData.name.trim()) {
+        showToast("Tournament name is required", "error");
+        return;
+      }
+
       const finalStatus = overrideStatus || formData.status;
       const payload = {
-        ...formData,
+        tournamentCode: formData.tournamentCode || generateTournamentCode(formData.name),
+        name: formData.name.trim(),
+        description: formData.description?.trim() || undefined,
+        location: formData.location?.trim() || undefined,
         startDate: formData.startDate ? new Date(formData.startDate).toISOString() : null,
         endDate: formData.endDate ? new Date(formData.endDate).toISOString() : null,
         registrationOpenAt: formData.registrationOpenAt ? new Date(formData.registrationOpenAt).toISOString() : null,
@@ -132,12 +153,24 @@ export default function TournamentOrchestration() {
       };
       if (selectedId) {
         await updateTournament(selectedId, payload);
+        if (coverImage) {
+          uploadTournamentImage(selectedId, coverImage).catch((err) => {
+            showToast("Tournament updated, but image upload failed: " + (err.response?.data?.message || err.message), "error");
+          });
+        }
         showToast(`Tournament updated successfully!`, 'success');
       } else {
-        await createTournament(payload);
+        const res = await createTournament(payload);
+        const newId = res?.data?.tournamentId || res?.data?.id || res?.tournamentId || res?.id;
+        if (coverImage && newId) {
+          uploadTournamentImage(newId, coverImage).catch((err) => {
+            showToast("Tournament created, but image upload failed: " + (err.response?.data?.message || err.message), "error");
+          });
+        }
         showToast(`Tournament ${finalStatus === 'DRAFT' ? 'saved as draft' : 'published'} successfully!`, 'success');
         handleNewTournament();
       }
+      setCoverImage(null);
       loadData();
     } catch (err) {
       showToast("Error saving tournament: " + (err.response?.data?.message || err.message), 'error');
@@ -311,18 +344,6 @@ export default function TournamentOrchestration() {
 
             <div className={styles.builderBody}>
               <div className={styles.formGroup}>
-                <label className={styles.formLabel}>Tournament Code <span style={{ color: 'red' }}>*</span></label>
-                <input
-                  ref={codeInputRef}
-                  type="text"
-                  className={styles.formInput}
-                  placeholder="e.g. TRN-2026-01"
-                  value={formData.tournamentCode}
-                  onChange={e => setFormData({ ...formData, tournamentCode: e.target.value })}
-                />
-              </div>
-
-              <div className={styles.formGroup}>
                 <label className={styles.formLabel}>Tournament Name <span style={{ color: 'red' }}>*</span></label>
                 <input
                   type="text"
@@ -330,6 +351,39 @@ export default function TournamentOrchestration() {
                   value={formData.name}
                   onChange={e => setFormData({ ...formData, name: e.target.value })}
                 />
+              </div>
+
+              <div className={styles.formGroup}>
+                <label className={styles.formLabel}>Cover Image</label>
+                <div className={styles.imagePicker}>
+                  <div className={styles.imagePreview}>
+                    {coverImage ? (
+                      <img src={URL.createObjectURL(coverImage)} alt="Preview" className={styles.imagePreviewImg} onLoad={() => URL.revokeObjectURL(coverImage)} />
+                    ) : formData.imageUrl ? (
+                      <img src={formData.imageUrl.startsWith('http') ? formData.imageUrl : `http://localhost:8080${formData.imageUrl}`} alt="Cover" className={styles.imagePreviewImg} />
+                    ) : (
+                      <div className={styles.imagePreviewEmpty}>No image</div>
+                    )}
+                  </div>
+                  <div className={styles.imagePickerContent}>
+                    <div className={styles.imagePickerControl}>
+                      <label className={styles.imagePickerButton}>
+                        Choose Image
+                        <input
+                          type="file"
+                          accept="image/png,image/jpeg,image/webp,image/gif"
+                          onChange={(e) => setCoverImage(e.target.files?.[0] || null)}
+                        />
+                      </label>
+                      <span className={styles.imagePickerName}>
+                        {coverImage ? coverImage.name : formData.imageUrl ? 'Current cover image' : 'No file chosen'}
+                      </span>
+                    </div>
+                    <p className={styles.imagePickerHint}>
+                      {selectedId ? 'Uploads immediately (PNG/JPG/WebP/GIF, <=5MB).' : 'Uploads after the tournament is created.'}
+                    </p>
+                  </div>
+                </div>
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>

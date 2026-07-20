@@ -8,7 +8,7 @@ import { cn } from "@/common/lib/cn";
 const itemBase = "flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors";
 const itemInactive = "text-muted hover:bg-subtle hover:text-ink";
 
-function Sidebar() {
+function SidebarContent({ onNavigate }) {
   const { user, logout } = useAuth();
   if (!user) return null;
 
@@ -16,8 +16,8 @@ function Sidebar() {
   const nav = ROLE_NAV[roleKey];
 
   return (
-    <aside className="hidden w-64 shrink-0 flex-col border-r border-border bg-surface px-4 py-6 md:flex">
-      <Link to={ROLE_HOME[roleKey] || "/"} className="px-3 pb-6">
+    <>
+      <Link to={ROLE_HOME[roleKey] || "/"} onClick={onNavigate} className="px-3 pb-6">
         <span className="block font-semibold text-ink">Equine Elite</span>
         <span className="block text-xs text-muted">Elite {roleWord(roleKey)} Portal</span>
       </Link>
@@ -28,6 +28,7 @@ function Sidebar() {
             key={to}
             to={to}
             end
+            onClick={onNavigate}
             className={({ isActive }) => cn(itemBase, isActive ? "bg-subtle font-medium text-brand-700" : itemInactive)}
           >
             {({ isActive }) => (
@@ -45,13 +46,31 @@ function Sidebar() {
           <HelpCircle size={18} />
           Support
         </a>
-        <button type="button" onClick={logout} className={cn(itemBase, itemInactive, "text-left")}>
+        <button
+          type="button"
+          onClick={() => {
+            onNavigate?.();
+            logout();
+          }}
+          className={cn(itemBase, itemInactive, "text-left")}
+        >
           <LogOut size={18} />
           Sign Out
         </button>
       </div>
+    </>
+  );
+}
+
+function Sidebar() {
+  const { user } = useAuth();
+  if (!user) return null;
+
+  return (
+    <aside className="hidden w-64 shrink-0 flex-col border-r border-border bg-surface px-4 py-6 md:flex">
+      <SidebarContent />
     </aside>
   );
 }
 
-export { Sidebar };
+export { Sidebar, SidebarContent };

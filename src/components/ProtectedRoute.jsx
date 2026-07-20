@@ -9,8 +9,18 @@ export default function ProtectedRoute({ roles = [] }) {
     return <Navigate to="/login" replace state={{ from: location.pathname }} />;
   }
 
-  if (roles.length > 0 && !roles.includes(user.role)) {
-    return <Navigate to="/" replace />;
+  if (roles.length > 0) {
+    const userRole = user.role ? user.role.toUpperCase() : "";
+    const allowedUpper = roles.map((r) => r.toUpperCase());
+    const hasRole = allowedUpper.some((r) => {
+      if (r === "REFEREE" && userRole === "RACE_REFEREE") return true;
+      if (r === "OWNER" && (userRole === "HORSE_OWNER" || userRole === "OWNER")) return true;
+      return r === userRole;
+    });
+
+    if (!hasRole) {
+      return <Navigate to="/" replace />;
+    }
   }
 
   return <Outlet context={{ session: { user } }} />;

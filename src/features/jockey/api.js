@@ -1,12 +1,21 @@
 import { apiClient } from "@/common/lib/apiClient";
 import { initials } from "@/common/lib/format";
+
+/** Unwrap a list payload that may be a bare array or a Spring Page object. */
 function toArray(d) {
   if (Array.isArray(d)) return d;
   return d?.content ?? [];
 }
-function humanize(value) {
-  return value.toLowerCase().split("_").map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
+
+/** "STALKER" -> "Stalker", "FRONT_RUNNER" -> "Front Runner". */
+export function humanize(value) {
+  return value
+    .toLowerCase()
+    .split("_")
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(" ");
 }
+
 function mapProfile(j) {
   return {
     id: j.userId,
@@ -14,69 +23,89 @@ function mapProfile(j) {
     avatarUrl: j.avatarUrl,
     winRate: j.winRate ?? 0,
     careerWins: j.winCount ?? 0,
-    ridingStyle: j.ridingStyle ? humanize(j.ridingStyle) : "\u2014"
+    ridingStyle: j.ridingStyle ? humanize(j.ridingStyle) : "—",
   };
 }
+
+/** Map a BE invitation to the card/modal VM — all fields REAL. */
 function mapInvitation(r) {
   return {
     id: r.assignmentId,
     status: r.status,
     horse: r.horseName,
     horseCode: r.horseCode,
-    owner: r.ownerName ?? "\u2014",
+    owner: r.ownerName ?? "—",
     race: r.raceName,
-    raceCode: r.raceCode ?? "\u2014",
-    tournament: r.tournamentName ?? "\u2014",
-    tournamentLocation: r.tournamentLocation ?? "\u2014",
+    raceCode: r.raceCode ?? "—",
+    tournament: r.tournamentName ?? "—",
+    tournamentLocation: r.tournamentLocation ?? "—",
     date: r.scheduledStartAt ?? r.invitedAt,
     distanceMeter: r.distanceMeter ?? 0,
-    trackCondition: r.trackCondition ?? "\u2014",
+    trackCondition: r.trackCondition ?? "—",
     entryNo: r.entryNo,
-    entryCode: r.entryCode ?? "\u2014",
+    entryCode: r.entryCode ?? "—",
     // ----- prize (REAL) -----
     prizePool: r.racePurse ?? 0,
     sharePct: Number(r.jockeySharePercent ?? 0),
-    estShare: r.estimatedShare ?? 0
+    estShare: r.estimatedShare ?? 0,
   };
 }
-async function fetchJockeyProfile(id) {
+
+/** GET /jockeys/{id} → jockey profile header VM (real fields only). */
+export async function fetchJockeyProfile(id) {
   const { data } = await apiClient.get(`/jockeys/${id}`);
   return mapProfile(data.data);
 }
-async function fetchJockeyInvitations(jockeyUserId, status) {
-  const { data } = await apiClient.get("/assignments/invitations", { params: { jockeyUserId, status } });
+
+/** GET /assignments/invitations?jockeyUserId=&status= → invitation VMs. */
+export async function fetchJockeyInvitations(jockeyUserId, status) {
+  const { data } = await apiClient.get("/assignments/invitations", {
+    params: { jockeyUserId, status },
+  });
   return toArray(data.data).map(mapInvitation);
 }
-async function acceptInvitation(id) {
+
+/** PATCH /assignments/invitations/{id}/accept → updated invitation. */
+export async function acceptInvitation(id) {
   const { data } = await apiClient.patch(
-    `/assignments/invitations/${id}/accept`
+    `/assignments/invitations/${id}/accept`,
   );
   return mapInvitation(data.data);
 }
-async function rejectInvitation(id) {
+
+/** PATCH /assignments/invitations/{id}/reject → updated invitation. */
+export async function rejectInvitation(id) {
   const { data } = await apiClient.patch(
-    `/assignments/invitations/${id}/reject`
+    `/assignments/invitations/${id}/reject`,
   );
   return mapInvitation(data.data);
 }
-async function withdrawInvitation(id) {
+
+/** PATCH /assignments/invitations/{id}/withdraw → ACCEPTED ride → CANCELLED (BE contract #9). */
+export async function withdrawInvitation(id) {
   const { data } = await apiClient.patch(
-    `/assignments/invitations/${id}/withdraw`
+    `/assignments/invitations/${id}/withdraw`,
   );
   return mapInvitation(data.data);
 }
-async function fetchJockeyStats() {
+
+/** GET /jockeys/me/stats → aggregated performance + earnings (REAL, contract #1). */
+export async function fetchJockeyStats() {
   const { data } = await apiClient.get("/jockeys/me/stats");
   return data.data;
 }
-async function fetchInvitationInsights() {
-  const { data } = await apiClient.get(
-    "/jockeys/me/invitation-insights"
-  );
+
+/** GET /jockeys/me/invitation-insights → REAL (contract #11). */
+export async function fetchInvitationInsights() {
+  const { data } = await apiClient.get("/jockeys/me/invitation-insights");
   return data.data;
 }
-async function fetchMyRides(when) {
-  const { data } = await apiClient.get("/assignments/me/rides", { params: { when } });
+
+/** GET /assignments/me/rides?when=PAST|UPCOMING → the caller's ACCEPTED rides (REAL, #6). */
+export async function fetchMyRides(when) {
+  const { data } = await apiClient.get("/assignments/me/rides", {
+    params: { when },
+  });
   return toArray(data.data).map((r, i) => ({
     id: `${r.raceId}-${r.horseName}-${i}`,
     raceId: r.raceId,
@@ -85,25 +114,58 @@ async function fetchMyRides(when) {
     date: r.date,
     horse: r.horseName,
     finishPosition: r.finishPosition,
-    earnings: r.earnings
+    earnings: r.earnings,
   }));
 }
-async function fetchLeaderboard(limit = 5) {
+
+/**
+ * Derived leaderboard — there is no BE ranking endpoint, so we sort the full
+ * jockey roster (GET /jockeys) by career win count. Real data, no mock.
+ */
+export async function fetchLeaderboard(limit = 5) {
   const { data } = await apiClient.get("/jockeys");
-  return toArray(data.data).slice().sort((a, b) => (b.winCount ?? 0) - (a.winCount ?? 0)).slice(0, limit).map((j, i) => ({
-    rank: i + 1,
-    jockeyUserId: j.userId,
-    name: j.fullName,
-    code: initials(j.fullName) || "\u2014",
-    wins: j.winCount ?? 0
-  }));
+  return toArray(data.data)
+    .slice()
+    .sort((a, b) => (b.winCount ?? 0) - (a.winCount ?? 0))
+    .slice(0, limit)
+    .map((j, i) => ({
+      rank: i + 1,
+      jockeyUserId: j.userId,
+      name: j.fullName,
+      code: initials(j.fullName) || "—",
+      wins: j.winCount ?? 0,
+    }));
 }
-const MONTH_ABBR = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-function buildWinTrend(rides, now = /* @__PURE__ */ new Date()) {
+
+// ----- Derivations from real ride history (no BE win-trend / trophy endpoint) -----
+
+const MONTH_ABBR = [
+  "Jan",
+  "Feb",
+  "Mar",
+  "Apr",
+  "May",
+  "Jun",
+  "Jul",
+  "Aug",
+  "Sep",
+  "Oct",
+  "Nov",
+  "Dec",
+];
+
+/**
+ * Wins-per-month for the trailing 12 calendar months, derived from PAST rides
+ * (a "win" = finishPosition === 1). Buckets with no wins render as zero so the
+ * chart always shows a full 12-month axis.
+ */
+export function buildWinTrend(rides, now = new Date()) {
   const buckets = [];
-  const index = /* @__PURE__ */ new Map();
+  const index = new Map();
   for (let i = 11; i >= 0; i--) {
-    const d = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - i, 1));
+    const d = new Date(
+      Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - i, 1),
+    );
     const key = `${d.getUTCFullYear()}-${d.getUTCMonth()}`;
     index.set(key, buckets.length);
     buckets.push({ key, month: MONTH_ABBR[d.getUTCMonth()], wins: 0 });
@@ -117,10 +179,14 @@ function buildWinTrend(rides, now = /* @__PURE__ */ new Date()) {
   }
   return buckets.map(({ month, wins }) => ({ month, wins }));
 }
-function buildTrophies(rides) {
-  const seen = /* @__PURE__ */ new Set();
+
+/** Trophies = races won (finishPosition === 1), newest first, deduped by name+year. */
+export function buildTrophies(rides) {
+  const seen = new Set();
   const out = [];
-  const won = rides.filter((r) => r.finishPosition === 1 && r.date != null).sort((a, b) => +new Date(b.date) - +new Date(a.date));
+  const won = rides
+    .filter((r) => r.finishPosition === 1 && r.date != null)
+    .sort((a, b) => +new Date(b.date) - +new Date(a.date));
   for (const ride of won) {
     const year = new Date(ride.date).getUTCFullYear();
     const key = `${ride.raceName}-${year}`;
@@ -130,16 +196,26 @@ function buildTrophies(rides) {
   }
   return out;
 }
-async function fetchRaceEntries(raceId) {
+
+// ----- Ride intelligence (REAL, BE contract #7) -----
+
+/** GET /races/{raceId}/entries → minimal {horseId, horseName} list (to resolve horseId by name). */
+export async function fetchRaceEntries(raceId) {
   const { data } = await apiClient.get(`/races/${raceId}/entries`);
-  return toArray(data.data).map((e) => ({ horseId: e.horseId, horseName: e.horseName }));
+  return toArray(data.data).map((e) => ({
+    horseId: e.horseId,
+    horseName: e.horseName,
+  }));
 }
-async function fetchRideIntelligence(horseId) {
-  const { data } = await apiClient.get(
-    `/horses/${horseId}/ride-intelligence`
-  );
+
+/** GET /horses/{id}/ride-intelligence → form profile for one horse. */
+export async function fetchRideIntelligence(horseId) {
+  const { data } = await apiClient.get(`/horses/${horseId}/ride-intelligence`);
   return data.data;
 }
+
+// ----- Self-edit jockey profile (REAL, BE contract #8) -----
+
 function mapProfileDetail(j) {
   return {
     id: j.userId,
@@ -151,23 +227,30 @@ function mapProfileDetail(j) {
     baseFee: j.baseFee,
     prizePercent: j.prizePercent,
     fullName: j.fullName,
-    email: j.email ?? "\u2014",
-    phone: j.phone ?? "\u2014",
-    status: j.status ?? "\u2014",
+    email: j.email ?? "—",
+    phone: j.phone ?? "—",
+    status: j.status ?? "—",
     avatarUrl: j.avatarUrl,
     winCount: j.winCount,
     experienceYrs: j.experienceYrs,
     rating: j.rating,
     winRate: j.winRate,
     recentForm: j.recentForm ?? [],
-    lastTrophy: j.lastTrophy
+    lastTrophy: j.lastTrophy,
   };
 }
-async function fetchJockeyDetail(id) {
+
+/** GET /jockeys/{id} → full editable profile (seeds the self-edit form). */
+export async function fetchJockeyDetail(id) {
   const { data } = await apiClient.get(`/jockeys/${id}`);
   return mapProfileDetail(data.data);
 }
-function toUpdateJockeyProfileRequest(v) {
+
+/**
+ * Build a PUT /jockeys/me body, dropping empty/undefined so the update stays
+ * PARTIAL (the endpoint cannot null-out a value, so we only send filled fields).
+ */
+export function toUpdateJockeyProfileRequest(v) {
   const body = {};
   if (v.bodyWeight != null) body.bodyWeight = v.bodyWeight;
   if (v.heightCm != null) body.heightCm = v.heightCm;
@@ -181,81 +264,9 @@ function toUpdateJockeyProfileRequest(v) {
   if (licenseNo) body.licenseNo = licenseNo;
   return body;
 }
-async function updateMyJockeyProfile(body) {
+
+/** PUT /jockeys/me → updated full profile. */
+export async function updateMyJockeyProfile(body) {
   const { data } = await apiClient.put("/jockeys/me", body);
   return mapProfileDetail(data.data);
 }
-async function fetchJockeySuggestions(raceId) {
-  const { data } = await apiClient.get(`/races/${raceId}/jockey-suggestions`);
-  const d = data.data;
-  return Array.isArray(d) ? d : d?.content ?? [];
-}
-async function searchJockeys(query) {
-  const { data } = await apiClient.get("/jockeys/search", { params: { q: query } });
-  const d = Array.isArray(data.data) ? data.data : data.data?.content ?? [];
-  return d.map((j) => ({
-    id: j.userId,
-    name: j.fullName,
-    avatarUrl: j.avatarUrl,
-    winRate: j.winRate ?? 0,
-    careerWins: j.winCount ?? 0,
-    ridingStyle: j.ridingStyle ?? "\u2014"
-  }));
-}
-async function fetchJockeysPage(params) {
-  const { data } = await apiClient.get("/jockeys/page", { params });
-  const d = data.data;
-  const rows = Array.isArray(d) ? d : d?.content ?? [];
-  return {
-    rows: rows.map((j) => ({
-      id: j.userId,
-      name: j.fullName,
-      avatarUrl: j.avatarUrl,
-      winRate: j.winRate ?? 0,
-      careerWins: j.winCount ?? 0,
-      ridingStyle: j.ridingStyle ?? "\u2014"
-    })),
-    totalPages: Array.isArray(d) ? 1 : d?.totalPages ?? 1,
-    page: Array.isArray(d) ? 0 : d?.number ?? 0
-  };
-}
-async function filterJockeys(filter) {
-  const { data } = await apiClient.get("/jockeys/filter", { params: filter });
-  const d = data.data;
-  const rows = Array.isArray(d) ? d : d?.content ?? [];
-  return {
-    rows: rows.map((j) => ({
-      id: j.userId,
-      name: j.fullName,
-      avatarUrl: j.avatarUrl,
-      winRate: j.winRate ?? 0,
-      careerWins: j.winCount ?? 0,
-      ridingStyle: j.ridingStyle ?? "\u2014"
-    })),
-    totalPages: Array.isArray(d) ? 1 : d?.totalPages ?? 1,
-    page: Array.isArray(d) ? 0 : d?.number ?? 0
-  };
-}
-export {
-  acceptInvitation,
-  buildTrophies,
-  buildWinTrend,
-  fetchInvitationInsights,
-  fetchJockeyDetail,
-  fetchJockeyInvitations,
-  fetchJockeyProfile,
-  fetchJockeyStats,
-  fetchJockeySuggestions,
-  fetchJockeysPage,
-  fetchLeaderboard,
-  fetchMyRides,
-  fetchRaceEntries,
-  fetchRideIntelligence,
-  filterJockeys,
-  humanize,
-  rejectInvitation,
-  searchJockeys,
-  toUpdateJockeyProfileRequest,
-  updateMyJockeyProfile,
-  withdrawInvitation
-};

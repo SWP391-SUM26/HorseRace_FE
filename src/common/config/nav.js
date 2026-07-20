@@ -14,26 +14,31 @@ import {
   CalendarDays,
   Coins,
   Radio,
-  BarChart3
+  BarChart3,
+  FileText,
+  UserSquare
 } from "lucide-react";
 const HorseIcon = Rabbit;
 
 const ROLE_NAV = {
   HORSE_OWNER: {
     sidebar: [
-      { label: "Overview", to: "/owner/overview", icon: LayoutDashboard },
-      { label: "Stable Management", to: "/owner/stable", icon: HorseIcon },
-      { label: "Jockey Market", to: "/owner/jockey-market", icon: Users },
-      { label: "Race Schedule", to: "/owner/race-schedule", icon: CalendarDays },
-      { label: "Profile", to: "/profile", icon: UserCog }
+      { label: "Tournaments", to: "/app/owner/tournaments", icon: Trophy },
+      { label: "Stable Management", to: "/app/owner/stable", icon: HorseIcon },
+      { label: "Jockey Market", to: "/app/owner/jockeys", icon: Users },
+      { label: "Race Calendar", to: "/app/owner/races", icon: CalendarDays },
+      { label: "Race Results", to: "/app/owner/results", icon: FileText },
+      { label: "My Race Report", to: "/app/owner/race-report", icon: ClipboardList },
+      { label: "Financials", to: "/app/owner/financials", icon: Wallet },
+      { label: "Profile", to: "/app/owner/profile", icon: UserCog }
     ],
     topbar: [
-      { label: "Dashboard", to: "/owner/overview" },
-      { label: "Stable", to: "/owner/stable" },
-      { label: "Marketplace", to: "/owner/jockey-market" },
-      { label: "Schedule", to: "/owner/race-schedule" }
+      { label: "Tournaments", to: "/app/owner/tournaments" },
+      { label: "Stable", to: "/app/owner/stable" },
+      { label: "Marketplace", to: "/app/owner/jockeys" },
+      { label: "Schedule", to: "/app/owner/races" }
     ],
-    primaryAction: { label: "Register Horse", to: "/owner/stable" }
+    primaryAction: { label: "Register Horse", to: "/app/owner/stable" }
   },
   JOCKEY: {
     sidebar: [
@@ -48,23 +53,28 @@ const ROLE_NAV = {
   RACE_REFEREE: {
     sidebar: [
       { label: "Dashboard", to: "/referee/dashboard", icon: LayoutDashboard },
-      { label: "Inspection", to: "/referee/pre-race-inspection", icon: ShieldCheck },
-      { label: "Live Monitor", to: "/referee/live-monitor", icon: Radio },
+      { label: "Pre-Race Inspection", to: "/referee/inspection", icon: ShieldCheck },
       { label: "Results", to: "/referee/race-result-recording", icon: Flag },
       { label: "Violations", to: "/referee/violations", icon: ClipboardList },
-      { label: "Registrations", to: "/referee/registration", icon: Users }
+      { label: "Race Reports", to: "/referee/reports", icon: FileText },
+      { label: "Tournament Invitations", to: "/referee/invitations", icon: Mail },
+      { label: "My Race Assignments", to: "/referee/race-assignments", icon: CalendarDays },
+      { label: "Live Monitor", to: "/referee/live-monitor", icon: Radio }
     ],
     topbar: []
   },
   ADMIN: {
     sidebar: [
-      { label: "Dashboard", to: "/admin/dashboard", icon: LayoutDashboard },
-      { label: "User Management", to: "/admin/users", icon: Users },
-      { label: "Tournaments", to: "/admin/tournaments", icon: Trophy },
-      { label: "Race Management", to: "/admin/races", icon: Flag },
-      { label: "Race Approval", to: "/admin/race-approval", icon: ClipboardList },
-      { label: "Results & Predictions", to: "/admin/results", icon: BarChart3 },
-      { label: "Settings", to: "/admin/settings", icon: UserCog }
+      { label: "Dashboard", to: "/app/admin", icon: LayoutDashboard },
+      { label: "User Management", to: "/app/admin/users", icon: Users },
+      { label: "Horses", to: "/app/admin/horses", icon: HorseIcon },
+      { label: "Jockeys", to: "/app/admin/jockeys", icon: UserSquare },
+      { label: "Tournaments", to: "/app/admin/tournaments", icon: Trophy },
+      { label: "Race Calendar", to: "/app/admin/races", icon: CalendarDays },
+      { label: "Race Reports", to: "/app/admin/reports", icon: FileText },
+      { label: "Registration Approval", to: "/app/admin/registrations", icon: ClipboardList },
+      { label: "Staffing", to: "/app/admin/staffing", icon: UserCog },
+      { label: "Withdrawals", to: "/app/admin/withdrawals", icon: Wallet }
     ],
     topbar: []
   },
@@ -75,9 +85,15 @@ const ROLE_NAV = {
       { label: "Predictions", to: "/spectator/predictions", icon: Coins },
       { label: "Rewards", to: "/spectator/rewards", icon: Trophy },
       { label: "Tournaments", to: "/spectator/tournaments", icon: Trophy },
-      { label: "Live Races", to: "/spectator/live-races", icon: Radio }
+      { label: "Live Races", to: "/spectator/live-races", icon: Radio },
+      { label: "Wallet", to: "/wallet", icon: Wallet }
     ],
-    topbar: []
+    topbar: [
+      { label: "Live Races", to: "/spectator-dashboard" },
+      { label: "Predictions", to: "/spectator/predictions" },
+      { label: "Rewards", to: "/spectator/rewards" },
+      { label: "Wallet", to: "/app/wallet" }
+    ]
   }
 };
 

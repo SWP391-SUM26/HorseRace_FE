@@ -1,21 +1,48 @@
 import { apiClient } from "@/common/lib/apiClient";
+
+/** Unwrap a list payload that may be a bare array or a Spring Page object. */
 function toArray(d) {
   if (Array.isArray(d)) return d;
   return d?.content ?? [];
 }
-function humanize(value) {
-  if (!value) return "\u2014";
-  return value.toLowerCase().split("_").map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
+
+/** "WHIP_USAGE" -> "Whip Usage". */
+export function humanize(value) {
+  if (!value) return "—";
+  return value
+    .toLowerCase()
+    .split("_")
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(" ");
 }
-async function fetchRefereeDashboard() {
+
+// ---------- Dashboard ----------
+export async function fetchRefereeDashboard() {
   const { data } = await apiClient.get("/referee/dashboard");
   return data.data;
 }
-async function fetchRefereeRaceIds() {
+
+// ---------- Races (scoped to the referee's assigned races) ----------
+/** Race IDs the signed-in referee is assigned (by admin) to officiate. */
+export async function fetchRefereeRaceIds() {
   const { data } = await apiClient.get("/staffing/my-races");
   return data.data ?? [];
 }
-async function fetchMyAssignments() {
+
+/** The signed-in referee's own assignments incl. the per-race code the admin issued. */
+
+/** CN1: the referee's own per-race assignments they can accept/decline. */
+export async function fetchMyRaceAssignments() {
+  const { data } = await apiClient.get("/referee/race-assignments");
+  return toArray(data.data);
+}
+export async function acceptRaceAssignment(id) {
+  await apiClient.patch(`/referee/race-assignments/${id}/accept`);
+}
+export async function declineRaceAssignment(id, reason) {
+  await apiClient.patch(`/referee/race-assignments/${id}/decline`, { reason });
+}
+export async function fetchMyAssignments() {
   const { data } = await apiClient.get("/staffing/my-assignments");
   return toArray(data.data).map((a) => ({
     refAssignmentId: a.refAssignmentId,
@@ -24,162 +51,316 @@ async function fetchMyAssignments() {
     raceCode: a.raceCode ?? null,
     panelRole: a.panelRole ?? null,
     refCode: a.refCode ?? null,
-    status: a.status ?? null
+    status: a.status ?? null,
   }));
 }
-async function fetchMyTournamentInvitations() {
+
+/** A tournament-level invitation the admin sent this referee. */
+export async function fetchMyTournamentInvitations() {
   const { data } = await apiClient.get("/referee/invitations");
   return toArray(data.data);
 }
-async function acceptTournamentInvitation(id) {
+export async function acceptTournamentInvitation(id) {
   await apiClient.patch(`/referee/invitations/${id}/accept`);
 }
-async function rejectTournamentInvitation(id) {
+export async function rejectTournamentInvitation(id) {
   await apiClient.patch(`/referee/invitations/${id}/reject`);
 }
-async function fetchRefereeRaces() {
+
+export async function fetchRefereeRaces() {
   const [racesRes, ids] = await Promise.all([
     apiClient.get("/races", {
-      params: { size: 200, sortBy: "scheduledStartAt", sortDir: "desc" }
+      params: { size: 200, sortBy: "scheduledStartAt", sortDir: "desc" },
     }),
-    fetchRefereeRaceIds()
+    fetchRefereeRaceIds(),
   ]);
   const assigned = new Set(ids);
-  return toArray(racesRes.data.data).filter((r) => assigned.has(r.raceId)).map((r) => ({
+  return toArray(racesRes.data.data)
+    .filter((r) => assigned.has(r.raceId)) // only races an admin assigned to this referee
+    .map((r) => ({
+      raceId: r.raceId,
+      raceCode: r.raceCode ?? null,
+      name: r.name,
+      scheduledStartAt: r.scheduledStartAt ?? null,
+      status: r.status,
+      trackCondition: r.trackCondition ?? null,
+    }));
+}
+
+/** A single race with the extra fields the live monitor header shows. */
+
+/**
+ * GET /races/{id} — fetch one race directly. The scoped race list (`fetchRefereeRaces`) is capped,
+ * so a deep-linked race outside that window still resolves through this single-race fetch.
+ */
+export async function fetchRefereeRace(raceId) {
+  const { data } = await apiClient.get(`/races/${raceId}`);
+  const r = data.data;
+  return {
     raceId: r.raceId,
     raceCode: r.raceCode ?? null,
     name: r.name,
     scheduledStartAt: r.scheduledStartAt ?? null,
     status: r.status,
-    trackCondition: r.trackCondition ?? null
-  }));
+    trackCondition: r.trackCondition ?? null,
+    raceType: r.raceType ?? null,
+    distanceMeter: r.distanceMeter ?? null,
+    tournamentName: r.tournamentName ?? null,
+  };
 }
-async function fetchInspections(raceId) {
+
+// ---------- Document review (CN2) ----------
+/** GET /races/{raceId}/entry-reviews — one row per runner with its owner + horse docs. */
+export async function fetchEntryReviews(raceId) {
+  const { data } = await apiClient.get(`/races/${raceId}/entry-reviews`);
+  return toArray(data.data);
+}
+
+/** PATCH /races/{raceId}/entries/{entryId}/accept — clear the entry's documents. */
+export async function acceptEntry(raceId, entryId) {
+  const { data } = await apiClient.patch(
+    `/races/${raceId}/entries/${entryId}/accept`,
+  );
+  return data.data;
+}
+
+/** PATCH /races/{raceId}/entries/{entryId}/reject — reject with a required reason. */
+export async function rejectEntry(raceId, entryId, reason) {
+  const { data } = await apiClient.patch(
+    `/races/${raceId}/entries/${entryId}/reject`,
+    { reason },
+  );
+  return data.data;
+}
+
+// ---------- Pre-Race Inspection ----------
+export async function fetchInspections(raceId) {
   const { data } = await apiClient.get(`/races/${raceId}/inspections`);
   return toArray(data.data);
 }
-async function recordInspection(raceId, body) {
+
+export async function recordInspection(raceId, body) {
   await apiClient.post(`/races/${raceId}/inspections`, body);
 }
-async function submitAllInspections(raceId) {
+
+export async function submitAllInspections(raceId) {
   const { data } = await apiClient.patch(
     `/races/${raceId}/inspections/submit-all`,
-    { confirm: true }
+    { confirm: true },
   );
   return data.data;
 }
-async function fetchRaceViolations(raceId) {
+
+// ---------- Violations ----------
+export async function fetchRaceViolations(raceId) {
   const { data } = await apiClient.get(`/races/${raceId}/violations`);
   return toArray(data.data);
 }
-async function fetchViolation(violationId) {
+
+export async function fetchViolation(violationId) {
   const { data } = await apiClient.get(`/violations/${violationId}`);
   return data.data;
 }
-async function createViolation(raceId, body) {
-  const { data } = await apiClient.post(
-    `/races/${raceId}/violations`,
-    body
-  );
+
+export async function createViolation(raceId, body) {
+  const { data } = await apiClient.post(`/races/${raceId}/violations`, body);
   return data.data;
 }
-async function recordRuling(violationId, body) {
+
+export async function recordRuling(violationId, body) {
   await apiClient.patch(`/violations/${violationId}/ruling`, body);
 }
-async function updateViolation(violationId, body) {
+
+export async function updateViolation(violationId, body) {
   await apiClient.put(`/violations/${violationId}`, body);
 }
-async function deleteViolation(violationId) {
+
+export async function deleteViolation(violationId) {
   await apiClient.delete(`/violations/${violationId}`);
 }
-async function fetchRaceEntries(raceId) {
+
+/** Race entries (runners) for the violation entry picker. */
+export async function fetchRaceEntries(raceId) {
   const { data } = await apiClient.get(`/races/${raceId}/entries`);
-  return toArray(data.data).map((e) => ({ entryId: e.entryId, entryNo: e.entryNo ?? null, horseName: e.horseName }));
+  return toArray(data.data).map((e) => ({
+    entryId: e.entryId,
+    entryNo: e.entryNo ?? null,
+    horseName: e.horseName,
+  }));
 }
-async function fetchResults(raceId) {
+
+// ---------- Results ----------
+export async function fetchResults(raceId) {
   const { data } = await apiClient.get(`/races/${raceId}/results`);
   return data.data;
 }
-async function recordResults(raceId, results, refCode) {
+
+/** ADMIN-ONLY legacy path — records provisional results directly (no OTP, no refCode). */
+export async function recordResults(raceId, results) {
   const { data } = await apiClient.post(`/races/${raceId}/results`, {
     results,
-    refCode
   });
   return data.data;
 }
-async function deleteResult(raceId, resultId) {
+
+/** CN3: email a fresh 6-digit OTP to the referee's verified address for this race. */
+export async function requestRefereeCode(raceId) {
+  await apiClient.post(`/races/${raceId}/referee-code/request`);
+}
+
+/** CN3: publish the combined race report (results + violations), authorised by the emailed OTP. */
+export async function submitReport(raceId, body) {
+  const { data } = await apiClient.post(`/races/${raceId}/report`, body);
+  return data.data;
+}
+
+/** CN3: flag one result row UNDER_REVIEW (referee/admin), pre-certification. */
+export async function flagInquiry(raceId, resultId) {
+  await apiClient.patch(`/races/${raceId}/results/${resultId}/inquiry`);
+}
+
+/** Delete one provisional result row (ADMIN-ONLY; blocked once OFFICIAL). */
+export async function deleteResult(raceId, resultId) {
   await apiClient.delete(`/races/${raceId}/results/${resultId}`);
 }
-async function uploadAttachment(file, ownerEntityType, ownerEntityId) {
+
+/** Upload an image and get back its public URL + id (for violation footage etc.). */
+export async function uploadAttachment(file, ownerEntityType, ownerEntityId) {
   const form = new FormData();
   form.append("file", file);
   form.append("ownerEntityType", ownerEntityType);
   if (ownerEntityId) form.append("ownerEntityId", ownerEntityId);
   const { data } = await apiClient.post("/attachments", form, {
-    headers: { "Content-Type": "multipart/form-data" }
+    headers: { "Content-Type": "multipart/form-data" },
   });
   return data.data;
 }
-async function certifyResults(raceId, body) {
+
+export async function certifyResults(raceId, body) {
   const { data } = await apiClient.patch(
     `/races/${raceId}/results/certify`,
-    body
+    body,
   );
   return data.data;
 }
-async function fetchLiveRace(raceId) {
+
+// ---------- Live monitor ----------
+export async function fetchLiveRace(raceId) {
   const { data } = await apiClient.get(`/races/${raceId}/live`);
   return data.data;
 }
-async function fetchRegistrations(query) {
-  const { data } = await apiClient.get("/registrations", { params: { size: 10, ...query } });
+
+// ---------- Registration management ----------
+
+export async function fetchRegistrations(query) {
+  const { data } = await apiClient.get("/registrations", {
+    params: { size: 10, ...query },
+  });
   const d = data.data;
   if (Array.isArray(d)) return { rows: d, totalPages: 1, page: 0 };
-  return { rows: d?.content ?? [], totalPages: d?.totalPages ?? 1, page: d?.number ?? 0 };
+  return {
+    rows: d?.content ?? [],
+    totalPages: d?.totalPages ?? 1,
+    page: d?.number ?? 0,
+  };
 }
-async function fetchRegistrationStats() {
+
+export async function fetchRegistrationStats() {
   const { data } = await apiClient.get("/registrations/stats");
   return data.data;
 }
-async function approveRegistration(id) {
+
+export async function approveRegistration(id) {
   await apiClient.patch(`/registrations/${id}/approve`);
 }
-async function rejectRegistration(id, reason) {
+
+export async function rejectRegistration(id, reason) {
   await apiClient.patch(`/registrations/${id}/reject`, { reason });
 }
-async function fetchHorsePassport(horseId) {
+
+/** DELETE /registrations/{id} — referee/admin soft-remove (sets status REMOVED). */
+export async function deleteRegistration(id) {
+  await apiClient.delete(`/registrations/${id}`);
+}
+
+/** Digital Passport for the Pre-Race Inspection panel (from /horses/{id} + pedigree). */
+export async function fetchHorsePassport(horseId) {
   const [horse, pedigree] = await Promise.all([
-    apiClient.get(`/horses/${horseId}`).then((r) => r.data.data).catch(() => ({})),
-    apiClient.get(`/horses/${horseId}/pedigree`).then((r) => r.data.data).catch(() => ({}))
+    apiClient
+      .get(`/horses/${horseId}`)
+      .then((r) => r.data.data)
+      .catch(() => ({})),
+    apiClient
+      .get(`/horses/${horseId}/pedigree`)
+      .then((r) => r.data.data)
+      .catch(() => ({})),
   ]);
-  const trainerName = (t) => typeof t === "string" ? t : t?.name ?? null;
+  /** Pedigree may return trainer as a string OR an object {name, licenseNo}. */
+  const trainerName = (t) => (typeof t === "string" ? t : (t?.name ?? null));
   const dob = horse?.dateOfBirth ? new Date(horse.dateOfBirth) : null;
-  const ageYears = dob ? Math.max(0, (/* @__PURE__ */ new Date()).getUTCFullYear() - dob.getUTCFullYear()) : null;
+  const ageYears = dob
+    ? Math.max(0, new Date().getUTCFullYear() - dob.getUTCFullYear())
+    : null;
   const g = (horse?.gender ?? "").toUpperCase();
-  const genderWord = g === "MALE" ? "Colt" : g === "FEMALE" ? "Filly" : g === "GELDING" ? "Gelding" : g ? humanize(g) : "\u2014";
+  const genderWord =
+    g === "MALE"
+      ? "Colt"
+      : g === "FEMALE"
+        ? "Filly"
+        : g === "GELDING"
+          ? "Gelding"
+          : g
+            ? humanize(g)
+            : "—";
   return {
     horseId,
-    name: horse?.name ?? "\u2014",
+    name: horse?.name ?? "—",
     microchipNo: horse?.microchipNo ?? null,
     ageYears,
     genderWord,
-    trainer: trainerName(pedigree?.trainer) ?? trainerName(pedigree?.trainerName) ?? trainerName(horse?.trainerName) ?? null,
-    owner: horse?.ownerName ?? null
+    trainer:
+      trainerName(pedigree?.trainer) ??
+      trainerName(pedigree?.trainerName) ??
+      trainerName(horse?.trainerName) ??
+      null,
+    owner: horse?.ownerName ?? null,
   };
 }
-async function fetchHorseVerification(horseId) {
+
+/** Assemble the Horse Verification panel from /horses/{id} (+pedigree, +medical-status). */
+export async function fetchHorseVerification(horseId) {
   const [horse, pedigree, medical] = await Promise.all([
-    apiClient.get(`/horses/${horseId}`).then((r) => r.data.data).catch(() => ({})),
-    apiClient.get(`/horses/${horseId}/pedigree`).then((r) => r.data.data).catch(() => ({})),
-    apiClient.get(`/horses/${horseId}/medical-status`).then((r) => r.data.data).catch(() => ({}))
+    apiClient
+      .get(`/horses/${horseId}`)
+      .then((r) => r.data.data)
+      .catch(() => ({})),
+    apiClient
+      .get(`/horses/${horseId}/pedigree`)
+      .then((r) => r.data.data)
+      .catch(() => ({})),
+    apiClient
+      .get(`/horses/${horseId}/medical-status`)
+      .then((r) => r.data.data)
+      .catch(() => ({})),
   ]);
   const dob = horse?.dateOfBirth ? new Date(horse.dateOfBirth) : null;
-  const ageYears = dob ? Math.max(0, (/* @__PURE__ */ new Date()).getUTCFullYear() - dob.getUTCFullYear()) : null;
+  const ageYears = dob
+    ? Math.max(0, new Date().getUTCFullYear() - dob.getUTCFullYear())
+    : null;
   const g = (horse?.gender ?? "").toUpperCase();
-  const genderWord = g === "MALE" ? "Stallion" : g === "FEMALE" ? "Mare" : g === "GELDING" ? "Gelding" : g ? humanize(g) : "\u2014";
+  const genderWord =
+    g === "MALE"
+      ? "Stallion"
+      : g === "FEMALE"
+        ? "Mare"
+        : g === "GELDING"
+          ? "Gelding"
+          : g
+            ? humanize(g)
+            : "—";
   return {
     horseId,
-    name: horse?.name ?? horse?.fullName ?? "\u2014",
+    name: horse?.name ?? horse?.fullName ?? "—",
     microchipNo: horse?.microchipNo ?? null,
     ageYears,
     genderWord,
@@ -189,93 +370,45 @@ async function fetchHorseVerification(horseId) {
     vaccinationsUpToDate: medical?.vaccinationsUpToDate ?? null,
     fitnessCertified: horse?.fitnessCertified ?? null,
     passportScanStatus: horse?.passportScanStatus ?? null,
-    healthStatus: medical?.healthStatus ?? null
+    healthStatus: medical?.healthStatus ?? null,
   };
 }
-async function fetchApplications(query) {
-  const { data } = await apiClient.get("/referee/applications", { params: { size: 20, ...query } });
+
+// ---------- Referee — Applicant onboarding (Registration Approval) ----------
+// NOTE: SPEC-ONLY endpoints (docs/be-referee-onboarding-contracts-todo.md). They 404 until the BE
+// ships them; the onboarding hooks use retry:false so the UI falls to empty/error states quickly.
+
+export async function fetchApplications(query) {
+  const { data } = await apiClient.get("/referee/applications", {
+    params: { size: 20, ...query },
+  });
   const d = data.data;
   if (Array.isArray(d)) return { rows: d, totalPages: 1, page: 0 };
-  return { rows: d?.content ?? [], totalPages: d?.totalPages ?? 1, page: d?.number ?? 0 };
+  return {
+    rows: d?.content ?? [],
+    totalPages: d?.totalPages ?? 1,
+    page: d?.number ?? 0,
+  };
 }
-async function fetchApplicationStats() {
+
+export async function fetchApplicationStats() {
   const { data } = await apiClient.get("/referee/applications/stats");
   return data.data;
 }
-async function fetchApplication(id) {
+
+export async function fetchApplication(id) {
   const { data } = await apiClient.get(`/referee/applications/${id}`);
   return data.data;
 }
-async function approveApplication(id) {
+
+export async function approveApplication(id) {
   await apiClient.patch(`/referee/applications/${id}/approve`);
 }
-async function rejectApplication(id, reason) {
+
+export async function rejectApplication(id, reason) {
   await apiClient.patch(`/referee/applications/${id}/reject`, { reason });
 }
-async function requestApplicationInfo(id, note) {
+
+export async function requestApplicationInfo(id, note) {
   await apiClient.patch(`/referee/applications/${id}/request-info`, { note });
 }
-async function fetchRefereeReports(filter) {
-  const { data } = await apiClient.get("/referee/reports", { params: filter });
-  const d = data.data;
-  if (Array.isArray(d)) return { rows: d, totalPages: 1, page: 0 };
-  return { rows: d?.content ?? [], totalPages: d?.totalPages ?? 1, page: d?.number ?? 0 };
-}
-async function createRefereeReport(body) {
-  const { data } = await apiClient.post("/referee/reports", body);
-  return data.data;
-}
-async function updateRefereeReport(id, body) {
-  const { data } = await apiClient.put(`/referee/reports/${id}`, body);
-  return data.data;
-}
-async function submitRefereeReport(id) {
-  const { data } = await apiClient.patch(`/referee/reports/${id}/submit`);
-  return data.data;
-}
-async function recordHorseHealthCheck(horseId, body) {
-  await apiClient.post(`/referee/horses/${horseId}/health-check`, body);
-}
-export {
-  acceptTournamentInvitation,
-  approveApplication,
-  approveRegistration,
-  certifyResults,
-  createRefereeReport,
-  createViolation,
-  deleteResult,
-  deleteViolation,
-  fetchApplication,
-  fetchApplicationStats,
-  fetchApplications,
-  fetchHorsePassport,
-  fetchHorseVerification,
-  fetchInspections,
-  fetchLiveRace,
-  fetchMyAssignments,
-  fetchMyTournamentInvitations,
-  fetchRaceEntries,
-  fetchRaceViolations,
-  fetchRefereeDashboard,
-  fetchRefereeRaceIds,
-  fetchRefereeRaces,
-  fetchRefereeReports,
-  fetchRegistrationStats,
-  fetchRegistrations,
-  fetchResults,
-  fetchViolation,
-  humanize,
-  recordHorseHealthCheck,
-  recordInspection,
-  recordResults,
-  recordRuling,
-  rejectApplication,
-  rejectRegistration,
-  rejectTournamentInvitation,
-  requestApplicationInfo,
-  submitAllInspections,
-  submitRefereeReport,
-  updateRefereeReport,
-  updateViolation,
-  uploadAttachment
-};
