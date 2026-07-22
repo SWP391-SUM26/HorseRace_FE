@@ -21,3 +21,18 @@ export function useFinanceOverview() {
     queryFn: fetchFinanceOverview,
   });
 }
+
+/** GET /owner/finances/races — per-race prize won vs. jockey fee paid, most recent race first. */
+async function fetchRaceEarnings() {
+  const { data } = await apiClient.get("/owner/finances/races", {
+    params: { limit: 20 },
+  });
+  return data.data;
+}
+
+export function useOwnerRaceEarnings() {
+  return useQuery({
+    queryKey: ["finances", "race-earnings"],
+    queryFn: fetchRaceEarnings,
+  });
+}

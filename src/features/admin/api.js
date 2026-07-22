@@ -342,6 +342,11 @@ export async function scheduleRace(id, scheduledStartAt) {
   await apiClient.patch(`/races/${id}/schedule`, { scheduledStartAt });
 }
 
+/** Lock the lineup (OPEN → CLOSED; opens betting). */
+export async function closeRace(id) {
+  await apiClient.patch(`/races/${id}/close`);
+}
+
 /** Conduct the race (OPEN/CLOSED → RUNNING; locks entries). */
 export async function startRace(id) {
   await apiClient.patch(`/races/${id}/start`);

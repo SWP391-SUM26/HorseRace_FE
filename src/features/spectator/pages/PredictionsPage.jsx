@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { Lightbulb, Clock } from "lucide-react";
 import {
   Badge,
@@ -45,13 +46,17 @@ export default function PredictionsPage() {
   const toast = useToast();
   const [tab, setTab] = useState("upcoming");
 
-  // Only CLOSED (locked, pre-cutoff) races are predictable — mirrors the BE betting window.
+  // Deep-linked from the Hub/Live page ("predict this race") — honored only when that race
+  // is actually predictable; a race that can't be predicted is never shown here at all, so an
+  // un-bettable target just falls back to the default (first predictable race).
+  const [searchParams] = useSearchParams();
   const racesQuery = useSpectatorRaces();
+  // Only CLOSED (locked, pre-cutoff) races are predictable — mirrors the BE betting window.
   const openRaces = useMemo(
-    () => (racesQuery.data?.rows ?? []).filter((r) => canPredict(r.status)),
+    () => (racesQuery.data?.rows ?? []).filter((r) => canPredict(r)),
     [racesQuery.data],
   );
-  const [raceId, setRaceId] = useState(null);
+  const [raceId, setRaceId] = useState(() => searchParams.get("raceId"));
   const selectedRace = useMemo(
     () => openRaces.find((r) => r.raceId === raceId) ?? openRaces[0] ?? null,
     [openRaces, raceId],
@@ -78,7 +83,7 @@ export default function PredictionsPage() {
     : null;
 
   const submit = useSubmitPrediction();
-  const open = canPredict(selectedRace?.status);
+  const open = canPredict(selectedRace);
 
   function pick(entry, type) {
     setSelectedEntryId(entry.entryId);
@@ -278,6 +283,7 @@ export default function PredictionsPage() {
           <div className="lg:sticky lg:top-4 lg:self-start">
             <BettingPanel
               raceStatus={selectedRace?.status}
+              predictionCutoffAt={selectedRace?.predictionCutoffAt}
               selectionLabel={
                 selectedEntry
                   ? `${selectedEntry.horseName ?? "Runner"} · ${predictionType}`

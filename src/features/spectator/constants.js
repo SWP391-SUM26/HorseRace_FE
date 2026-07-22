@@ -1,6 +1,13 @@
-/** Betting-window gating: a prediction is accepted only for a CLOSED, locked, pre-cutoff race. */
-export function canPredict(status) {
-  return status === "CLOSED";
+/**
+ * Betting-window gating: a prediction is accepted only for a CLOSED, locked, pre-cutoff race.
+ * Mirrors PredictionServiceImpl#submitPrediction exactly (status AND cutoff, not status alone) —
+ * a CLOSED race whose cutoff has already lapsed is not bettable even though nothing else has
+ * moved it out of CLOSED yet.
+ */
+export function canPredict(race) {
+  if (!race || race.status !== "CLOSED") return false;
+  if (!race.predictionCutoffAt) return true;
+  return new Date(race.predictionCutoffAt) > new Date();
 }
 
 /**
