@@ -19,7 +19,7 @@ const schema = z
     password: passwordField,
     confirmPassword: z.string(),
     agreedToTerms: z.literal(true, {
-      errorMap: () => ({ message: "Bạn cần đồng ý điều khoản" }),
+      error: () => "Bạn cần đồng ý điều khoản",
     }),
   })
   .refine((d) => d.password === d.confirmPassword, {
@@ -113,7 +113,6 @@ export default function SpectatorRegistrationPage() {
               {...register("email")}
               error={errors.email?.message}
             />
-
             <Input
               label="Phone Number"
               {...register("phone")}
@@ -126,7 +125,6 @@ export default function SpectatorRegistrationPage() {
               {...register("password")}
               error={errors.password?.message}
             />
-
             <Input
               label="Confirm Password"
               type="password"
@@ -140,7 +138,6 @@ export default function SpectatorRegistrationPage() {
                 label="I agree to the Terms of Service and Privacy Policy."
                 {...register("agreedToTerms")}
               />
-
               {errors.agreedToTerms && (
                 <span className="text-xs text-danger">
                   {errors.agreedToTerms.message}
@@ -161,10 +158,7 @@ export default function SpectatorRegistrationPage() {
 
         <p className="mt-6 text-center text-sm text-muted">
           Already have an account?{" "}
-          <Link
-            to="/login"
-            className="font-medium text-brand-700 hover:underline"
-          >
+          <Link to="/login" className="font-medium text-brand-700 hover:underline">
             Sign In
           </Link>
         </p>

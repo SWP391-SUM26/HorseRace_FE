@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { Modal, Button, Select, Spinner } from "@/common/ui";
 import { useToast } from "@/common/providers/ToastProvider";
+import { byName } from "@/common/lib/sort";
 import {
   useJockeys,
   useJockeySuggestions,
@@ -27,6 +28,7 @@ export function ReassignInvitationModal({ invitation, onClose }) {
           (byId.get(j.userId)?.eligible ?? true) &&
           j.userId !== invitation.jockeyUserId,
       )
+      .sort(byName("fullName"))
       .map((j) => {
         const c = byId.get(j.userId)?.compatibility;
         return {
@@ -99,7 +101,6 @@ export function ReassignInvitationModal({ invitation, onClose }) {
               ...options,
             ]}
           />
-
           <p className="text-xs text-muted">
             The current invitation is cancelled and a new one is sent to the
             selected jockey.

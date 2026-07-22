@@ -8,10 +8,7 @@ const PASSWORD_COMPLEXITY =
   /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/;
 export const passwordField = z
   .string()
-  .min(
-    8,
-    "Mật khẩu cần 8+ ký tự, gồm chữ hoa, chữ thường, số và ký tự đặc biệt",
-  )
+  .min(8, "Mật khẩu cần 8+ ký tự, gồm chữ hoa, chữ thường, số và ký tự đặc biệt")
   .regex(
     PASSWORD_COMPLEXITY,
     "Mật khẩu cần 8+ ký tự, gồm chữ hoa, chữ thường, số và ký tự đặc biệt",

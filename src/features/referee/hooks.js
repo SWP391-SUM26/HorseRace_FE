@@ -9,7 +9,6 @@ import {
   fetchApplications,
   fetchApplicationStats,
   fetchHorsePassport,
-  fetchHorseVerification,
   fetchInspections,
   fetchLiveRace,
   fetchMyAssignments,
@@ -41,7 +40,6 @@ import {
   fetchRaceEntries,
   rejectApplication,
   rejectRegistration,
-  deleteRegistration,
   requestApplicationInfo,
   submitAllInspections,
 } from "./api";
@@ -356,13 +354,6 @@ export function useHorsePassport(horseId) {
   });
 }
 
-export function useHorseVerification(horseId) {
-  return useQuery({
-    queryKey: ["referee", "horse-verification", horseId],
-    queryFn: () => fetchHorseVerification(horseId),
-    enabled: !!horseId,
-  });
-}
 
 export function useApproveRegistration() {
   const qc = useQueryClient();
@@ -386,17 +377,6 @@ export function useRejectRegistration() {
   });
 }
 
-/** Referee/admin soft-remove of a registration (DELETE → status REMOVED). */
-export function useDeleteRegistration() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: (id) => deleteRegistration(id),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["referee", "registrations"] });
-      qc.invalidateQueries({ queryKey: ["referee", "registration-stats"] });
-    },
-  });
-}
 
 // ---------- Applicant onboarding (Registration Approval) ----------
 // retry:false — the BE endpoints are spec-only for now, so fail fast to an empty/error state.

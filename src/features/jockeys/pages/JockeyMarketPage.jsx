@@ -2,6 +2,9 @@ import { useMemo, useState } from "react";
 import { ChevronRight, SlidersHorizontal, Zap } from "lucide-react";
 import { Button, EmptyState, Skeleton, Tabs } from "@/common/ui";
 import { useToast } from "@/common/providers/ToastProvider";
+import { useWallet } from "@/features/wallet/hooks";
+import { formatMoney } from "@/common/lib/format";
+import { byName } from "@/common/lib/sort";
 import { useAuth } from "@/common/hooks/useAuth";
 import {
   useEntryId,
@@ -71,6 +74,7 @@ export default function JockeyMarketPage() {
 
   const entryId = useEntryId(raceId, horseId);
   const invite = useSendInvitation();
+  const wallet = useWallet();
 
   /**
    * Merge BE suggestions (compatibility + eligibility) into the jockey list. When a horse is
@@ -98,10 +102,27 @@ export default function JockeyMarketPage() {
       toast.error("Couldn't determine this horse's race entry");
       return;
     }
+    // Hiring commits real money: the fee is locked out of the owner's wallet the moment the
+    // invitation is sent, and only reaches the jockey once the race has been certified. Check it
+    // here so the owner is told why, rather than being handed a bare 400 from the server.
+    const jockey = jockeyCards.find((j) => j.userId === jockeyUserId);
+    const fee = jockey?.baseFeeAmount ?? null;
+    const balance = wallet.data?.balance ?? 0;
+    if (fee != null && fee > 0 && !wallet.isPending && balance < fee) {
+      toast.error(
+        `Not enough balance — hiring ${name} costs ${formatMoney(fee)} and you have ${formatMoney(balance)}.`,
+      );
+      return;
+    }
     invite.mutate(
-      { entryId: entryId.data, jockeyUserId },
+      { entryId: entryId.data, jockeyUserId, agreedBaseFee: fee ?? undefined },
       {
-        onSuccess: () => toast.success(`Invitation sent to ${name}`),
+        onSuccess: () =>
+          toast.success(
+            fee != null && fee > 0
+              ? `Invitation sent to ${name} — ${formatMoney(fee)} is held until the race is run.`
+              : `Invitation sent to ${name}`,
+          ),
       },
     );
   };
@@ -205,7 +226,7 @@ export default function JockeyMarketPage() {
             ) : jockeyCards.length === 0 ? (
               <EmptyState title="No jockeys available" />
             ) : (
-              jockeyCards.map((jockey) => (
+              [...jockeyCards].sort(byName("fullName")).map((jockey) => (
                 <JockeyCard
                   key={jockey.id}
                   jockey={jockey}

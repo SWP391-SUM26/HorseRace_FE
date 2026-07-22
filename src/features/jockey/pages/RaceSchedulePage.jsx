@@ -21,10 +21,6 @@ const TABS = [
 ];
 
 /** USD-shaped earnings; render with a $ prefix. */
-function formatUsd(amount) {
-  return `$${Math.round(amount).toLocaleString("en-US")}`;
-}
-
 /** "14:30" from an ISO datetime (UTC, matching formatDate's convention). */
 function formatTime(iso) {
   if (!iso) return "—";
@@ -253,7 +249,7 @@ function RideRow({ row, active, onSelect }) {
               Earnings
             </p>
             <p className="mt-0.5 text-sm font-semibold text-ink">
-              {formatUsd(row.earnings)}
+              {formatMoney(row.earnings)}
             </p>
           </div>
         )}

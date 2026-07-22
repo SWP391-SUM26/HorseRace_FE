@@ -16,7 +16,7 @@ export function mapAuthResponse(raw) {
   return { accessToken: raw.accessToken, refreshToken: raw.refreshToken, user };
 }
 
-/** POST an auth/register request and unwrap ApiResponse<AuthResponse> into a session. */
+/** POST an auth/register request and unwrap the ApiResponse into a session. */
 async function postAuth(path, body) {
   const { data } = await apiClient.post(path, body);
   return mapAuthResponse(data.data);
@@ -28,8 +28,8 @@ export const authApi = {
   registerOwner: (body) => postAuth("/auth/register/owner", body),
 
   /**
-   * Jockey register is multipart (fields + licence/fitness files) and returns NO tokens —
-   * the account is PENDING referee approval.
+   * Jockey register is multipart (fields + licence/fitness files) and returns NO
+   * tokens — the account is PENDING referee approval.
    */
   async registerJockey(input) {
     const { license, fitnessCertificate, ...fields } = input;
@@ -39,7 +39,8 @@ export const authApi = {
     });
     if (license) fd.append("license", license);
     if (fitnessCertificate) fd.append("fitnessCertificate", fitnessCertificate);
-    // Content-Type: null → let the browser set multipart/form-data with the correct boundary.
+    // Content-Type: null → let the browser set multipart/form-data with the
+    // correct boundary.
     const { data } = await apiClient.post("/auth/register/jockey", fd, {
       headers: { "Content-Type": null },
     });

@@ -99,3 +99,15 @@ export async function fetchLivePoolOdds(raceId) {
   const { data } = await apiClient.get(`/races/${raceId}/pools`);
   return toArray(data.data);
 }
+
+/**
+ * GET /standings/predictors → global predictor leaderboard, ranked by the backend from settled
+ * tickets. This replaces a hardcoded four-name showcase array that was labelled "the BE exposes
+ * NO leaderboard endpoint" — it does now.
+ */
+export async function fetchTopPredictors(limit = 4) {
+  const { data } = await apiClient.get("/standings/predictors", {
+    params: { limit },
+  });
+  return toArray(data.data);
+}

@@ -1,30 +1,36 @@
 import { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { ChevronLeft } from "lucide-react";
-import { Button, EmptyState, Modal, Skeleton } from "@/common/ui";
-import { useToast } from "@/common/providers/ToastProvider";
-import { useDeleteHorse, useHorseProfile } from "../hooks";
+import { Button, Skeleton, EmptyState, Modal } from "@/common/ui";
+import { useHorseProfile, useDeleteHorse } from "../hooks";
 import { HorseImageCard } from "../components/HorseImageCard";
-import { LifetimeEarnings } from "../components/LifetimeEarnings";
-import { MedicalRecordsCard } from "../components/MedicalRecordsCard";
 import { PedigreeChart } from "../components/PedigreeChart";
 import { TrainingRaceLog } from "../components/TrainingRaceLog";
+import { LifetimeEarnings } from "../components/LifetimeEarnings";
+import { MedicalRecordsCard } from "../components/MedicalRecordsCard";
+import { useToast } from "@/common/providers/ToastProvider";
 
 export default function StableManagementPage() {
   const navigate = useNavigate();
   const { horseId = "" } = useParams();
   const { data, isPending, isError } = useHorseProfile(horseId);
-  const [deleteOpen, setDeleteOpen] = useState(false);
-  const remove = useDeleteHorse();
+  const [delOpen, setDelOpen] = useState(false);
+  const del = useDeleteHorse();
   const toast = useToast();
 
   if (isPending) return <StableSkeleton />;
-  if (isError) return <EmptyState title="Couldn't load horse profile" description="Please try again." />;
+  if (isError)
+    return (
+      <EmptyState
+        title="Couldn't load horse profile"
+        description="Please try again."
+      />
+    );
   if (!data) {
     return (
       <EmptyState
-        title="No horse profile returned"
-        description="Register a horse or select another horse from your stable."
+        title="No horses in your stable"
+        description="Register your first horse to see its detailed profile."
       />
     );
   }
@@ -49,10 +55,13 @@ export default function StableManagementPage() {
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <Button variant="secondary" onClick={() => navigate(`/app/owner/stable/${horseId}/edit`)}>
+          <Button
+            variant="secondary"
+            onClick={() => navigate(`/owner/stable/${horseId}/edit`)}
+          >
             Edit Info
           </Button>
-          <Button variant="danger" onClick={() => setDeleteOpen(true)}>
+          <Button variant="danger" onClick={() => setDelOpen(true)}>
             Delete
           </Button>
         </div>
@@ -60,7 +69,12 @@ export default function StableManagementPage() {
 
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="flex flex-col gap-6 lg:col-span-2">
-          <HorseImageCard imageUrl={data.imageUrl} name={data.name} status={data.status} grade={data.grade} />
+          <HorseImageCard
+            imageUrl={data.imageUrl}
+            name={data.name}
+            status={data.status}
+            grade={data.grade}
+          />
           <PedigreeChart pedigree={data.pedigree} />
           <TrainingRaceLog raceHistory={data.raceHistory} />
         </div>
@@ -77,21 +91,23 @@ export default function StableManagementPage() {
       </div>
 
       <Modal
-        open={deleteOpen}
-        onClose={() => setDeleteOpen(false)}
+        open={delOpen}
+        onClose={() => setDelOpen(false)}
         title="Delete horse?"
         footer={
           <>
-            <Button variant="ghost" onClick={() => setDeleteOpen(false)}>Cancel</Button>
+            <Button variant="ghost" onClick={() => setDelOpen(false)}>
+              Cancel
+            </Button>
             <Button
               variant="danger"
-              loading={remove.isPending}
+              loading={del.isPending}
               onClick={() =>
-                remove.mutate(horseId, {
+                del.mutate(horseId, {
                   onSuccess: () => {
                     toast.success("Horse deleted");
-                    navigate("/app/owner/stable");
-                  }
+                    navigate("/owner/stable");
+                  },
                 })
               }
             >
@@ -101,7 +117,9 @@ export default function StableManagementPage() {
         }
       >
         <p className="text-sm text-muted">
-          Are you sure you want to delete <span className="font-medium text-ink">{data.name}</span>? This action cannot be undone.
+          Are you sure you want to delete{" "}
+          <span className="font-medium text-ink">{data.name}</span>? This action
+          cannot be undone.
         </p>
       </Modal>
     </div>

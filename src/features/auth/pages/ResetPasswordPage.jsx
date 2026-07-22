@@ -136,7 +136,6 @@ export default function ResetPasswordPage() {
             {...register("newPassword")}
             error={errors.newPassword?.message}
           />
-
           <div className="h-1.5 w-full overflow-hidden rounded-full bg-border">
             <div
               className={cn("h-full transition-all", STRENGTH_COLOR[strength])}

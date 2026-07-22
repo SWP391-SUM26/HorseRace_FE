@@ -9,6 +9,7 @@ export const MIN_STAKE = 10_000;
 /** The dark-green "Potential Rewards" panel with the CONFIRM CTA (or a closed block when the pool is shut). */
 export function BettingPanel({
   raceStatus,
+  predictionCutoffAt,
   selectionLabel,
   stake,
   onStakeChange,
@@ -20,7 +21,7 @@ export function BettingPanel({
   poolTotalStake = null,
   oddsLoading = false,
 }) {
-  const open = canPredict(raceStatus);
+  const open = canPredict({ status: raceStatus, predictionCutoffAt });
   const belowMin = !(stake >= MIN_STAKE);
   const hasLiveOdds =
     estimatedPayoutPerUnit != null && estimatedPayoutPerUnit > 0;

@@ -1,45 +1,47 @@
 import { Link } from "react-router-dom";
 import { Plus } from "lucide-react";
 import { PageHeader } from "@/common/components/PageHeader";
-import { Button, EmptyState, Skeleton } from "@/common/ui";
+import { Button, Skeleton, EmptyState } from "@/common/ui";
+import { byName } from "@/common/lib/sort";
 import { useOwnerHorses } from "../hooks";
 import { HorseCard } from "../components/HorseCard";
 
 export default function StableListPage() {
   const { data, isPending, isError } = useOwnerHorses();
-
   return (
     <>
       <PageHeader
         title="Stable Management"
-        subtitle="Manage your racing stable and horse readiness."
+        subtitle="Quản lý đàn ngựa của bạn."
         actions={
-          <Link to="/app/owner/stable/new">
+          <Link to="/owner/stable/new">
             <Button leftIcon={<Plus size={16} />}>Register Horse</Button>
           </Link>
         }
       />
-
       {isPending ? (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {Array.from({ length: 6 }).map((_, index) => (
-            <Skeleton key={index} className="h-60 w-full rounded-2xl" />
+          {Array.from({ length: 6 }).map((_, i) => (
+            <Skeleton key={i} className="h-60 w-full rounded-2xl" />
           ))}
         </div>
       ) : isError ? (
-        <EmptyState title="Couldn't load stable" description="Please refresh and try again." />
-      ) : data?.length ? (
+        <EmptyState
+          title="Không tải được danh sách ngựa"
+          description="Vui lòng thử lại."
+        />
+      ) : data && data.length > 0 ? (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {data.map((horse) => (
-            <HorseCard key={horse.id} horse={horse} />
+          {[...data].sort(byName("name")).map((h) => (
+            <HorseCard key={h.id} horse={h} />
           ))}
         </div>
       ) : (
         <EmptyState
-          title="No horses registered"
-          description="Register your first horse to begin managing your stable."
+          title="Chưa có ngựa nào"
+          description="Đăng ký con ngựa đầu tiên để bắt đầu."
           action={
-            <Link to="/app/owner/stable/new">
+            <Link to="/owner/stable/new">
               <Button>Register Horse</Button>
             </Link>
           }

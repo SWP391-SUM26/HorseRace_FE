@@ -2,6 +2,7 @@ import { Check } from "lucide-react";
 import { Avatar, Badge, Card, CardBody } from "@/common/ui";
 import { cn } from "@/common/lib/cn";
 import { formatDate } from "@/common/lib/format";
+import { byName } from "@/common/lib/sort";
 
 export function UnassignedHorses({ entries, selectedId, onSelect }) {
   return (
@@ -12,7 +13,7 @@ export function UnassignedHorses({ entries, selectedId, onSelect }) {
           <Badge tone="warning">{entries.length} Pending</Badge>
         </div>
         <ul className="flex flex-col gap-2">
-          {entries.map((entry) => {
+          {[...entries].sort(byName("name")).map((entry) => {
             const selected = entry.id === selectedId;
             return (
               <li key={entry.id}>

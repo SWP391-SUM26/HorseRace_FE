@@ -1,80 +1,142 @@
 import { apiClient } from "@/common/lib/apiClient";
+import { byName, byDate } from "@/common/lib/sort";
+
 function toArray(d) {
   if (Array.isArray(d)) return d;
   return d?.content ?? [];
 }
-function mapRegistration(r) {
+
+export function mapRegistration(r) {
   return {
     id: r.registrationId,
     code: r.registrationCode,
     status: r.status,
-    tournament: r.tournamentName ?? "\u2014",
+    tournament: r.tournamentName ?? "—",
     horse: r.horseName,
     horseCode: r.horseCode,
     raceId: r.raceId,
     race: r.raceName,
     submittedAt: r.submittedAt,
-    rejectionReason: r.rejectionReason
+    rejectionReason: r.rejectionReason,
   };
 }
+
 const TERMINAL = ["REJECTED", "WITHDRAWN", "REMOVED"];
-function canWithdraw(status) {
+export function canWithdraw(status) {
   return !TERMINAL.includes(status);
 }
-async function fetchMyRegistrations(ownerUserId) {
-  const { data } = await apiClient.get(
-    "/registrations",
-    { params: { ownerUserId, size: 100 } }
-  );
+
+/** GET /registrations is NOT owner-scoped by default — pass ownerUserId to filter to mine. */
+export async function fetchMyRegistrations(ownerUserId) {
+  const { data } = await apiClient.get("/registrations", {
+    params: { ownerUserId, size: 100 },
+  });
   return toArray(data.data).map(mapRegistration);
 }
-async function registerForTournament(tournamentId, horseId, raceId) {
-  const { data } = await apiClient.post("/registrations", { tournamentId, horseId, raceId });
+
+/** Create the registration and return its id (so the dossier can be attached to it). */
+export async function registerForTournament(tournamentId, horseId, raceId) {
+  const { data } = await apiClient.post("/registrations", {
+    tournamentId,
+    horseId,
+    raceId,
+  });
   return data.data.registrationId;
 }
-async function uploadRegistrationAttachment(registrationId, file) {
+
+/** Upload one dossier file attached to a registration. */
+export async function uploadRegistrationAttachment(registrationId, file) {
   const form = new FormData();
   form.append("file", file);
   form.append("ownerEntityType", "TOURNAMENT_REGISTRATION");
   form.append("ownerEntityId", registrationId);
-  await apiClient.post("/attachments", form, { headers: { "Content-Type": "multipart/form-data" } });
+  await apiClient.post("/attachments", form, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
 }
-async function fetchRegistrationAttachments(registrationId) {
+
+/** List the dossier files attached to a registration (for the referee's review). */
+export async function fetchRegistrationAttachments(registrationId) {
   const { data } = await apiClient.get("/attachments", {
-    params: { ownerEntityType: "TOURNAMENT_REGISTRATION", ownerEntityId: registrationId }
+    params: {
+      ownerEntityType: "TOURNAMENT_REGISTRATION",
+      ownerEntityId: registrationId,
+    },
   });
   return data.data ?? [];
 }
-async function withdrawRegistration(id) {
+
+export async function withdrawRegistration(id) {
   await apiClient.patch(`/registrations/${id}/withdraw`);
 }
+
+// The BE accepts registrations for tournaments that are PUBLISHED or REGISTRATION_OPEN.
 const OPEN_TOURNAMENT_STATUSES = ["PUBLISHED", "REGISTRATION_OPEN"];
-async function fetchOpenTournaments() {
+
+export async function fetchOpenTournaments() {
   const { data } = await apiClient.get("/tournaments", {
-    params: { size: 100 }
+    params: { size: 100 },
   });
-  return toArray(data.data).filter((t) => OPEN_TOURNAMENT_STATUSES.includes(t.status)).map((t) => ({ value: t.tournamentId, label: t.location ? `${t.name} \u2014 ${t.location}` : t.name }));
+  return toArray(data.data)
+    .filter((t) => OPEN_TOURNAMENT_STATUSES.includes(t.status))
+    .sort(byDate("startDate"))
+    .map((t) => ({
+      value: t.tournamentId,
+      label: t.location ? `${t.name} — ${t.location}` : t.name,
+      status: t.status,
+      registrationOpenAt: t.registrationOpenAt,
+      registrationCloseAt: t.registrationCloseAt,
+    }));
 }
+
+/**
+ * Why a tournament cannot be registered for right now.
+ *
+ * <p>Mirrors the backend guards in RegistrationServiceImpl exactly, so the form and the server
+ * cannot disagree. The status filter alone used to be the whole client-side rule, which is why the
+ * dropdown offered tournaments whose registration window opens next month and the submit then 400'd.
+ */
+export function registrationAvailability(t, openRaceCount, now = new Date()) {
+  if (!t) return { ok: true };
+  if (!OPEN_TOURNAMENT_STATUSES.includes(t.status)) {
+    return { ok: false, reason: "NOT_ACCEPTING" };
+  }
+  // Null bounds mean unbounded on that side — same as the backend.
+  if (t.registrationOpenAt && now < new Date(t.registrationOpenAt)) {
+    return { ok: false, reason: "WINDOW_NOT_OPEN", at: t.registrationOpenAt };
+  }
+  if (t.registrationCloseAt && now > new Date(t.registrationCloseAt)) {
+    return { ok: false, reason: "WINDOW_CLOSED", at: t.registrationCloseAt };
+  }
+  // FE-only: the entry fee lives on the race, so a race must be picked to know what is charged.
+  if (openRaceCount === 0) return { ok: false, reason: "NO_OPEN_RACES" };
+  return { ok: true };
+}
+
+// Races open for entries within a tournament — only OPEN races accept registrations.
 const OPEN_RACE_STATUSES = ["OPEN"];
-async function fetchOpenRaces(tournamentId) {
+
+export async function fetchOpenRaces(tournamentId) {
   const { data } = await apiClient.get("/races", {
-    params: { tournamentId, size: 100 }
+    params: { tournamentId, size: 100 },
   });
-  return toArray(data.data).filter((r) => OPEN_RACE_STATUSES.includes(r.status)).map((r) => ({ value: r.raceId, label: r.name ?? r.raceCode }));
+  return (
+    toArray(data.data)
+      .filter((r) => OPEN_RACE_STATUSES.includes(r.status))
+      .sort(byDate("scheduledStartAt"))
+      // entryFee was already on the wire — the old mapper simply dropped it, which is why the owner
+      // was never told what entering would cost.
+      .map((r) => ({
+        value: r.raceId,
+        label: r.name ?? r.raceCode,
+        entryFee: r.entryFee,
+      }))
+  );
 }
-async function fetchOwnerHorseOptions() {
+
+export async function fetchOwnerHorseOptions() {
   const { data } = await apiClient.get("/owner/horses");
-  return toArray(data.data).map((h) => ({ value: h.horseId, label: h.name }));
+  return toArray(data.data)
+    .map((h) => ({ value: h.horseId, label: h.name }))
+    .sort(byName("label"));
 }
-export {
-  canWithdraw,
-  fetchMyRegistrations,
-  fetchOpenRaces,
-  fetchOpenTournaments,
-  fetchOwnerHorseOptions,
-  fetchRegistrationAttachments,
-  mapRegistration,
-  registerForTournament,
-  uploadRegistrationAttachment,
-  withdrawRegistration
-};

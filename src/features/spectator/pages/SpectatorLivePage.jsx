@@ -181,7 +181,7 @@ export default function SpectatorLivePage() {
           </Card>
 
           <Link
-            to="/app/spectator/predictions"
+            to={`/spectator/predictions?raceId=${raceId}`}
             className="flex h-12 w-full items-center justify-center rounded-xl bg-brand-700 text-sm font-semibold text-white hover:bg-brand-800"
           >
             Place Quick Bet

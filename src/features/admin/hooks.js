@@ -3,6 +3,7 @@ import {
   approveRegistration,
   assignReferee,
   cancelRace,
+  closeRace,
   changeUserRole,
   changeUserStatus,
   fetchHorses,
@@ -28,6 +29,8 @@ import {
   fetchRaceStats,
   fetchRaceEntries,
   fetchRaces,
+  fetchVenues,
+  fetchRaceFieldOptions,
   fetchRegistrationStats,
   fetchRegistrations,
   fetchStaff,
@@ -48,7 +51,6 @@ import {
   removeAssignment,
   revokeTournamentAssignment,
   scheduleRace,
-  closeRace,
   startRace,
   finishRace,
   updateRace,
@@ -57,7 +59,13 @@ import {
   fetchUsers,
   fetchWithdrawals,
   approveWithdrawal,
-  rejectWithdrawal
+  rejectWithdrawal,
+  fetchAdminPredictions,
+  fetchPredictionStats,
+  voidPrediction,
+  fetchRoles,
+  fetchPermissions,
+  updateRolePermissions
 } from "./api";
 function useWithdrawals(query = {}) {
   return useQuery({ queryKey: ["admin", "withdrawals", query], queryFn: () => fetchWithdrawals(query) });
@@ -260,6 +268,15 @@ function useRaceStats(tournamentId) {
 function useRaceEntries(raceId) {
   return useQuery({ queryKey: ["admin", "race-entries", raceId], queryFn: () => fetchRaceEntries(raceId), enabled: !!raceId });
 }
+function useVenues() {
+  return useQuery({ queryKey: ["admin", "venues"], queryFn: fetchVenues });
+}
+function useRaceFieldOptions() {
+  return useQuery({
+    queryKey: ["admin", "race-field-options"],
+    queryFn: fetchRaceFieldOptions,
+  });
+}
 function invalidateRaces(qc) {
   qc.invalidateQueries({ queryKey: ["admin", "races"] });
   qc.invalidateQueries({ queryKey: ["admin", "race"] });
@@ -289,13 +306,13 @@ function useScheduleRace() {
     onSuccess: () => invalidateRaces(qc)
   });
 }
-function useStartRace() {
-  const qc = useQueryClient();
-  return useMutation({ mutationFn: (id) => startRace(id), onSuccess: () => invalidateRaces(qc) });
-}
 function useCloseRace() {
   const qc = useQueryClient();
   return useMutation({ mutationFn: (id) => closeRace(id), onSuccess: () => invalidateRaces(qc) });
+}
+function useStartRace() {
+  const qc = useQueryClient();
+  return useMutation({ mutationFn: (id) => startRace(id), onSuccess: () => invalidateRaces(qc) });
 }
 function useFinishRace() {
   const qc = useQueryClient();
@@ -370,6 +387,54 @@ function useRevokeTournamentAssignment() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ["admin", "tournament-assignments"] })
   });
 }
+
+// ---------- Prediction moderation (Req 32) ----------
+export function useAdminPredictions(query) {
+  return useQuery({
+    queryKey: ["admin", "predictions", query],
+    queryFn: () => fetchAdminPredictions(query),
+  });
+}
+
+export function usePredictionStats() {
+  return useQuery({
+    queryKey: ["admin", "prediction-stats"],
+    queryFn: fetchPredictionStats,
+  });
+}
+
+export function useVoidPrediction() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, reason }) => voidPrediction(id, reason),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["admin", "predictions"] });
+      qc.invalidateQueries({ queryKey: ["admin", "prediction-stats"] });
+    },
+  });
+}
+
+// ---------- Role / permission matrix (Req 26) ----------
+export function useRoles() {
+  return useQuery({ queryKey: ["admin", "roles"], queryFn: fetchRoles });
+}
+
+export function usePermissions() {
+  return useQuery({
+    queryKey: ["admin", "permissions"],
+    queryFn: fetchPermissions,
+  });
+}
+
+export function useUpdateRolePermissions() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ roleId, permissionCodes }) =>
+      updateRolePermissions(roleId, permissionCodes),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["admin", "roles"] }),
+  });
+}
+
 export {
   useAdminHorse,
   useAdminHorses,
@@ -383,6 +448,7 @@ export {
   useCancelRace,
   useChangeUserRole,
   useChangeUserStatus,
+  useCloseRace,
   useCloseTournamentRegistration,
   useCompleteTournament,
   useCreateRace,
@@ -399,9 +465,11 @@ export {
   usePublishTournament,
   useRace,
   useRaceEntries,
+  useRaceFieldOptions,
   useRacePanel,
   useRaceStats,
   useRaces,
+  useVenues,
   useReassignReferee,
   useRefereeConflicts,
   useRegistrationStats,
@@ -415,7 +483,6 @@ export {
   useStaff,
   useStaffingDashboard,
   useStartRace,
-  useCloseRace,
   useStartTournament,
   useTournament,
   useTournamentAssignments,

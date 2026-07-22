@@ -2,15 +2,17 @@ import { useEffect, useRef, useState } from "react";
 import { Upload, FileText } from "lucide-react";
 
 /**
- * File picker for a credential document. Shows an image thumbnail preview for image files
- * (via `URL.createObjectURL`, revoked on every new selection and on unmount to avoid leaks)
- * and a filename + file icon for non-image files (e.g. PDFs).
+ * File picker for a credential document. Shows an image thumbnail preview for
+ * image files (via `URL.createObjectURL`, revoked on every new selection and on
+ * unmount to avoid leaks) and a filename + file icon for non-image files
+ * (e.g. PDFs).
  */
 export function UploadBox({ label, onFile }) {
   const ref = useRef(null);
   const [file, setFile] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(null);
-  // Mirror the current object URL in a ref so the unmount cleanup revokes the latest value.
+  // Mirror the current object URL in a ref so the unmount cleanup revokes the
+  // latest value.
   const urlRef = useRef(null);
 
   useEffect(

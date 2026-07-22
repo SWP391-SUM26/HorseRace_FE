@@ -1,60 +1,88 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { CheckCircle2, XCircle } from "lucide-react";
 import { PageHeader } from "@/common/components/PageHeader";
-import { Badge, Card, CardBody, EmptyState, Select, Skeleton } from "@/common/ui";
+import {
+  Badge,
+  Card,
+  CardBody,
+  EmptyState,
+  Select,
+  Skeleton,
+} from "@/common/ui";
 import { formatDate } from "@/common/lib/format";
+import { byName } from "@/common/lib/sort";
 import { useOwnerRaceReport } from "../hooks";
 
-const humanize = (value) =>
-  !value ? "-" : value.toLowerCase().split("_").map((word) => word.charAt(0).toUpperCase() + word.slice(1)).join(" ");
+const humanize = (v) =>
+  !v
+    ? "—"
+    : v
+        .toLowerCase()
+        .split("_")
+        .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+        .join(" ");
 
 function fmtMs(ms) {
-  if (ms == null) return "-";
-  const minutes = Math.floor(ms / 60000);
-  const seconds = Math.floor((ms % 60000) / 1000);
-  const centiseconds = Math.floor((ms % 1000) / 10);
-  const pad = (n) => String(n).padStart(2, "0");
-  return `${minutes}:${pad(seconds)}.${pad(centiseconds)}`;
+  if (ms == null) return "—";
+  const m = Math.floor(ms / 60000);
+  const s = Math.floor((ms % 60000) / 1000);
+  const cs = Math.floor((ms % 1000) / 10);
+  const p = (n) => String(n).padStart(2, "0");
+  return `${m}:${p(s)}.${p(cs)}`;
 }
 
-function notRunReason(row) {
-  if (row.entered && row.entryStatus === "SCRATCHED") return "Scratched";
-  switch (row.registrationStatus) {
+/** Why a registered horse didn't make it into the race. */
+function notRunReason(r) {
+  // Entered the race but was pulled before the off — the entry state explains
+  // it, not the registration.
+  if (r.entered && r.entryStatus === "SCRATCHED") return "Scratched";
+  switch (r.registrationStatus) {
     case "REJECTED":
-      return row.rejectionReason ? `Rejected - ${row.rejectionReason}` : "Registration rejected";
-    case "WITHDRAWN":
-      return "Withdrawn";
+      return r.rejectionReason
+        ? `Rejected — ${r.rejectionReason}`
+        : "Registration rejected";
+    case "WITHDRAWN": return "Withdrawn";
     case "SUBMITTED":
-    case "UNDER_REVIEW":
-      return "Awaiting approval";
-    case "DRAFT":
-      return "Draft (not submitted)";
-    case "APPROVED":
-      return "Approved but not entered";
-    default:
-      return humanize(row.registrationStatus);
+    case "UNDER_REVIEW": return "Awaiting approval";
+    case "DRAFT": return "Draft (not submitted)";
+    case "APPROVED": return "Approved but not entered";
+    default: return humanize(r.registrationStatus);
   }
 }
 
+/**
+ * Owner per-race report: which of the owner's horses registered, which actually
+ * ran, and results.
+ */
 export default function OwnerRaceReportPage() {
   const { data, isPending, isError } = useOwnerRaceReport();
   const [raceId, setRaceId] = useState("");
 
+  // Distinct races the owner registered for, newest first.
   const races = useMemo(() => {
     const map = new Map();
-    for (const row of data ?? []) {
-      if (row.raceId && !map.has(row.raceId)) map.set(row.raceId, row);
+    for (const r of data ?? []) {
+      if (r.raceId && !map.has(r.raceId)) map.set(r.raceId, r);
     }
     return [...map.values()].sort(
-      (a, b) => +new Date(b.scheduledStartAt ?? 0) - +new Date(a.scheduledStartAt ?? 0)
+      (a, b) =>
+        +new Date(b.scheduledStartAt ?? 0) - +new Date(a.scheduledStartAt ?? 0),
     );
   }, [data]);
 
-  const selectedRaceId = raceId || races[0]?.raceId || "";
-  const rows = useMemo(() => (data ?? []).filter((row) => row.raceId === selectedRaceId), [data, selectedRaceId]);
-  const ran = rows.filter((row) => row.participated);
-  const didNotRun = rows.filter((row) => !row.participated);
-  const race = races.find((row) => row.raceId === selectedRaceId);
+  useEffect(() => {
+    if (!raceId && races.length > 0) setRaceId(races[0].raceId);
+  }, [races, raceId]);
+
+  const rows = useMemo(
+    () => (data ?? []).filter((r) => r.raceId === raceId),
+    [data, raceId],
+  );
+  const ran = rows.filter((r) => r.participated);
+  const didNotRun = rows
+    .filter((r) => !r.participated)
+    .sort(byName("horseName"));
+  const race = races.find((r) => r.raceId === raceId);
 
   return (
     <>
@@ -74,11 +102,11 @@ export default function OwnerRaceReportPage() {
           <div className="mb-4 w-80 max-w-full">
             <Select
               label="Race"
-              value={selectedRaceId}
-              onChange={(event) => setRaceId(event.target.value)}
-              options={races.map((row) => ({
-                value: row.raceId,
-                label: `${row.raceCode ?? row.raceId.slice(0, 6)} - ${row.raceName ?? "Race"}`
+              value={raceId}
+              onChange={(e) => setRaceId(e.target.value)}
+              options={races.map((r) => ({
+                value: r.raceId,
+                label: `${r.raceCode ?? r.raceId.slice(0, 6)} · ${r.raceName ?? "Race"}`,
               }))}
             />
           </div>
@@ -86,13 +114,14 @@ export default function OwnerRaceReportPage() {
           {race && (
             <div className="mb-4 flex flex-wrap items-center gap-2 rounded-lg bg-subtle/60 px-3 py-2 text-sm">
               <span className="font-semibold text-ink">{race.raceName ?? race.raceCode}</span>
-              {race.tournamentName && <span className="text-muted">- {race.tournamentName}</span>}
+              {race.tournamentName && <span className="text-muted">· {race.tournamentName}</span>}
               {race.raceStatus && <Badge tone="neutral">{humanize(race.raceStatus)}</Badge>}
               {race.scheduledStartAt && <span className="ml-auto text-xs text-muted">{formatDate(race.scheduledStartAt)}</span>}
             </div>
           )}
 
           <div className="grid gap-6 lg:grid-cols-2">
+            {/* Participated */}
             <Card>
               <CardBody>
                 <h2 className="mb-3 inline-flex items-center gap-2 font-semibold text-ink">
@@ -111,24 +140,12 @@ export default function OwnerRaceReportPage() {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-border">
-                      {ran.map((row) => (
-                        <tr key={row.registrationId}>
-                          <td className="px-2 py-2 font-medium text-ink">{row.horseName ?? "-"}</td>
-                          <td className="px-2 py-2">
-                            <Badge
-                              tone={
-                                row.entryStatus === "FINISHED"
-                                  ? "success"
-                                  : row.entryStatus === "SCRATCHED" || row.entryStatus === "DISQUALIFIED"
-                                    ? "danger"
-                                    : "neutral"
-                              }
-                            >
-                              {humanize(row.entryStatus)}
-                            </Badge>
-                          </td>
-                          <td className="px-2 py-2 text-right tabular-nums text-ink">{row.finishPosition ?? "-"}</td>
-                          <td className="px-2 py-2 text-right tabular-nums text-muted">{fmtMs(row.finishTimeMs)}</td>
+                      {ran.map((r) => (
+                        <tr key={r.registrationId}>
+                          <td className="px-2 py-2 font-medium text-ink">{r.horseName ?? "—"}</td>
+                          <td className="px-2 py-2"><Badge tone={r.entryStatus === "FINISHED" ? "success" : r.entryStatus === "SCRATCHED" || r.entryStatus === "DISQUALIFIED" ? "danger" : "neutral"}>{humanize(r.entryStatus)}</Badge></td>
+                          <td className="px-2 py-2 text-right tabular-nums text-ink">{r.finishPosition ?? "—"}</td>
+                          <td className="px-2 py-2 text-right tabular-nums text-muted">{fmtMs(r.finishTimeMs)}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -137,10 +154,11 @@ export default function OwnerRaceReportPage() {
               </CardBody>
             </Card>
 
+            {/* Registered but did not run */}
             <Card>
               <CardBody>
                 <h2 className="mb-3 inline-flex items-center gap-2 font-semibold text-ink">
-                  <XCircle size={17} className="text-muted" /> Registered - did not run ({didNotRun.length})
+                  <XCircle size={17} className="text-muted" /> Registered — did not run ({didNotRun.length})
                 </h2>
                 {didNotRun.length === 0 ? (
                   <p className="rounded-lg bg-subtle/60 px-3 py-3 text-sm text-muted">All your registered horses ran.</p>
@@ -154,15 +172,11 @@ export default function OwnerRaceReportPage() {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-border">
-                      {didNotRun.map((row) => (
-                        <tr key={row.registrationId}>
-                          <td className="px-2 py-2 font-medium text-ink">{row.horseName ?? "-"}</td>
-                          <td className="px-2 py-2">
-                            <Badge tone={row.registrationStatus === "REJECTED" || row.registrationStatus === "WITHDRAWN" ? "danger" : "warning"}>
-                              {humanize(row.registrationStatus)}
-                            </Badge>
-                          </td>
-                          <td className="px-2 py-2 text-muted">{notRunReason(row)}</td>
+                      {didNotRun.map((r) => (
+                        <tr key={r.registrationId}>
+                          <td className="px-2 py-2 font-medium text-ink">{r.horseName ?? "—"}</td>
+                          <td className="px-2 py-2"><Badge tone={r.registrationStatus === "REJECTED" || r.registrationStatus === "WITHDRAWN" ? "danger" : "warning"}>{humanize(r.registrationStatus)}</Badge></td>
+                          <td className="px-2 py-2 text-muted">{notRunReason(r)}</td>
                         </tr>
                       ))}
                     </tbody>

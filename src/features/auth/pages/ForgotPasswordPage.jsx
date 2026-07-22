@@ -70,7 +70,6 @@ export default function ForgotPasswordPage() {
           {...register("email")}
           error={errors.email?.message}
         />
-
         <Button
           type="submit"
           size="lg"

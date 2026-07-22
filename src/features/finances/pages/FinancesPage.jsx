@@ -1,22 +1,19 @@
-import { Download, Landmark } from "lucide-react";
+import { Download, Wallet } from "lucide-react";
+import { Link } from "react-router-dom";
 import { PageHeader } from "@/common/components/PageHeader";
-import { Button, Card, CardBody, EmptyState, Skeleton, StatCard } from "@/common/ui";
-import { formatMoney } from "@/common/lib/format";
-import { useTransactions, useWallet } from "@/features/wallet/hooks";
-import { TransactionHistory } from "@/features/wallet/components/TransactionHistory";
+import { Button, Skeleton, EmptyState } from "@/common/ui";
+import { useFinanceOverview, useOwnerRaceEarnings } from "../hooks";
+import { useWallet } from "@/features/wallet/hooks";
+import { BalanceCard } from "@/features/wallet/components/BalanceCard";
+import { FinanceKpiGrid } from "../components/FinanceKpiGrid";
+import { HorseProfitabilityCard } from "../components/HorseProfitabilityCard";
+import { RecentTransactionsCard } from "../components/RecentTransactionsCard";
+import { RaceEarningsTable } from "../components/RaceEarningsTable";
 
 export default function FinancesPage() {
-  const walletQuery = useWallet();
-  const transactionsQuery = useTransactions({ page: 0, size: 10 });
-
-  const wallet = walletQuery.data;
-  const transactions = transactionsQuery.data?.rows ?? [];
-  const creditTotal = transactions
-    .filter((transaction) => transaction.entryType === "CREDIT")
-    .reduce((sum, transaction) => sum + Number(transaction.amount ?? 0), 0);
-  const debitTotal = transactions
-    .filter((transaction) => transaction.entryType === "DEBIT")
-    .reduce((sum, transaction) => sum + Number(transaction.amount ?? 0), 0);
+  const { data, isPending, isError } = useFinanceOverview();
+  const wallet = useWallet();
+  const raceEarnings = useOwnerRaceEarnings();
 
   return (
     <>
@@ -25,56 +22,50 @@ export default function FinancesPage() {
         subtitle="Real-time tracking of stable performance and overheads."
         actions={
           <>
-            <Button variant="secondary" leftIcon={<Landmark size={16} />} disabled>
-              Link Bank Account
-            </Button>
-            <Button leftIcon={<Download size={16} />} disabled>Export Report</Button>
+            {/* Replaces a "Link Bank Account" button that had no handler at
+                all. Entry fees come out of this wallet, so the owner needs a
+                way to reach it. */}
+            <Link to="/wallet">
+              <Button variant="secondary" leftIcon={<Wallet size={16} />}>
+                Top Up
+              </Button>
+            </Link>
+            <Button leftIcon={<Download size={16} />}>Export Report</Button>
           </>
         }
       />
 
-      {walletQuery.isPending ? (
+      {/* Outside the branch below on purpose: a failing /owner/finances must
+          not also hide a perfectly good wallet balance — that is the number the
+          owner needs before registering. */}
+      <div className="mb-6 max-w-sm">
+        <BalanceCard
+          wallet={wallet.data}
+          loading={wallet.isPending}
+          error={wallet.isError}
+        />
+      </div>
+
+      {isPending ? (
         <FinancesSkeleton />
-      ) : walletQuery.isError ? (
-        <EmptyState title="Couldn't load your financials" description="Please refresh the page to try again." />
+      ) : isError || !data ? (
+        <EmptyState
+          title="Couldn't load your financials"
+          description="Please refresh the page to try again."
+        />
       ) : (
         <div className="flex flex-col gap-6">
-          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-            <StatCard
-              label="Available Balance"
-              value={formatMoney(wallet?.balance ?? 0)}
-              hint="Current wallet balance"
-              icon={<Landmark size={18} />}
-            />
-            <StatCard
-              label="Locked Balance"
-              value={formatMoney(wallet?.lockedBalance ?? 0)}
-              hint="Funds currently on hold"
-            />
-            <StatCard label="Credits Loaded" value={formatMoney(creditTotal)} hint="From recent transactions" />
-            <StatCard label="Debits Loaded" value={formatMoney(debitTotal)} hint="From recent transactions" />
-          </div>
-
+          <FinanceKpiGrid kpis={data.kpis} />
           <div className="grid gap-6 lg:grid-cols-3">
-            <Card>
-              <CardBody>
-                <h3 className="text-xs font-semibold uppercase tracking-wide text-muted">Horse Profitability</h3>
-                <EmptyState
-                  title="No profitability API connected"
-                  description="Backend currently exposes wallet transactions, not per-horse financial analytics."
-                />
-              </CardBody>
-            </Card>
+            <HorseProfitabilityCard horses={data.horses} />
             <div className="lg:col-span-2">
-              <TransactionHistory
-                rows={transactions}
-                loading={transactionsQuery.isLoading}
-                page={transactionsQuery.data?.page ?? 0}
-                totalPages={transactionsQuery.data?.totalPages ?? 1}
-                onPageChange={() => {}}
+              <RecentTransactionsCard
+                transactions={data.transactions}
+                total={data.totalTransactions}
               />
             </div>
           </div>
+          <RaceEarningsTable rows={raceEarnings.data} loading={raceEarnings.isPending} />
         </div>
       )}
     </>
@@ -85,11 +76,18 @@ function FinancesSkeleton() {
   return (
     <div className="flex flex-col gap-6">
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        {Array.from({ length: 4 }).map((_, index) => (
-          <Skeleton key={index} className="h-32 w-full rounded-2xl" />
+        {Array.from({ length: 4 }).map((_, i) => (
+          <Skeleton key={i} className="h-32 w-full rounded-2xl" />
         ))}
       </div>
-      <Skeleton className="h-80 w-full rounded-2xl" />
+      <div className="grid gap-6 lg:grid-cols-3">
+        <Skeleton className="h-80 w-full rounded-2xl" />
+        <Skeleton className="h-80 w-full rounded-2xl lg:col-span-2" />
+      </div>
+      <div className="grid gap-6 sm:grid-cols-2">
+        <Skeleton className="h-40 w-full rounded-2xl" />
+        <Skeleton className="h-40 w-full rounded-2xl" />
+      </div>
     </div>
   );
 }

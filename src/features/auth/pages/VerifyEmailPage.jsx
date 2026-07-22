@@ -51,8 +51,9 @@ export default function VerifyEmailPage() {
       {
         onSuccess: () => {
           toast.success("Xác thực email thành công");
-          // Post-registration the user is already logged in → send them to their role dashboard,
-          // not the public home. If somehow unauthenticated (email link), fall back to login.
+          // Post-registration the user is already logged in → send them to their
+          // role dashboard, not the public home. If somehow unauthenticated
+          // (email link), fall back to login.
           navigate(user ? (ROLE_HOME[user.role] ?? "/") : "/login");
         },
       },

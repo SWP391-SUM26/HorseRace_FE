@@ -19,8 +19,6 @@ const ROLE_OPTIONS = [
   { value: "HORSE_OWNER", label: "Owner" },
   { value: "JOCKEY", label: "Jockey" },
   { value: "RACE_REFEREE", label: "Referee" },
-  { value: "TRAINER", label: "Trainer" },
-  { value: "VET", label: "Vet" },
   { value: "SPECTATOR", label: "Spectator" }
 ];
 const ROLE_FILTERS = [{ value: "", label: "All roles" }, ...ROLE_OPTIONS];
