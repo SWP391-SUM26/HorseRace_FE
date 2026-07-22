@@ -1,5 +1,4 @@
 import { apiClient } from "@/common/lib/apiClient";
-import { initials } from "@/common/lib/format";
 
 /** Unwrap a list payload that may be a bare array or a Spring Page object. */
 function toArray(d) {
@@ -119,22 +118,15 @@ export async function fetchMyRides(when) {
 }
 
 /**
- * Derived leaderboard — there is no BE ranking endpoint, so we sort the full
- * jockey roster (GET /jockeys) by career win count. Real data, no mock.
+ * Leaderboard, ranked by the backend from OFFICIAL race results.
+ *
+ * This used to fetch the whole jockey roster and sort it client-side by `winCount` — but no
+ * backend code ever writes that column, so the table was ordered by stale seed values and could
+ * put a rider with zero actual wins on top. It also over-fetched every jockey on each load.
  */
 export async function fetchLeaderboard(limit = 5) {
-  const { data } = await apiClient.get("/jockeys");
-  return toArray(data.data)
-    .slice()
-    .sort((a, b) => (b.winCount ?? 0) - (a.winCount ?? 0))
-    .slice(0, limit)
-    .map((j, i) => ({
-      rank: i + 1,
-      jockeyUserId: j.userId,
-      name: j.fullName,
-      code: initials(j.fullName) || "—",
-      wins: j.winCount ?? 0,
-    }));
+  const { data } = await apiClient.get("/standings/jockeys", { params: { limit } });
+  return toArray(data.data);
 }
 
 // ----- Derivations from real ride history (no BE win-trend / trophy endpoint) -----

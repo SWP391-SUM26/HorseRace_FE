@@ -5,6 +5,7 @@ import { cn } from "@/common/lib/cn";
 import { formatDate } from "@/common/lib/format";
 import { useOwnerRaceIds, useRaceCalendar, useRefereeRaceIds } from "../hooks";
 import { RaceReportView } from "../components/RaceReportView";
+import { HorseStandings } from "@/features/owner/components/HorseStandings";
 
 const REPORTABLE = new Set(["FINISHED", "OFFICIAL"]);
 
@@ -24,6 +25,7 @@ export default function RaceReportPage({ scope }) {
   const refereeIds = useRefereeRaceIds({ enabled: scope === "referee" });
   const [selectedId, setSelectedId] = useState(null);
 
+  // owner = their horses' races; referee = admin-assigned races; admin = all.
   const restricted = scope === "owner" || scope === "referee";
   const restrictIds = scope === "owner" ? ownerIds.data : scope === "referee" ? refereeIds.data : undefined;
   const restrictedPending = restricted && restrictIds === undefined;
@@ -57,6 +59,7 @@ export default function RaceReportPage({ scope }) {
         </Card>
       ) : (
         <div className="grid gap-6 lg:grid-cols-3">
+          {/* Race picker */}
           <div className="flex flex-col gap-3 lg:col-span-1">
             {races.map((race) => (
               <RaceRow
@@ -68,6 +71,7 @@ export default function RaceReportPage({ scope }) {
             ))}
           </div>
 
+          {/* Report */}
           <div className="lg:col-span-2">
             {selected ? (
               <RaceReportView raceId={selected.raceId} canCertify={scope === "admin"} />
@@ -81,6 +85,11 @@ export default function RaceReportPage({ scope }) {
           </div>
         </div>
       )}
+
+      {/* Owners follow their horses' standings alongside the results. GET /standings/horses had
+          worked all along with no page calling it — jockeys and predictors had a league table,
+          horses did not. */}
+      {scope === "owner" && <HorseStandings />}
     </div>
   );
 }

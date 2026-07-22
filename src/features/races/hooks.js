@@ -10,9 +10,14 @@ import {
 } from "./api";
 
 export function useRaceCalendar() {
-  return useQuery({ queryKey: ["races", "calendar"], queryFn: fetchRaceCalendar });
+  return useQuery({
+    queryKey: ["races", "calendar"],
+    queryFn: fetchRaceCalendar,
+  });
 }
 
+// `options` lets a caller pass `enabled` so the owner/referee scoped lookups
+// only fire for the role that actually needs them.
 export function useOwnerRaceIds(options = {}) {
   return useQuery({
     queryKey: ["owner", "race-ids"],
@@ -22,7 +27,10 @@ export function useOwnerRaceIds(options = {}) {
 }
 
 export function useOwnerRaceReport() {
-  return useQuery({ queryKey: ["owner", "race-report"], queryFn: fetchOwnerRaceReport });
+  return useQuery({
+    queryKey: ["owner", "race-report"],
+    queryFn: fetchOwnerRaceReport,
+  });
 }
 
 export function useRefereeRaceIds(options = {}) {
@@ -49,13 +57,16 @@ export function useRaceReportViolations(raceId) {
   });
 }
 
+/** Admin-only: publish/certify a race's results as OFFICIAL. */
 export function useCertifyRaceResults(raceId) {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: (stewardsReport) => certifyRaceResults(raceId, stewardsReport),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["races", "result-sheet", raceId] });
+      queryClient.invalidateQueries({
+        queryKey: ["races", "result-sheet", raceId],
+      });
       queryClient.invalidateQueries({ queryKey: ["races", "calendar"] });
     },
   });

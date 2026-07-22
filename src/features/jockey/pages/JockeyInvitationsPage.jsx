@@ -14,7 +14,7 @@ import {
 } from "@/common/ui";
 import { useAuth } from "@/common/hooks/useAuth";
 import { useToast } from "@/common/providers/ToastProvider";
-import { formatDate } from "@/common/lib/format";
+import { formatDate, formatMoney } from "@/common/lib/format";
 import {
   useAcceptInvitation,
   useInvitationInsights,
@@ -45,10 +45,6 @@ const EMPTY_LABEL = {
 };
 
 /** Prize amounts are USD-shaped; render with a $ prefix. */
-function formatUsd(amount) {
-  return `$${Math.round(amount).toLocaleString("en-US")}`;
-}
-
 export default function JockeyInvitationsPage() {
   const { user } = useAuth();
   const toast = useToast();
@@ -183,10 +179,10 @@ function InvitationCard({
               Prize Pool / Purse Share
             </p>
             <p className="mt-0.5 text-sm font-medium text-ink">
-              {formatUsd(invitation.prizePool)}
+              {formatMoney(invitation.prizePool)}
             </p>
             <p className="text-xs text-muted">
-              {invitation.sharePct}% ({formatUsd(invitation.estShare)} est.)
+              {invitation.sharePct}% ({formatMoney(invitation.estShare)} est.)
             </p>
           </div>
         </div>
@@ -296,10 +292,10 @@ function InvitationDetailsModal({ invitation, onClose }) {
               Prize Pool / Purse Share
             </p>
             <p className="mt-1 text-lg font-semibold text-ink">
-              {formatUsd(inv.prizePool)}
+              {formatMoney(inv.prizePool)}
             </p>
             <p className="text-sm text-muted">
-              Your share: {inv.sharePct}% ({formatUsd(inv.estShare)} est.)
+              Your share: {inv.sharePct}% ({formatMoney(inv.estShare)} est.)
             </p>
           </div>
         </div>
