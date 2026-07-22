@@ -147,7 +147,6 @@ export default function MyRaceAssignmentsPage() {
                         onChange={(e) => setReason(e.target.value)}
                         placeholder="e.g. Scheduling clash"
                       />
-
                       <div className="flex justify-end gap-2">
                         <Button
                           size="sm"

@@ -57,8 +57,6 @@ export const APPLICATION_STATUS_FILTERS = [
 export const REQUESTED_ROLE_FILTERS = [
   { value: "", label: "All roles" },
   { value: "OWNER", label: "Owner" },
-  { value: "TRAINER", label: "Trainer" },
-  { value: "VET", label: "Vet" },
   { value: "JOCKEY", label: "Jockey" },
 ];
 

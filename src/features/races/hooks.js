@@ -1,55 +1,73 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
-  fetchRaceCalendar,
-  fetchOwnerRaceIds,
-  fetchRefereeRaceIds,
-  fetchRaceResultSheet,
-  fetchRaceReportViolations,
   certifyRaceResults,
-  fetchOwnerRaceReport
+  fetchOwnerRaceIds,
+  fetchOwnerRaceReport,
+  fetchRaceCalendar,
+  fetchRaceReportViolations,
+  fetchRaceResultSheet,
+  fetchRefereeRaceIds,
 } from "./api";
-function useRaceCalendar() {
-  return useQuery({ queryKey: ["races", "calendar"], queryFn: fetchRaceCalendar });
+
+export function useRaceCalendar() {
+  return useQuery({
+    queryKey: ["races", "calendar"],
+    queryFn: fetchRaceCalendar,
+  });
 }
-function useOwnerRaceIds() {
-  return useQuery({ queryKey: ["owner", "race-ids"], queryFn: fetchOwnerRaceIds });
+
+// `options` lets a caller pass `enabled` so the owner/referee scoped lookups
+// only fire for the role that actually needs them.
+export function useOwnerRaceIds(options = {}) {
+  return useQuery({
+    queryKey: ["owner", "race-ids"],
+    queryFn: fetchOwnerRaceIds,
+    ...options,
+  });
 }
-function useOwnerRaceReport() {
-  return useQuery({ queryKey: ["owner", "race-report"], queryFn: fetchOwnerRaceReport });
+
+export function useOwnerRaceReport() {
+  return useQuery({
+    queryKey: ["owner", "race-report"],
+    queryFn: fetchOwnerRaceReport,
+  });
 }
-function useRefereeRaceIds() {
-  return useQuery({ queryKey: ["referee", "race-ids"], queryFn: fetchRefereeRaceIds });
+
+export function useRefereeRaceIds(options = {}) {
+  return useQuery({
+    queryKey: ["referee", "race-ids"],
+    queryFn: fetchRefereeRaceIds,
+    ...options,
+  });
 }
-function useRaceResultSheet(raceId) {
+
+export function useRaceResultSheet(raceId) {
   return useQuery({
     queryKey: ["races", "result-sheet", raceId],
     queryFn: () => fetchRaceResultSheet(raceId),
-    enabled: !!raceId
+    enabled: !!raceId,
   });
 }
-function useRaceReportViolations(raceId) {
+
+export function useRaceReportViolations(raceId) {
   return useQuery({
     queryKey: ["races", "report-violations", raceId],
     queryFn: () => fetchRaceReportViolations(raceId),
-    enabled: !!raceId
+    enabled: !!raceId,
   });
 }
-function useCertifyRaceResults(raceId) {
-  const qc = useQueryClient();
+
+/** Admin-only: publish/certify a race's results as OFFICIAL. */
+export function useCertifyRaceResults(raceId) {
+  const queryClient = useQueryClient();
+
   return useMutation({
     mutationFn: (stewardsReport) => certifyRaceResults(raceId, stewardsReport),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["races", "result-sheet", raceId] });
-      qc.invalidateQueries({ queryKey: ["races", "calendar"] });
-    }
+      queryClient.invalidateQueries({
+        queryKey: ["races", "result-sheet", raceId],
+      });
+      queryClient.invalidateQueries({ queryKey: ["races", "calendar"] });
+    },
   });
 }
-export {
-  useCertifyRaceResults,
-  useOwnerRaceIds,
-  useOwnerRaceReport,
-  useRaceCalendar,
-  useRaceReportViolations,
-  useRaceResultSheet,
-  useRefereeRaceIds
-};

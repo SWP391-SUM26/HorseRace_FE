@@ -36,8 +36,6 @@ import {
 
 const ROLE_LABEL = {
   OWNER: "Owner",
-  TRAINER: "Trainer",
-  VET: "Vet",
   JOCKEY: "Jockey",
 };
 
@@ -392,7 +390,6 @@ function DossierPanel({ applicationId, onViewPrevious }) {
                 detail={data.eligibility?.idVerification?.documentRef ?? "—"}
                 ok={okStatus(data.eligibility?.idVerification?.status)}
               />
-
               <CheckRow
                 title="License Check"
                 detail={
@@ -405,7 +402,6 @@ function DossierPanel({ applicationId, onViewPrevious }) {
                 }
                 ok={okStatus(data.eligibility?.license?.status)}
               />
-
               <CheckRow
                 title="Background Check"
                 detail={data.eligibility?.backgroundCheck?.status ?? "—"}
@@ -476,8 +472,8 @@ function DossierPanel({ applicationId, onViewPrevious }) {
         </div>
         {!reviewable && (
           <p className="text-xs text-muted">
-            This application is {data.status.toLowerCase().replace("_", " ")} —
-            no action available.
+            This application is{" "}
+            {data.status.toLowerCase().replace("_", " ")} — no action available.
           </p>
         )}
       </CardBody>
@@ -498,7 +494,6 @@ function DossierPanel({ applicationId, onViewPrevious }) {
           )
         }
       />
-
       <RequestInfoModal
         open={infoOpen}
         onClose={() => setInfoOpen(false)}

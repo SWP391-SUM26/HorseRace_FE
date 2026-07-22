@@ -1,5 +1,9 @@
 import { cn } from "@/common/lib/cn";
 
+/**
+ * Two-column auth screen: a full-bleed image on one side and the form on the
+ * other. `formMaxWidth="xl"` gives a wider form column (e.g. the Jockey form).
+ */
 export function AuthSplitLayout({
   imageSide,
   image,

@@ -1,31 +1,19 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { updateMyProfile, uploadAvatar } from "@/services/user";
+import { useMutation } from "@tanstack/react-query";
+import { useAuth } from "@/common/hooks/useAuth";
+import { updateProfile, uploadAvatar } from "./api";
 
-function useUpdateProfile() {
-  const queryClient = useQueryClient();
-
+export function useUpdateProfile() {
+  const { setUser } = useAuth();
   return useMutation({
-    mutationFn: updateMyProfile,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["auth", "me"] });
-      queryClient.invalidateQueries({ queryKey: ["user", "me"] });
-    }
+    mutationFn: (v) => updateProfile(v),
+    onSuccess: (user) => setUser(user),
   });
 }
 
-function useUploadAvatar() {
-  const queryClient = useQueryClient();
-
+export function useUploadAvatar() {
+  const { setUser } = useAuth();
   return useMutation({
-    mutationFn: uploadAvatar,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["auth", "me"] });
-      queryClient.invalidateQueries({ queryKey: ["user", "me"] });
-    }
+    mutationFn: (file) => uploadAvatar(file),
+    onSuccess: (user) => setUser(user),
   });
 }
-
-export {
-  useUpdateProfile,
-  useUploadAvatar
-};

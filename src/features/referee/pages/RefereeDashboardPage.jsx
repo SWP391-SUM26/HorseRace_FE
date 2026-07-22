@@ -101,7 +101,7 @@ export default function RefereeDashboardPage() {
                   </p>
                   <div className="mt-auto flex flex-wrap gap-2 pt-6">
                     <Link
-                      to="/app/referee/inspection"
+                      to="/referee/inspection"
                       className="inline-flex h-10 items-center gap-2 rounded-lg border border-white/20 bg-white/10 px-4 text-sm font-medium text-white transition-colors hover:bg-white/20"
                     >
                       <Users size={16} /> Pre-Race Inspection
@@ -220,7 +220,7 @@ function InspectionMiniTable({ raceId }) {
         <div className="flex items-center justify-between">
           <h2 className="font-semibold text-ink">Pre-Race Inspections</h2>
           <Link
-            to="/app/referee/inspection"
+            to="/referee/inspection"
             className="text-xs font-medium text-brand-700 hover:text-brand-800"
           >
             Open inspection sheet →

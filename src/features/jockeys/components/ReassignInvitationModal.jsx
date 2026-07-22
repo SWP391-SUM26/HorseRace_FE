@@ -99,7 +99,6 @@ export function ReassignInvitationModal({ invitation, onClose }) {
               ...options,
             ]}
           />
-
           <p className="text-xs text-muted">
             The current invitation is cancelled and a new one is sent to the
             selected jockey.

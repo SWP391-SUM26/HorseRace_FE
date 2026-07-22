@@ -3,43 +3,33 @@ import {
   fetchTournament,
   fetchTournamentEntries,
   fetchTournamentRaces,
-  fetchTournaments
+  fetchTournaments,
 } from "./api";
 
-function useTournaments() {
+export function useTournaments() {
   return useQuery({
-    queryKey: ["owner", "tournaments"],
-    queryFn: fetchTournaments
+    queryKey: ["tournaments", "catalog"],
+    queryFn: fetchTournaments,
   });
 }
-
-function useTournament(id) {
+export function useTournament(id) {
   return useQuery({
-    queryKey: ["owner", "tournaments", id],
+    queryKey: ["tournaments", "detail", id],
     queryFn: () => fetchTournament(id),
-    enabled: Boolean(id)
+    enabled: !!id,
   });
 }
-
-function useTournamentRaces(tournamentId) {
+export function useTournamentRaces(id) {
   return useQuery({
-    queryKey: ["owner", "tournaments", tournamentId, "races"],
-    queryFn: () => fetchTournamentRaces(tournamentId),
-    enabled: Boolean(tournamentId)
+    queryKey: ["tournaments", "races", id],
+    queryFn: () => fetchTournamentRaces(id),
+    enabled: !!id,
   });
 }
-
-function useTournamentEntries(tournamentId) {
+export function useTournamentEntries(id) {
   return useQuery({
-    queryKey: ["owner", "tournaments", tournamentId, "entries"],
-    queryFn: () => fetchTournamentEntries(tournamentId),
-    enabled: Boolean(tournamentId)
+    queryKey: ["tournaments", "entries", id],
+    queryFn: () => fetchTournamentEntries(id),
+    enabled: !!id,
   });
 }
-
-export {
-  useTournament,
-  useTournamentEntries,
-  useTournamentRaces,
-  useTournaments
-};

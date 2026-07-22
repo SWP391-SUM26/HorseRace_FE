@@ -3,18 +3,10 @@ import { Link, useNavigate } from "react-router-dom";
 import { Star, Trophy, Radio } from "lucide-react";
 import { Card, CardBody, DataTable, EmptyState, Skeleton } from "@/common/ui";
 import { PageHeader } from "@/common/components/PageHeader";
-import { useSpectatorRaces } from "../hooks";
+import { useSpectatorRaces, useTopPredictors } from "../hooks";
 import { canPredict } from "../constants";
 import { Countdown } from "../components/Countdown";
 import { RaceCard } from "../components/RaceCard";
-
-// STATIC showcase — the BE exposes NO leaderboard endpoint. Clearly labelled as a showcase, not live data.
-const TOP_PREDICTORS = [
-  { rank: 1, name: "Nguyễn Minh", winRate: "68%", points: 12480 },
-  { rank: 2, name: "Trần Anh", winRate: "64%", points: 11120 },
-  { rank: 3, name: "Lê Hoàng", winRate: "61%", points: 9860 },
-  { rank: 4, name: "Phạm Thu", winRate: "59%", points: 8740 },
-];
 
 function fmtDateTime(iso) {
   if (!iso) return "TBD";
@@ -30,6 +22,7 @@ function fmtDateTime(iso) {
 export default function SpectatorHubPage() {
   const navigate = useNavigate();
   const racesQuery = useSpectatorRaces();
+  const predictorsQuery = useTopPredictors(4);
   const races = racesQuery.data?.rows ?? [];
 
   // Bettability filter: the "Race of the Day" hero leads users to bet, so surface only a race whose
@@ -106,13 +99,13 @@ export default function SpectatorHubPage() {
               </div>
               <div className="mt-6 flex flex-wrap gap-3">
                 <button
-                  onClick={() => navigate("/app/spectator/predictions")}
+                  onClick={() => navigate("/spectator/predictions")}
                   className="h-11 rounded-xl bg-brand-600 px-5 text-sm font-semibold text-white hover:bg-brand-700"
                 >
                   Place Prediction
                 </button>
                 <Link
-                  to="/app/spectator/predictions"
+                  to="/spectator/predictions"
                   className="flex h-11 items-center rounded-xl border border-white/30 px-5 text-sm font-semibold text-white hover:bg-white/10"
                 >
                   View Field
@@ -153,8 +146,8 @@ export default function SpectatorHubPage() {
                   live={r.status === "RUNNING"}
                   to={
                     r.status === "RUNNING"
-                      ? `/app/spectator/races/${r.raceId}/live`
-                      : "/app/spectator/predictions"
+                      ? `/spectator/live-races/${r.raceId}`
+                      : "/spectator/predictions"
                   }
                 />
               ))}
@@ -167,33 +160,45 @@ export default function SpectatorHubPage() {
           )}
         </div>
 
-        {/* (c) Top Predictors — STATIC showcase (no BE endpoint) */}
+        {/* (c) Top Predictors — real ranking from GET /standings/predictors */}
         <Card>
           <CardBody>
             <h3 className="flex items-center gap-2 text-sm font-semibold text-ink">
               <Trophy className="h-4 w-4 text-warning" /> Top Predictors
             </h3>
-            <p className="mb-3 text-xs text-muted">
-              Global leaderboard — showcase preview
-            </p>
-            <ul className="space-y-3">
-              {TOP_PREDICTORS.map((p) => (
-                <li key={p.rank} className="flex items-center gap-3">
-                  <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-subtle text-sm font-semibold text-ink">
-                    {p.rank}
-                  </span>
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium text-ink">
-                      {p.name}
-                    </p>
-                    <p className="text-xs text-muted">Win rate {p.winRate}</p>
-                  </div>
-                  <span className="text-sm font-semibold tabular-nums text-brand-700">
-                    {p.points.toLocaleString("vi-VN")}
-                  </span>
-                </li>
-              ))}
-            </ul>
+            <p className="mb-3 text-xs text-muted">Ranked by winnings paid out</p>
+            {predictorsQuery.isPending ? (
+              <div className="space-y-3">
+                {Array.from({ length: 4 }).map((_, i) => (
+                  <Skeleton key={i} className="h-10 w-full rounded-lg" />
+                ))}
+              </div>
+            ) : predictorsQuery.isError ? (
+              <p className="text-sm text-muted">Could not load the leaderboard.</p>
+            ) : (predictorsQuery.data ?? []).length === 0 ? (
+              <p className="text-sm text-muted">No tickets have been settled yet.</p>
+            ) : (
+              <ul className="space-y-3">
+                {(predictorsQuery.data ?? []).map((p) => (
+                  <li key={p.jockeyUserId} className="flex items-center gap-3">
+                    <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-subtle text-sm font-semibold text-ink">
+                      {p.rank}
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-medium text-ink">
+                        {p.name}
+                      </p>
+                      <p className="text-xs text-muted">
+                        Won {p.wins}/{p.starts} tickets
+                      </p>
+                    </div>
+                    <span className="text-sm font-semibold tabular-nums text-brand-700">
+                      {Math.round(p.earnings).toLocaleString("vi-VN")}₫
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            )}
           </CardBody>
         </Card>
       </div>
@@ -206,7 +211,7 @@ export default function SpectatorHubPage() {
               Tournament at a Glance
             </h3>
             <Link
-              to="/app/spectator/predictions"
+              to="/spectator/predictions"
               className="text-sm font-medium text-brand-700 hover:underline"
             >
               Full Calendar

@@ -15,6 +15,7 @@ import {
   fetchRaceResults,
   fetchRewardHistory,
   fetchSpectatorRaces,
+  fetchTopPredictors,
   submitPrediction,
 } from "./api";
 
@@ -133,3 +134,10 @@ export function useClaimReward() {
 // ---------- Live monitor (polling) ----------
 // useLiveRace / useLiveLeaderboard moved to @/common/live; re-exported for existing importers.
 export { useLiveRace, useLiveLeaderboard } from "@/common/live/useLiveRace";
+
+export function useTopPredictors(limit = 4) {
+  return useQuery({
+    queryKey: ["spectator", "top-predictors", limit],
+    queryFn: () => fetchTopPredictors(limit),
+  });
+}

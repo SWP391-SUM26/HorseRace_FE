@@ -98,7 +98,7 @@ function useDeleteMedicalRecord(horseId) {
 function useUploadMedicalRecordFile(horseId) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ recordId, file }) => uploadMedicalRecordFile(horseId, recordId, file),
+    mutationFn: (v) => uploadMedicalRecordFile(horseId, v.recordId, v.file),
     onSuccess: () => qc.invalidateQueries({ queryKey: medKey(horseId) })
   });
 }

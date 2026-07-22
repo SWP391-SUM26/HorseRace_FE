@@ -1,12 +1,12 @@
-import { useState } from 'react';
-import { ArrowUpRight, ArrowDownLeft } from 'lucide-react';
-import { Button, Card, CardBody, Input } from '@/common/ui';
-import { PageHeader } from '@/common/components/PageHeader';
-import { useToast } from '@/common/providers/ToastProvider';
-import { formatMoney } from '@/common/lib/format';
-import { useTopup, useTransactions, useWallet, useWithdraw } from '../hooks';
-import { BalanceCard } from '../components/BalanceCard';
-import { TransactionHistory } from '../components/TransactionHistory';
+import { useState } from "react";
+import { ArrowUpRight, ArrowDownLeft } from "lucide-react";
+import { Button, Card, CardBody, Input } from "@/common/ui";
+import { PageHeader } from "@/common/components/PageHeader";
+import { useToast } from "@/common/providers/ToastProvider";
+import { formatMoney } from "@/common/lib/format";
+import { useTopup, useTransactions, useWallet, useWithdraw } from "../hooks";
+import { BalanceCard } from "../components/BalanceCard";
+import { TransactionHistory } from "../components/TransactionHistory";
 
 /** Smallest VND top-up / withdrawal we accept (mirrors the betting floor). */
 const MIN_AMOUNT = 10_000;
@@ -24,7 +24,8 @@ export default function WalletPage() {
 
   const topupInvalid = !(topupAmount >= MIN_AMOUNT);
   const balance = walletQuery.data?.balance ?? 0;
-  const withdrawInvalid = !(withdrawAmount >= MIN_AMOUNT) || withdrawAmount > balance;
+  const withdrawInvalid =
+    !(withdrawAmount >= MIN_AMOUNT) || withdrawAmount > balance;
 
   function onTopup() {
     if (topupInvalid) return;
@@ -40,7 +41,9 @@ export default function WalletPage() {
     if (withdrawInvalid) return;
     withdrawMutation.mutate(withdrawAmount, {
       onSuccess: () => {
-        toast.success('Withdrawal requested — funds are held pending admin review.');
+        toast.success(
+          "Withdrawal requested — funds are held pending admin review.",
+        );
         setWithdrawAmount(0);
       },
     });
@@ -48,27 +51,38 @@ export default function WalletPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title="My Wallet" subtitle="Top up in VND, review your balance, and track every transaction." />
+      <PageHeader
+        title="My Wallet"
+        subtitle="Top up in VND, review your balance, and track every transaction."
+      />
 
       <div className="grid gap-6 lg:grid-cols-[1fr_1.4fr]">
         <div className="space-y-6">
-          <BalanceCard wallet={walletQuery.data} loading={walletQuery.isLoading} error={walletQuery.isError} />
+          <BalanceCard
+            wallet={walletQuery.data}
+            loading={walletQuery.isLoading}
+            error={walletQuery.isError}
+          />
 
           {/* Top-up */}
           <Card>
             <CardBody className="space-y-4">
-              <h3 className="text-xs font-semibold uppercase tracking-wide text-muted">Top Up (VND)</h3>
+              <h3 className="text-xs font-semibold uppercase tracking-wide text-muted">
+                Top Up (VND)
+              </h3>
               <Input
                 label="Amount (VND)"
                 type="number"
                 min={MIN_AMOUNT}
                 step={10_000}
-                value={topupAmount || ''}
+                value={topupAmount || ""}
                 onChange={(e) => setTopupAmount(Number(e.target.value))}
                 placeholder="Enter amount in VND"
               />
               {topupInvalid && (
-                <p className="text-xs text-danger">Minimum top-up is {formatMoney(MIN_AMOUNT)}.</p>
+                <p className="text-xs text-danger">
+                  Minimum top-up is {formatMoney(MIN_AMOUNT)}.
+                </p>
               )}
               <Button
                 className="w-full"
@@ -85,20 +99,22 @@ export default function WalletPage() {
           {/* Withdraw */}
           <Card>
             <CardBody className="space-y-4">
-              <h3 className="text-xs font-semibold uppercase tracking-wide text-muted">Withdraw (VND)</h3>
+              <h3 className="text-xs font-semibold uppercase tracking-wide text-muted">
+                Withdraw (VND)
+              </h3>
               <Input
                 label="Amount (VND)"
                 type="number"
                 min={MIN_AMOUNT}
                 step={10_000}
-                value={withdrawAmount || ''}
+                value={withdrawAmount || ""}
                 onChange={(e) => setWithdrawAmount(Number(e.target.value))}
                 placeholder="Enter amount in VND"
               />
               {withdrawAmount > 0 && withdrawInvalid && (
                 <p className="text-xs text-danger">
                   {withdrawAmount > balance
-                    ? 'Amount exceeds your available balance.'
+                    ? "Amount exceeds your available balance."
                     : `Minimum withdrawal is ${formatMoney(MIN_AMOUNT)}.`}
                 </p>
               )}

@@ -1,7 +1,9 @@
-import { useLocation, useNavigate } from 'react-router-dom';
-import { CheckCircle2, XCircle } from 'lucide-react';
-import { Button, Card, CardBody, Spinner } from '@/common/ui';
-import { useVnPayReturn } from '../hooks';
+import { useEffect } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
+import { CheckCircle2, XCircle } from "lucide-react";
+import { Button, Card, CardBody, Spinner } from "@/common/ui";
+import { queryClient } from "@/common/lib/queryClient";
+import { useVnPayReturn } from "../hooks";
 
 /**
  * VNPay redirects the browser back here with the payment result in the query string.
@@ -12,6 +14,13 @@ export default function WalletReturnPage() {
   const { search } = useLocation();
   const navigate = useNavigate();
   const query = useVnPayReturn(search);
+  // The balance is cached for 30s, so without this the owner tops up, lands back here, walks to
+  // Financials and still sees the old number — indistinguishable from the payment not working.
+  useEffect(() => {
+    if (query.isSuccess) {
+      queryClient.invalidateQueries({ queryKey: ["wallet"] });
+    }
+  }, [query.isSuccess]);
 
   if (query.isLoading) {
     return (
@@ -26,8 +35,11 @@ export default function WalletReturnPage() {
 
   const success = !query.isError && (query.data?.success ?? false);
   const message = query.isError
-    ? 'We could not verify this payment. Please check your wallet history.'
-    : query.data?.message ?? (success ? 'Your top-up was successful.' : 'Your top-up was not completed.');
+    ? "We could not verify this payment. Please check your wallet history."
+    : (query.data?.message ??
+      (success
+        ? "Your top-up was successful."
+        : "Your top-up was not completed."));
 
   return (
     <div className="flex min-h-[60vh] items-center justify-center px-4">
@@ -44,11 +56,11 @@ export default function WalletReturnPage() {
           )}
           <div>
             <h1 className="text-xl font-semibold text-ink">
-              {success ? 'Payment successful' : 'Payment failed'}
+              {success ? "Payment successful" : "Payment failed"}
             </h1>
             <p className="mt-1 text-sm text-muted">{message}</p>
           </div>
-          <Button onClick={() => navigate('/app/wallet')}>Back to wallet</Button>
+          <Button onClick={() => navigate("/wallet")}>Back to wallet</Button>
         </CardBody>
       </Card>
     </div>

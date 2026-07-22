@@ -23,7 +23,7 @@ export const schema = z
     confirmPassword: z.string(),
     bio: z.string().trim().min(1, "Vui lòng nhập thông tin chuyên môn"),
     agreedToTerms: z.literal(true, {
-      errorMap: () => ({ message: "Bạn cần đồng ý điều khoản" }),
+      error: () => "Bạn cần đồng ý điều khoản",
     }),
   })
   .refine((d) => d.password === d.confirmPassword, {
@@ -148,7 +148,6 @@ export default function OwnerRegistrationPage() {
                 {...register("fullName")}
                 error={errors.fullName?.message}
               />
-
               <Input
                 label="Email Address"
                 type="email"
@@ -164,7 +163,6 @@ export default function OwnerRegistrationPage() {
                 {...register("contactNumber")}
                 error={errors.contactNumber?.message}
               />
-
               <Input
                 label="Primary Region"
                 {...register("primaryRegion")}
@@ -186,7 +184,6 @@ export default function OwnerRegistrationPage() {
                 {...register("password")}
                 error={errors.password?.message}
               />
-
               <Input
                 label="Confirm Password"
                 type="password"
@@ -208,7 +205,6 @@ export default function OwnerRegistrationPage() {
                 label="I agree to the Terms of Service and confirm that I hold valid ownership credentials for my listed stable."
                 {...register("agreedToTerms")}
               />
-
               {errors.agreedToTerms && (
                 <span className="text-xs text-danger">
                   {errors.agreedToTerms.message}
@@ -230,10 +226,7 @@ export default function OwnerRegistrationPage() {
 
         <p className="mt-6 text-center text-sm text-muted">
           Already have an account?{" "}
-          <Link
-            to="/login"
-            className="font-medium text-brand-700 hover:underline"
-          >
+          <Link to="/login" className="font-medium text-brand-700 hover:underline">
             Sign In
           </Link>
         </p>

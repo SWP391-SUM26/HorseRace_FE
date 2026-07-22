@@ -8,13 +8,13 @@ export function HorseImageCard({ imageUrl, name, status, grade }) {
         src={imageUrl ?? silverStreak}
         alt={name}
         className="h-72 w-full object-cover"
-        onError={(event) => {
-          event.currentTarget.src = silverStreak;
+        onError={(e) => {
+          e.currentTarget.src = silverStreak;
         }}
       />
       <div className="absolute right-4 top-4 flex gap-2">
-        <Badge tone="success">{String(status).toUpperCase()}</Badge>
-        {grade && <Badge tone="neutral">{String(grade).toUpperCase()}</Badge>}
+        <Badge tone="success">{status.toUpperCase()}</Badge>
+        {grade && <Badge tone="neutral">{grade.toUpperCase()}</Badge>}
       </div>
     </div>
   );

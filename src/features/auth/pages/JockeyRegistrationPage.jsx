@@ -34,7 +34,7 @@ const schema = z
     yearsActive: optionalNumber,
     ridingStyle: z.string().optional(),
     agreedToTerms: z.literal(true, {
-      errorMap: () => ({ message: "Bạn cần đồng ý điều khoản" }),
+      error: () => "Bạn cần đồng ý điều khoản",
     }),
   })
   .refine((d) => d.password === d.confirmPassword, {
@@ -154,7 +154,6 @@ export default function JockeyRegistrationPage() {
               {...register("email")}
               error={errors.email?.message}
             />
-
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <Input
                 label="Password"
@@ -163,7 +162,6 @@ export default function JockeyRegistrationPage() {
                 {...register("password")}
                 error={errors.password?.message}
               />
-
               <Input
                 label="Confirm Password"
                 type="password"
@@ -219,7 +217,6 @@ export default function JockeyRegistrationPage() {
               {...register("yearsActive")}
               error={errors.yearsActive?.message}
             />
-
             <Select
               label="Primary Riding Style"
               options={RIDING_STYLE_OPTIONS}
@@ -232,10 +229,7 @@ export default function JockeyRegistrationPage() {
         <Section icon="3" title="Credentials">
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <UploadBox label="Jockey License Copy" onFile={setLicense} />
-            <UploadBox
-              label="Current Fitness Certificate"
-              onFile={setFitness}
-            />
+            <UploadBox label="Current Fitness Certificate" onFile={setFitness} />
           </div>
         </Section>
 
@@ -244,7 +238,6 @@ export default function JockeyRegistrationPage() {
             label="I agree to the Terms of Service and confirm my credentials are accurate."
             {...register("agreedToTerms")}
           />
-
           {errors.agreedToTerms && (
             <span className="text-xs text-danger">
               {errors.agreedToTerms.message}

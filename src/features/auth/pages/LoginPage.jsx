@@ -81,7 +81,6 @@ export default function LoginPage() {
             {...register("password")}
             error={errors.password?.message}
           />
-
           <button
             type="button"
             onClick={() => setShowPassword((v) => !v)}

@@ -9,8 +9,8 @@ const ROLE_LABELS = {
 
 const ROLE_HOME = {
   ADMIN: "/admin/dashboard",
-  OWNER: "/app/owner/tournaments",
-  HORSE_OWNER: "/app/owner/tournaments",
+  OWNER: "/owner/overview",
+  HORSE_OWNER: "/owner/overview",
   JOCKEY: "/jockey-dashboard",
   RACE_REFEREE: "/referee/dashboard",
   SPECTATOR: "/spectator-dashboard"
