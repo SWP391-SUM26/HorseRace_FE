@@ -4,6 +4,7 @@ import { Button, EmptyState, Skeleton, Tabs } from "@/common/ui";
 import { useToast } from "@/common/providers/ToastProvider";
 import { useWallet } from "@/features/wallet/hooks";
 import { formatMoney } from "@/common/lib/format";
+import { byName } from "@/common/lib/sort";
 import { useAuth } from "@/common/hooks/useAuth";
 import {
   useEntryId,
@@ -225,7 +226,7 @@ export default function JockeyMarketPage() {
             ) : jockeyCards.length === 0 ? (
               <EmptyState title="No jockeys available" />
             ) : (
-              jockeyCards.map((jockey) => (
+              [...jockeyCards].sort(byName("fullName")).map((jockey) => (
                 <JockeyCard
                   key={jockey.id}
                   jockey={jockey}

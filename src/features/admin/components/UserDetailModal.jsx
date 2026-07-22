@@ -1,6 +1,7 @@
 import { Trophy } from "lucide-react";
 import { Avatar, Badge, Modal, Skeleton } from "@/common/ui";
 import { formatDate } from "@/common/lib/format";
+import { byName } from "@/common/lib/sort";
 import { useUserHorses, useUserWins } from "../hooks";
 import { USER_STATUS_TONE } from "../constants";
 
@@ -66,7 +67,7 @@ export function UserDetailModal({ user, onClose }) {
             <p className="text-sm text-muted">This user owns no horses.</p>
           ) : (
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-              {horses.map((h) => (
+              {[...horses].sort(byName("name")).map((h) => (
                 <div
                   key={h.horseId}
                   className="overflow-hidden rounded-xl border border-border"

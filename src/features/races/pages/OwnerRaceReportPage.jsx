@@ -10,6 +10,7 @@ import {
   Skeleton,
 } from "@/common/ui";
 import { formatDate } from "@/common/lib/format";
+import { byName } from "@/common/lib/sort";
 import { useOwnerRaceReport } from "../hooks";
 
 const humanize = (v) =>
@@ -78,7 +79,9 @@ export default function OwnerRaceReportPage() {
     [data, raceId],
   );
   const ran = rows.filter((r) => r.participated);
-  const didNotRun = rows.filter((r) => !r.participated);
+  const didNotRun = rows
+    .filter((r) => !r.participated)
+    .sort(byName("horseName"));
   const race = races.find((r) => r.raceId === raceId);
 
   return (

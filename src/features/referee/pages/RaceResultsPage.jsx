@@ -35,6 +35,7 @@ import {
   useSubmitReport,
   useViolation,
 } from "../hooks";
+import { byName } from "@/common/lib/sort";
 import { humanize } from "../api";
 import { DECISION_TYPES, SEVERITY_TONE } from "../constants";
 
@@ -288,7 +289,9 @@ function ResultsBody({ raceId, results, loading, isAdmin }) {
                   this race.
                 </p>
                 <ul className="divide-y divide-border">
-                  {results.registeredNotEntered.map((r) => (
+                  {[...results.registeredNotEntered]
+                    .sort(byName("horseName"))
+                    .map((r) => (
                     <li
                       key={r.registrationId}
                       className="flex items-center justify-between gap-3 py-2"

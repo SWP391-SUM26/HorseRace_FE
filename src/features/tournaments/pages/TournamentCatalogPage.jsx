@@ -13,6 +13,7 @@ import {
 } from "@/common/ui";
 import { cn } from "@/common/lib/cn";
 import { formatDate } from "@/common/lib/format";
+import { byDate } from "@/common/lib/sort";
 import { RegisterModal } from "@/features/registrations/components/RegisterModal";
 import { OwnerRegistrationsPanel } from "@/features/registrations/components/OwnerRegistrationsPanel";
 import {
@@ -104,9 +105,9 @@ export default function TournamentCatalogPage() {
 
   const filtered = useMemo(
     () =>
-      tournaments.filter((t) =>
-        t.name.toLowerCase().includes(q.trim().toLowerCase()),
-      ),
+      tournaments
+        .filter((t) => t.name.toLowerCase().includes(q.trim().toLowerCase()))
+        .sort(byDate("startDate")),
     [tournaments, q],
   );
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));

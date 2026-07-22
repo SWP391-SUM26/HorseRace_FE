@@ -33,6 +33,8 @@ export default function HorseManagementPage() {
     status: status || undefined,
     gender: gender || undefined,
     page,
+    sortBy: "name",
+    sortDir: "asc",
   });
 
   const rows = listQuery.data?.rows ?? [];

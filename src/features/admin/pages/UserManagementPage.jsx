@@ -22,6 +22,7 @@ import {
 import { useToast } from "@/common/providers/ToastProvider";
 import { downloadCsv } from "@/common/lib/csv";
 import { formatDate } from "@/common/lib/format";
+import { byName } from "@/common/lib/sort";
 import {
   useChangeUserRole,
   useChangeUserStatus,
@@ -57,16 +58,18 @@ export default function UserManagementPage() {
 
   const filtered = useMemo(() => {
     const needle = q.trim().toLowerCase();
-    return all.filter((u) => {
-      if (role && u.roleCode !== role) return false;
-      if (status && (u.status ?? "") !== status) return false;
-      if (
-        needle &&
-        !`${u.fullName} ${u.email} ${u.userCode}`.toLowerCase().includes(needle)
-      )
-        return false;
-      return true;
-    });
+    return all
+      .filter((u) => {
+        if (role && u.roleCode !== role) return false;
+        if (status && (u.status ?? "") !== status) return false;
+        if (
+          needle &&
+          !`${u.fullName} ${u.email} ${u.userCode}`.toLowerCase().includes(needle)
+        )
+          return false;
+        return true;
+      })
+      .sort(byName("fullName"));
   }, [all, q, role, status]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));

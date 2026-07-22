@@ -27,6 +27,7 @@ import {
 } from "@/common/ui";
 import { cn } from "@/common/lib/cn";
 import { formatDate } from "@/common/lib/format";
+import { byName } from "@/common/lib/sort";
 import { useToast } from "@/common/providers/ToastProvider";
 import { useRegistrationAttachments } from "@/features/registrations/hooks";
 import {
@@ -63,10 +64,12 @@ export default function PreRaceInspectionPage() {
   );
   const queue = useMemo(
     () =>
-      (regsQ.data?.rows ?? []).filter(
-        (r) =>
-          r.raceId && assignedIds.has(r.raceId) && PENDING.includes(r.status),
-      ),
+      (regsQ.data?.rows ?? [])
+        .filter(
+          (r) =>
+            r.raceId && assignedIds.has(r.raceId) && PENDING.includes(r.status),
+        )
+        .sort(byName("horseName")),
     [regsQ.data, assignedIds],
   );
   const selected =

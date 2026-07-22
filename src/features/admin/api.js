@@ -309,6 +309,22 @@ export async function fetchRaceStats(tournamentId) {
   return data.data;
 }
 
+/** GET /venues — real venue (track) rows from the DB, for the race form's venue picker. */
+export async function fetchVenues() {
+  const { data } = await apiClient.get("/venues");
+  return toArray(data.data);
+}
+
+/** GET /races/field-options — distinct race type / track / weather values actually stored in the DB. */
+export async function fetchRaceFieldOptions() {
+  const { data } = await apiClient.get("/races/field-options");
+  return {
+    raceTypes: data.data?.raceTypes ?? [],
+    trackConditions: data.data?.trackConditions ?? [],
+    weatherConditions: data.data?.weatherConditions ?? [],
+  };
+}
+
 export async function createRace(body) {
   const { data } = await apiClient.post("/races", body);
   return data.data;
