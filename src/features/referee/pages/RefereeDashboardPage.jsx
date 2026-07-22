@@ -10,6 +10,7 @@ import {
   Skeleton,
   StatCard,
 } from "@/common/ui";
+import { byName } from "@/common/lib/sort";
 import { useInspections, useRefereeDashboard } from "../hooks";
 
 /** seconds → "HH:MM:SS" */
@@ -183,7 +184,7 @@ export default function RefereeDashboardPage() {
                   <p className="text-sm text-muted">No stewards assigned.</p>
                 ) : (
                   <ul className="flex flex-col gap-2">
-                    {data.dutyRoster.map((d) => (
+                    {[...data.dutyRoster].sort(byName("refereeName")).map((d) => (
                       <li
                         key={d.refereeUserId}
                         className="flex items-center justify-between gap-3 rounded-xl border border-border px-4 py-2.5"

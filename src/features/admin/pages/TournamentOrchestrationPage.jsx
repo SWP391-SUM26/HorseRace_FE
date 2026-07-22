@@ -15,6 +15,7 @@ import {
 } from "@/common/ui";
 import { cn } from "@/common/lib/cn";
 import { formatDate } from "@/common/lib/format";
+import { byDate } from "@/common/lib/sort";
 import {
   useRaces,
   useRegistrations,
@@ -94,11 +95,13 @@ export default function TournamentOrchestrationPage() {
 
   const filtered = useMemo(
     () =>
-      tournaments.filter((t) =>
-        `${t.name} ${t.tournamentCode}`
-          .toLowerCase()
-          .includes(q.trim().toLowerCase()),
-      ),
+      tournaments
+        .filter((t) =>
+          `${t.name} ${t.tournamentCode}`
+            .toLowerCase()
+            .includes(q.trim().toLowerCase()),
+        )
+        .sort(byDate("startDate")),
     [tournaments, q],
   );
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));

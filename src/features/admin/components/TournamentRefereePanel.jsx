@@ -12,6 +12,7 @@ import {
   Skeleton,
 } from "@/common/ui";
 import { useToast } from "@/common/providers/ToastProvider";
+import { byName } from "@/common/lib/sort";
 import {
   useInviteTournamentReferee,
   useRevokeTournamentAssignment,
@@ -167,7 +168,9 @@ function InviteRefereeModal({ tournamentId, excludeRefereeIds, onClose }) {
   // Only referees not already invited (non-revoked/declined) are selectable.
   const options = useMemo(() => {
     const excluded = new Set(excludeRefereeIds);
-    return (staffQuery.data ?? []).filter((s) => !excluded.has(s.userId));
+    return (staffQuery.data ?? [])
+      .filter((s) => !excluded.has(s.userId))
+      .sort(byName("fullName"));
   }, [staffQuery.data, excludeRefereeIds]);
 
   function submit() {

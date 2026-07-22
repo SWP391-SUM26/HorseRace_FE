@@ -28,6 +28,8 @@ import {
   fetchRaceStats,
   fetchRaceEntries,
   fetchRaces,
+  fetchVenues,
+  fetchRaceFieldOptions,
   fetchRegistrationStats,
   fetchRegistrations,
   fetchStaff,
@@ -265,6 +267,15 @@ function useRaceStats(tournamentId) {
 function useRaceEntries(raceId) {
   return useQuery({ queryKey: ["admin", "race-entries", raceId], queryFn: () => fetchRaceEntries(raceId), enabled: !!raceId });
 }
+function useVenues() {
+  return useQuery({ queryKey: ["admin", "venues"], queryFn: fetchVenues });
+}
+function useRaceFieldOptions() {
+  return useQuery({
+    queryKey: ["admin", "race-field-options"],
+    queryFn: fetchRaceFieldOptions,
+  });
+}
 function invalidateRaces(qc) {
   qc.invalidateQueries({ queryKey: ["admin", "races"] });
   qc.invalidateQueries({ queryKey: ["admin", "race"] });
@@ -448,9 +459,11 @@ export {
   usePublishTournament,
   useRace,
   useRaceEntries,
+  useRaceFieldOptions,
   useRacePanel,
   useRaceStats,
   useRaces,
+  useVenues,
   useReassignReferee,
   useRefereeConflicts,
   useRegistrationStats,

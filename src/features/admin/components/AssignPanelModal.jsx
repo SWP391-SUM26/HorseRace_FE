@@ -3,6 +3,7 @@ import { Plus, X } from "lucide-react";
 import { Button, Modal, Select } from "@/common/ui";
 import { useToast } from "@/common/providers/ToastProvider";
 import { getApiErrorMessage } from "@/common/lib/apiError";
+import { byName } from "@/common/lib/sort";
 import {
   useAssignReferee,
   useRacePanel,
@@ -110,6 +111,7 @@ export function AssignPanelModal({ raceId, onClose }) {
               .filter(
                 (s) => s.userId === row.refereeUserId || !chosen.has(s.userId),
               )
+              .sort(byName("fullName"))
               .map((s) => ({
                 value: s.userId,
                 label: `${s.fullName}${s.assignedRaceCount != null ? ` (${s.assignedRaceCount} races)` : ""}`,

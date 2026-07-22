@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { Plus } from "lucide-react";
 import { PageHeader } from "@/common/components/PageHeader";
 import { Button, Skeleton, EmptyState } from "@/common/ui";
+import { byName } from "@/common/lib/sort";
 import { useOwnerHorses } from "../hooks";
 import { HorseCard } from "../components/HorseCard";
 
@@ -31,7 +32,7 @@ export default function StableListPage() {
         />
       ) : data && data.length > 0 ? (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {data.map((h) => (
+          {[...data].sort(byName("name")).map((h) => (
             <HorseCard key={h.id} horse={h} />
           ))}
         </div>

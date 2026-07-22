@@ -1,4 +1,5 @@
 import { apiClient } from "@/common/lib/apiClient";
+import { byName, byDate } from "@/common/lib/sort";
 
 function toArray(d) {
   if (Array.isArray(d)) return d;
@@ -78,6 +79,7 @@ export async function fetchOpenTournaments() {
   });
   return toArray(data.data)
     .filter((t) => OPEN_TOURNAMENT_STATUSES.includes(t.status))
+    .sort(byDate("startDate"))
     .map((t) => ({
       value: t.tournamentId,
       label: t.location ? `${t.name} — ${t.location}` : t.name,
@@ -121,6 +123,7 @@ export async function fetchOpenRaces(tournamentId) {
   return (
     toArray(data.data)
       .filter((r) => OPEN_RACE_STATUSES.includes(r.status))
+      .sort(byDate("scheduledStartAt"))
       // entryFee was already on the wire — the old mapper simply dropped it, which is why the owner
       // was never told what entering would cost.
       .map((r) => ({
@@ -133,5 +136,7 @@ export async function fetchOpenRaces(tournamentId) {
 
 export async function fetchOwnerHorseOptions() {
   const { data } = await apiClient.get("/owner/horses");
-  return toArray(data.data).map((h) => ({ value: h.horseId, label: h.name }));
+  return toArray(data.data)
+    .map((h) => ({ value: h.horseId, label: h.name }))
+    .sort(byName("label"));
 }

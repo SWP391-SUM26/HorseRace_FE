@@ -3,7 +3,69 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Button, Input, Modal, Select } from "@/common/ui";
 import { useToast } from "@/common/providers/ToastProvider";
-import { useCreateRace, useUpdateRace } from "../hooks";
+import { byDate } from "@/common/lib/sort";
+import {
+  useCreateRace,
+  useUpdateRace,
+  useVenues,
+  useRaceFieldOptions,
+} from "../hooks";
+
+// Fallback option lists so the dropdowns are populated even before the BE field-options / venues
+// endpoints are live. Merged with (not replacing) whatever the API returns.
+const RACE_TYPE_FALLBACK = [
+  "FLAT",
+  "JUMP",
+  "HARNESS",
+  "ENDURANCE",
+  "HURDLE",
+  "STEEPLECHASE",
+];
+const TRACK_FALLBACK = [
+  "FIRM",
+  "GOOD",
+  "YIELDING",
+  "SOFT",
+  "HEAVY",
+  "STANDARD",
+  "FAST",
+  "SLOW",
+];
+const WEATHER_FALLBACK = [
+  "CLEAR",
+  "SUNNY",
+  "CLOUDY",
+  "OVERCAST",
+  "WINDY",
+  "RAINY",
+  "STORM",
+  "FOGGY",
+];
+// Real seeded venue rows (33333333-…-0001..0010) — safe to submit since these venue_ids exist in the DB.
+const VENUE_FALLBACK = [
+  { venueId: "33333333-0000-4000-8000-000000000001", name: "Trường đua Phú Thọ", city: "TP. Hồ Chí Minh" },
+  { venueId: "33333333-0000-4000-8000-000000000002", name: "Trường đua Đại Nam", city: "Bình Dương" },
+  { venueId: "33333333-0000-4000-8000-000000000003", name: "Trường đua Sóc Sơn", city: "Hà Nội" },
+  { venueId: "33333333-0000-4000-8000-000000000004", name: "Trường đua Vân Đồn", city: "Quảng Ninh" },
+  { venueId: "33333333-0000-4000-8000-000000000005", name: "Trường đua Lâm Viên", city: "Lâm Đồng" },
+  { venueId: "33333333-0000-4000-8000-000000000006", name: "Trường đua Bà Nà", city: "Đà Nẵng" },
+  { venueId: "33333333-0000-4000-8000-000000000007", name: "Trường đua Cần Giờ", city: "TP. Hồ Chí Minh" },
+  { venueId: "33333333-0000-4000-8000-000000000008", name: "Trường đua Tam Đảo", city: "Vĩnh Phúc" },
+  { venueId: "33333333-0000-4000-8000-000000000009", name: "Trường đua Cát Bà", city: "Hải Phòng" },
+  { venueId: "33333333-0000-4000-8000-000000000010", name: "Trung tâm đua quốc gia", city: "Hà Nội" },
+];
+
+/** Build <Select> options from a list of DB string values, always including the current value
+ *  (so an existing race's saved value stays selectable even if it is the only one). */
+function stringOptions(values, current, placeholder) {
+  const uniq = [
+    ...new Set([...(values ?? []), current].filter((v) => v != null && v !== "")),
+  ];
+  return [
+    { value: "", label: placeholder },
+    ...uniq.map((v) => ({ value: v, label: v })),
+  ];
+}
 
 function isoToLocalInput(iso) {
   if (!iso) return "";
@@ -42,25 +104,19 @@ function makeSchema(isEdit) {
     .object({
       tournamentId: reqStr("Chọn giải đấu"),
       name: opt(reqStr("Nhập tên vòng đua")),
-      raceType: opt(reqStr("Nhập loại đua")).refine(
+      raceType: opt(reqStr("Chọn loại đua")).refine(
         (v) => v.length <= 50,
         "Tối đa 50 ký tự",
       ),
       distanceMeter: isEdit ? lenientInt : posInt("Nhập cự ly"),
-      trackCondition: opt(reqStr("Nhập tình trạng đường đua")),
-      weatherCondition: opt(reqStr("Nhập thời tiết")),
+      trackCondition: opt(reqStr("Chọn tình trạng đường đua")),
+      weatherCondition: opt(reqStr("Chọn thời tiết")),
       scheduledStartAt: opt(reqStr("Chọn giờ xuất phát")),
       predictionCutoffAt: opt(reqStr("Chọn hạn dự đoán")),
       minParticipants: isEdit ? lenientInt : posInt("Nhập số tối thiểu"),
       maxParticipants: isEdit ? lenientInt : posInt("Nhập số tối đa"),
-      venue: opt(reqStr("Nhập địa điểm")),
+      venueId: opt(reqStr("Chọn địa điểm")),
       totalPurse: z
-        .string()
-        .refine(
-          (v) => v === "" || (!Number.isNaN(Number(v)) && Number(v) >= 0),
-          "Phải là số ≥ 0",
-        ),
-      entryFee: z
         .string()
         .refine(
           (v) => v === "" || (!Number.isNaN(Number(v)) && Number(v) >= 0),
@@ -104,16 +160,18 @@ function toDefaults(race, lockedTournamentId) {
       race?.minParticipants != null ? String(race.minParticipants) : "",
     maxParticipants:
       race?.maxParticipants != null ? String(race.maxParticipants) : "",
-    venue: race?.venue ?? "",
+    venueId: race?.venueId ?? "",
     totalPurse: race?.totalPurse != null ? String(race.totalPurse) : "",
-    entryFee: race?.entryFee != null ? String(race.entryFee) : "",
     prizeDistribution:
       race?.prizeDistribution && race.prizeDistribution.length > 0
         ? race.prizeDistribution.map((p) => ({
             place: p.place,
             amount: String(p.amount),
           }))
-        : [{ place: "1st", amount: "" }],
+        : [
+            { place: "1st", amount: "" },
+            { place: "2nd", amount: "" },
+          ],
   };
 }
 
@@ -133,6 +191,10 @@ export function RaceFormModal({
   const toast = useToast();
   const create = useCreateRace();
   const update = useUpdateRace();
+  const venuesQuery = useVenues();
+  const fieldOptionsQuery = useRaceFieldOptions();
+  const venues = venuesQuery.data ?? [];
+  const fieldOptions = fieldOptionsQuery.data;
   const isEdit = mode === "edit";
   const busy = create.isPending || update.isPending;
 
@@ -159,7 +221,9 @@ export function RaceFormModal({
       distanceMeter: v.distanceMeter !== "" ? Number(v.distanceMeter) : undefined,
       trackCondition: v.trackCondition.trim() || undefined,
       weatherCondition: v.weatherCondition.trim() || undefined,
-      venue: v.venue.trim() || undefined,
+      // Persist the structured venue FK; also send the venue name for the legacy text column.
+      venueId: v.venueId || undefined,
+      venue: venues.find((x) => x.venueId === v.venueId)?.name || undefined,
       minParticipants:
         v.minParticipants !== "" ? Number(v.minParticipants) : undefined,
       maxParticipants:
@@ -167,7 +231,6 @@ export function RaceFormModal({
       scheduledStartAt: localInputToIso(v.scheduledStartAt),
       predictionCutoffAt: localInputToIso(v.predictionCutoffAt),
       totalPurse: v.totalPurse !== "" ? Number(v.totalPurse) : undefined,
-      entryFee: v.entryFee !== "" ? Number(v.entryFee) : undefined,
       prizeDistribution: v.prizeDistribution
         .filter((p) => p.place.trim() !== "" && p.amount.trim() !== "")
         .map((p) => ({ place: p.place.trim(), amount: Number(p.amount) })),
@@ -231,7 +294,7 @@ export function RaceFormModal({
             error={errors.tournamentId?.message}
             options={[
               { value: "", label: "Select a tournament…" },
-              ...tournaments.map((t) => ({
+              ...[...tournaments].sort(byDate("startDate")).map((t) => ({
                 value: t.tournamentId,
                 label: t.name,
               })),
@@ -245,11 +308,15 @@ export function RaceFormModal({
           placeholder="e.g. Qualifier Round A"
         />
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          <Input
+          <Select
             label="Race type"
             {...register("raceType")}
             error={errors.raceType?.message}
-            placeholder="e.g. FLAT"
+            options={stringOptions(
+              fieldOptions?.raceTypes,
+              race?.raceType,
+              fieldOptionsQuery.isPending ? "Đang tải…" : "Chọn loại đua…",
+            )}
           />
           <Input
             label="Distance (m)"
@@ -261,17 +328,25 @@ export function RaceFormModal({
           />
         </div>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          <Input
+          <Select
             label="Track condition"
             {...register("trackCondition")}
             error={errors.trackCondition?.message}
-            placeholder="e.g. GOOD"
+            options={stringOptions(
+              fieldOptions?.trackConditions,
+              race?.trackCondition,
+              fieldOptionsQuery.isPending ? "Đang tải…" : "Chọn tình trạng…",
+            )}
           />
-          <Input
+          <Select
             label="Weather"
             {...register("weatherCondition")}
             error={errors.weatherCondition?.message}
-            placeholder="e.g. CLEAR"
+            options={stringOptions(
+              fieldOptions?.weatherConditions,
+              race?.weatherCondition,
+              fieldOptionsQuery.isPending ? "Đang tải…" : "Chọn thời tiết…",
+            )}
           />
         </div>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -306,24 +381,24 @@ export function RaceFormModal({
             {...register("maxParticipants")}
             error={errors.maxParticipants?.message}
           />
-          <Input
+          <Select
             label="Venue"
-            {...register("venue")}
-            error={errors.venue?.message}
-            placeholder="e.g. Ascot"
+            {...register("venueId")}
+            error={errors.venueId?.message}
+            options={[
+              {
+                value: "",
+                label: venuesQuery.isPending
+                  ? "Đang tải…"
+                  : "Chọn địa điểm…",
+              },
+              ...venues.map((vn) => ({
+                value: vn.venueId,
+                label: vn.city ? `${vn.name} — ${vn.city}` : vn.name,
+              })),
+            ]}
           />
         </div>
-
-        {/* Entry fee — the owner pays this into the house wallet when a horse enters this race. */}
-        <Input
-          label="Entry fee (VND)"
-          type="number"
-          min="0"
-          step="1000"
-          {...register("entryFee")}
-          error={errors.entryFee?.message}
-          placeholder="e.g. 500000 (leave blank for free entry)"
-        />
 
         {/* Prize purse — total + per-finish-position amounts (paid to owner + jockey on certify). */}
         <div className="rounded-xl border border-border bg-subtle/30 p-3">
@@ -337,15 +412,26 @@ export function RaceFormModal({
             placeholder="e.g. 100000000"
           />
           <div className="mt-3 mb-2 flex items-center justify-between">
-            <p className="text-sm font-medium text-ink">Prize distribution</p>
+            <div>
+              <p className="text-sm font-medium text-ink">Prize distribution</p>
+              <p className="text-xs text-muted">
+                Hạng 1 và 2 đã có sẵn — chỉ cần nhập số tiền. Thêm hạng khác nếu
+                cần.
+              </p>
+            </div>
             <Button
               type="button"
               variant="secondary"
               size="sm"
-              onClick={() => append({ place: "", amount: "" })}
+              onClick={() => append({ place: `${fields.length + 1}th`, amount: "" })}
             >
               + Add place
             </Button>
+          </div>
+          <div className="grid grid-cols-[1fr_1.4fr_auto] gap-2 px-1 pb-1 text-xs font-medium text-muted">
+            <span>Thứ hạng</span>
+            <span>Số tiền (VND)</span>
+            <span className="sr-only">Xoá</span>
           </div>
           <div className="flex flex-col gap-2">
             {fields.map((f, i) => (
@@ -354,7 +440,7 @@ export function RaceFormModal({
                 className="grid grid-cols-[1fr_1.4fr_auto] items-start gap-2"
               >
                 <Input
-                  placeholder="Place (e.g. 1st)"
+                  placeholder="e.g. 1st"
                   {...register(`prizeDistribution.${i}.place`)}
                 />
                 <Input
