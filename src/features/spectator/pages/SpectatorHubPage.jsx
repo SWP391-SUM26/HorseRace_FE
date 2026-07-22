@@ -28,7 +28,7 @@ export default function SpectatorHubPage() {
   // Bettability filter: the "Race of the Day" hero leads users to bet, so surface only a race whose
   // BettingPanel will actually accept a prediction (CLOSED, locked, pre-cutoff) — via canPredict.
   const featured = useMemo(
-    () => races.find((r) => canPredict(r.status)) ?? null,
+    () => races.find((r) => canPredict(r)) ?? null,
     [races],
   );
   // Lifecycle-descriptive filters (NOT bettability) — left as-is.
@@ -99,13 +99,15 @@ export default function SpectatorHubPage() {
               </div>
               <div className="mt-6 flex flex-wrap gap-3">
                 <button
-                  onClick={() => navigate("/spectator/predictions")}
+                  onClick={() =>
+                    navigate(`/spectator/predictions?raceId=${featured.raceId}`)
+                  }
                   className="h-11 rounded-xl bg-brand-600 px-5 text-sm font-semibold text-white hover:bg-brand-700"
                 >
                   Place Prediction
                 </button>
                 <Link
-                  to="/spectator/predictions"
+                  to={`/spectator/predictions?raceId=${featured.raceId}`}
                   className="flex h-11 items-center rounded-xl border border-white/30 px-5 text-sm font-semibold text-white hover:bg-white/10"
                 >
                   View Field
@@ -147,7 +149,7 @@ export default function SpectatorHubPage() {
                   to={
                     r.status === "RUNNING"
                       ? `/spectator/live-races/${r.raceId}`
-                      : "/spectator/predictions"
+                      : `/spectator/predictions?raceId=${r.raceId}`
                   }
                 />
               ))}

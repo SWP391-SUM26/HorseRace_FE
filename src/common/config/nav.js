@@ -44,6 +44,7 @@ const ROLE_NAV = {
       { label: "Invitations", to: "/jockey/invitations", icon: Mail },
       { label: "Race Schedule", to: "/jockey/schedule", icon: CalendarDays },
       { label: "Performance", to: "/jockey/performance", icon: BarChart3 },
+      { label: "Wallet", to: "/wallet", icon: Wallet },
       { label: "Profile", to: "/jockey/profile", icon: UserCog }
     ],
     topbar: []
@@ -71,7 +72,6 @@ const ROLE_NAV = {
       { label: "Race Calendar", to: "/admin/races", icon: CalendarDays },
       { label: "Race Reports", to: "/admin/reports", icon: FileText },
       { label: "Registration Approval", to: "/admin/registrations", icon: ClipboardList },
-      { label: "Staffing", to: "/admin/staffing", icon: UserCog },
       { label: "Withdrawals", to: "/admin/withdrawals", icon: Wallet },
       { label: "Predictions", to: "/admin/predictions", icon: Coins }
     ],

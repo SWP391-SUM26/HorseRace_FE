@@ -61,12 +61,6 @@ export default function AdminDashboardPage() {
       icon: <Flag size={18} />,
     },
     {
-      label: "Staffing",
-      description: "Assign referees to races",
-      to: "/admin/staffing",
-      icon: <UserCog size={18} />,
-    },
-    {
       label: "User Management",
       description: "Owners, jockeys, referees and admins",
       to: "/admin/users",

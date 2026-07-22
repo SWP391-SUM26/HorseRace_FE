@@ -28,8 +28,6 @@ import AdminTournamentOrchestration from '@/features/admin/pages/TournamentOrche
 import AdminTournamentDetail from '@/features/admin/pages/TournamentDetailPage';
 import AdminRaceCalendar from '@/features/admin/pages/AdminRaceCalendarPage';
 import AdminRegistrationApproval from '@/features/admin/pages/RegistrationApprovalPage';
-import AdminStaffingV2 from '@/features/admin/pages/StaffingPage';
-import AdminStaffingDetail from '@/features/admin/pages/StaffingDetailPage';
 import AdminWithdrawals from '@/features/admin/pages/WithdrawalsPage';
 import AdminPredictionManagement from '@/features/admin/pages/PredictionManagementPage';
 import AdminRaceReports from '@/features/races/pages/RaceReportPage';
@@ -206,8 +204,6 @@ export default function App() {
             <Route path="/admin/registrations" element={<AdminRegistrationApproval />} />
             <Route path="/admin/reports" element={<AdminRaceReports scope="admin" />} />
             <Route path="/admin/results" element={<AdminRaceReports scope="admin" />} />
-            <Route path="/admin/staffing" element={<AdminStaffingV2 />} />
-            <Route path="/admin/staffing/:raceId" element={<AdminStaffingDetail />} />
             <Route path="/admin/withdrawals" element={<AdminWithdrawals />} />
             <Route path="/admin/predictions" element={<AdminPredictionManagement />} />
           </Route>

@@ -2,17 +2,18 @@ import { Download, Wallet } from "lucide-react";
 import { Link } from "react-router-dom";
 import { PageHeader } from "@/common/components/PageHeader";
 import { Button, Skeleton, EmptyState } from "@/common/ui";
-import { useFinanceOverview } from "../hooks";
+import { useFinanceOverview, useOwnerRaceEarnings } from "../hooks";
 import { useWallet } from "@/features/wallet/hooks";
 import { BalanceCard } from "@/features/wallet/components/BalanceCard";
 import { FinanceKpiGrid } from "../components/FinanceKpiGrid";
 import { HorseProfitabilityCard } from "../components/HorseProfitabilityCard";
 import { RecentTransactionsCard } from "../components/RecentTransactionsCard";
-import { FinanceAlerts } from "../components/FinanceAlerts";
+import { RaceEarningsTable } from "../components/RaceEarningsTable";
 
 export default function FinancesPage() {
   const { data, isPending, isError } = useFinanceOverview();
   const wallet = useWallet();
+  const raceEarnings = useOwnerRaceEarnings();
 
   return (
     <>
@@ -64,7 +65,7 @@ export default function FinancesPage() {
               />
             </div>
           </div>
-          <FinanceAlerts />
+          <RaceEarningsTable rows={raceEarnings.data} loading={raceEarnings.isPending} />
         </div>
       )}
     </>

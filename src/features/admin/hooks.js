@@ -3,6 +3,7 @@ import {
   approveRegistration,
   assignReferee,
   cancelRace,
+  closeRace,
   changeUserRole,
   changeUserStatus,
   fetchHorses,
@@ -305,6 +306,10 @@ function useScheduleRace() {
     onSuccess: () => invalidateRaces(qc)
   });
 }
+function useCloseRace() {
+  const qc = useQueryClient();
+  return useMutation({ mutationFn: (id) => closeRace(id), onSuccess: () => invalidateRaces(qc) });
+}
 function useStartRace() {
   const qc = useQueryClient();
   return useMutation({ mutationFn: (id) => startRace(id), onSuccess: () => invalidateRaces(qc) });
@@ -443,6 +448,7 @@ export {
   useCancelRace,
   useChangeUserRole,
   useChangeUserStatus,
+  useCloseRace,
   useCloseTournamentRegistration,
   useCompleteTournament,
   useCreateRace,

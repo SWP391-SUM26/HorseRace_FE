@@ -1,23 +1,42 @@
 import { useState } from "react";
-import { ChevronRight, Pencil, Trash2 } from "lucide-react";
-import { Badge, Button, Modal, Skeleton } from "@/common/ui";
+import { ChevronRight, Pencil, Trash2, UserPlus } from "lucide-react";
+import { Avatar, Badge, Button, EmptyState, Modal, Skeleton } from "@/common/ui";
 import { cn } from "@/common/lib/cn";
 import { useToast } from "@/common/providers/ToastProvider";
 import { formatDate } from "@/common/lib/format";
 import {
   useCancelRace,
+  useCloseRace,
   useDeleteRace,
   useFinishRace,
   useHorse,
   useRace,
   useRaceEntries,
+  useRacePanel,
+  useRemoveAssignment,
   useScheduleRace,
   useStartRace,
   useUser,
 } from "../hooks";
 import { humanize } from "../api";
-import { RACE_STATUS_LABEL, RACE_STATUS_TONE } from "../constants";
+import {
+  PANEL_ROLE_OPTIONS,
+  RACE_STATUS_LABEL,
+  RACE_STATUS_TONE,
+} from "../constants";
 import { RaceFormModal } from "./RaceFormModal";
+import { AssignPanelModal } from "./AssignPanelModal";
+
+const PANEL_ROLE_LABEL = Object.fromEntries(
+  PANEL_ROLE_OPTIONS.map((o) => [o.value, o.label]),
+);
+const PANEL_ROLE_TONE = {
+  CHIEF: "success",
+  JUDGE: "info",
+  STEWARD: "warning",
+  TIMEKEEPER: "neutral",
+  OBSERVER: "neutral",
+};
 
 const money = (v) => `${Math.round(v).toLocaleString("vi-VN")}₫`;
 
@@ -181,6 +200,98 @@ function ParticipantRow({ p }) {
   );
 }
 
+/** This race's referee panel — assign/remove referees, per-race (not the tournament-wide invite pool). */
+function RefereePanel({ raceId }) {
+  const toast = useToast();
+  const panelQuery = useRacePanel(raceId);
+  const remove = useRemoveAssignment();
+  const [assigning, setAssigning] = useState(false);
+
+  const panel = panelQuery.data ?? [];
+
+  function onRemove(a) {
+    remove.mutate(a.refAssignmentId, {
+      onSuccess: () => toast.success("Referee removed from panel"),
+    });
+  }
+
+  return (
+    <div>
+      <div className="mb-2 flex items-baseline justify-between">
+        <p className="text-xs font-semibold uppercase tracking-wide text-muted">
+          Referee Panel{panel.length > 0 ? ` (${panel.length})` : ""}
+        </p>
+        <Button size="sm" variant="secondary" onClick={() => setAssigning(true)}>
+          <UserPlus size={14} /> Assign Referees
+        </Button>
+      </div>
+      {panelQuery.isPending ? (
+        <Skeleton className="h-20 w-full rounded-lg" />
+      ) : panelQuery.isError ? (
+        <p className="rounded-lg bg-subtle/60 px-3 py-3 text-sm text-muted">
+          Couldn't load the referee panel.
+        </p>
+      ) : panel.length === 0 ? (
+        <EmptyState
+          title="No referees assigned"
+          description="Assign referees to build this race's panel."
+        />
+      ) : (
+        <ul className="divide-y divide-border rounded-lg border border-border">
+          {panel.map((a) => (
+            <li
+              key={a.refAssignmentId}
+              className="flex flex-wrap items-center gap-3 px-3 py-2.5"
+            >
+              <Avatar
+                name={a.refereeName ?? "—"}
+                src={a.refereeAvatarUrl ?? undefined}
+                size={32}
+              />
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-medium text-ink">
+                  {a.refereeName ?? "—"}
+                </p>
+                <p className="text-xs text-muted">
+                  {a.status ?? "ASSIGNED"}
+                  {a.assignedAt ? ` · ${formatDate(a.assignedAt)}` : ""}
+                </p>
+              </div>
+              {a.refCode && (
+                <span
+                  title="Per-race report code issued to this referee"
+                  className="rounded-md border border-brand-200 bg-brand-50 px-2 py-0.5 font-mono text-xs font-semibold text-brand-800"
+                >
+                  {a.refCode}
+                </span>
+              )}
+              {a.panelRole ? (
+                <Badge tone={PANEL_ROLE_TONE[a.panelRole] ?? "neutral"}>
+                  {PANEL_ROLE_LABEL[a.panelRole] ?? a.panelRole}
+                </Badge>
+              ) : (
+                <span className="text-xs text-muted">No role</span>
+              )}
+              <Button
+                size="sm"
+                variant="ghost"
+                className="border border-danger text-danger hover:bg-danger/10"
+                loading={remove.isPending}
+                onClick={() => onRemove(a)}
+              >
+                <Trash2 size={14} /> Remove
+              </Button>
+            </li>
+          ))}
+        </ul>
+      )}
+      {assigning && (
+        <AssignPanelModal raceId={raceId} onClose={() => setAssigning(false)} />
+      )}
+    </div>
+  );
+}
+
 /**
  * Read-only race detail with the admin lifecycle actions (publish, start,
  * finish, cancel, delete) and an inline switch into the edit form.
@@ -192,6 +303,7 @@ export function RaceDetailModal({ raceId, fallback, tournaments, onClose }) {
   const query = useRace(raceId);
   const entriesQuery = useRaceEntries(raceId);
   const schedule = useScheduleRace();
+  const close = useCloseRace();
   const start = useStartRace();
   const finish = useFinishRace();
   const cancel = useCancelRace();
@@ -219,6 +331,11 @@ export function RaceDetailModal({ raceId, fallback, tournaments, onClose }) {
       { id: raceId, scheduledStartAt: race.scheduledStartAt },
       { onSuccess: () => toast.success("Race opened for entries") },
     );
+  }
+  function onCloseRegistration() {
+    close.mutate(raceId, {
+      onSuccess: () => toast.success("Registration closed — betting is now open"),
+    });
   }
   function onStart() {
     start.mutate(raceId, {
@@ -300,6 +417,15 @@ export function RaceDetailModal({ raceId, fallback, tournaments, onClose }) {
                 onClick={onOpen}
               >
                 Publish (open registration)
+              </Button>
+            )}
+            {race.status === "OPEN" && (
+              <Button
+                variant="secondary"
+                loading={close.isPending}
+                onClick={onCloseRegistration}
+              >
+                Close registration (open betting)
               </Button>
             )}
             {(race.status === "OPEN" || race.status === "CLOSED") && (
@@ -480,6 +606,9 @@ export function RaceDetailModal({ raceId, fallback, tournaments, onClose }) {
               </div>
             )}
           </div>
+
+          <RefereePanel raceId={raceId} />
+
           {!editable && (
             <p className="rounded-lg bg-subtle/60 px-3 py-2 text-xs text-muted">
               This race is {RACE_STATUS_LABEL[race.status] ?? race.status} and
